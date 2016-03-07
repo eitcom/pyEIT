@@ -2,7 +2,7 @@
 
 A python-based, open-source package for Electrical Impedance Tomography (EIT)
 
-Dependencies:
+**Dependencies:**
 
  - numpy (tested with `numpy-1.10.4`)
  - scipy (tested with `scipy-0.17.0`)
@@ -12,9 +12,10 @@ Dependencies:
  - distmesh or meshpy (both are optional), it currently has a build-in distmesh2d module
  - tetgen (optional) for generating 3D meshes
 
-The distribution [Anaconda from continuum](https://www.continuum.io/downloads) is suggested to be used with this package.
+The distribution, [Anaconda from continuum](https://www.continuum.io/downloads), is suggested to be used with this package.
 
-Currently suppots:
+**Currently suppots:**
+
  - 2D forward and inverse computing of EIT
  - Reconstruction algorithms : Gauss-Newton solver (JAC), Back-projection (BP), 2D GREIT
  - 2D visualization code
