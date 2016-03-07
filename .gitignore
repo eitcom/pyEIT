@@ -3,4 +3,5 @@
 *.jpeg
 *.so
 *.dll
+__pycache__/
 
