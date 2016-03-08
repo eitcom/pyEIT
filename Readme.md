@@ -68,7 +68,3 @@ Using `demo/demo_static_jac.py`
  - [ ] Port iso2mesh to python, and use MRI data as input for 3D mesh generation
  - [ ] More algorithms and data pre-processing modules
 
-## Changelog
-
- - 0.1, TBD
- - alpha, 2016-03-07
