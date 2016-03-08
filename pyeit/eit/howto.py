@@ -1,15 +1,15 @@
 # coding: utf-8
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, too-many-arguments
 """
 This is a python code template that guide you through writing your own
 reconstruction algorithm.
 """
 from __future__ import absolute_import
 
-import numpy as np
+# import numpy as np
 
-from .fem import forward
-from .utils import eit_scan_lines
+# from .fem import forward
+# from .utils import eit_scan_lines
 
 
 class EIT(object):
@@ -41,7 +41,9 @@ class EIT(object):
         ----
         parser is required for your code to be compatible with
         (a) simulation dataset or (b) FMMU dataset
-        """
+
+        Example
+        -------
         if exMtx is None:
             exMtx = eit_scan_lines(len(elPos), 8)
         if perm is None:
@@ -57,6 +59,8 @@ class EIT(object):
         self.parser = parser
         f = fwd.solve(exMtx, step=step, perm=perm, parser=self.parser)
         self.J, self.v0, self.B = f.Jac, f.v, f.B
+        """
+        pass
 
     def solve(self, v1, v0):
         """
@@ -78,4 +82,5 @@ class EIT(object):
         pass
 
     def static_solve(self, v1):
+        """ static solvers """
         pass

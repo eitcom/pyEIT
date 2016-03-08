@@ -1,5 +1,6 @@
 # coding: utf-8
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, no-member, too-many-instance-attributes
+# pylint: disable=too-many-arguments
 """
 GREIT (using distribution method)
 
@@ -97,7 +98,7 @@ class GREIT(object):
                            parser=self.parser)
         J = f.Jac
         # build D on grids
-        self._build_grid()
+        self.xg, self.yg, self.mask = self._build_grid()
         rmax = self._get_rmax()
         D = self._psf_grid(rmax)
         # E[yy^T]
@@ -122,10 +123,11 @@ class GREIT(object):
         path = Path(edge_points, closed=False)
         mask = path.contains_points(points)
         mask = mask.reshape(xg.shape)
-        # save
-        self.xg, self.yg, self.mask = xg, yg, mask
 
-    def _distance2d(self, x, y, center=None):
+        return xg, yg, mask
+
+    @staticmethod
+    def _distance2d(x, y, center=None):
         """ Calculate radius given center. This function can be OPTIMIZED """
         if center is None:
             xc, yc = np.mean(x), np.mean(y)
@@ -156,28 +158,30 @@ class GREIT(object):
             D[:, i] = f
         return D
 
-    def get_grid(self):
-        return self.xg, self.yg
-
     def mask_value(self, ds, mask_value=0.0):
         """ mask values on nodes outside 2D mesh. """
         ds = ds.reshape(self.xg.shape)
         ds[~self.mask] = mask_value
         return self.xg, self.yg, ds
 
-    def build_set(self, X, Y, W=None):
+    @staticmethod
+    def build_set(X, Y):
         """ generate R from a set of training sets (deprecate). """
         # E_w[yy^T]
         YYT = la.inv(np.dot(Y, Y.transpose()))
         RM = np.dot(np.dot(X, Y), YYT)
         return RM
 
-    def solve(self, v1, v0, normalize=True):
+    def solve(self, v1, v0, normalize=False):
         """ solving and interpolating (psf convolve) on grids. """
-        dv = v1 - v0
+        if normalize:
+            dv = - (v1 - v0)/v0
+        else:
+            dv = v1 - v0
         return - np.dot(self.RM, dv)
 
 
+# pylint: disable=too-few-public-methods
 class GREIT3D(object):
     """ 3D GREIT algorithm. """
 

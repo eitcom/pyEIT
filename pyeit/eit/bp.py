@@ -1,10 +1,9 @@
 # coding: utf-8
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, no-member
 """ bp (back-projection) and f(filtered)-bp module """
 from __future__ import absolute_import
 
 import numpy as np
-import scipy.linalg as la
 from .fem import forward
 from .utils import eit_scan_lines
 
@@ -12,6 +11,7 @@ from .utils import eit_scan_lines
 class BP(object):
     """ implement a naive inversion of (Euclidean) back projection. """
 
+    # pylint: disable=too-many-arguments
     def __init__(self, mesh, elPos,
                  exMtx=None, step=1, perm=None, parser='std',
                  weight='none'):
@@ -58,6 +58,7 @@ class BP(object):
         else:
             self.WB = B
 
+    # pylint: enable=too-many-arguments
     def solve(self, v1, v0=None, normalize=False):
         """
         back projection : mapping boundary data on element
@@ -119,27 +120,3 @@ class BP(object):
         # weighting by element-wise multiplication W with B
         W = np.dot(np.ones((num_voltages, 1)), w.reshape(1, -1))
         return W
-
-
-class FBP(BP):
-    """ implement a filtered back projection (deprecated) """
-
-    def __init__(self, mesh, elPos,
-                 exMtx=None, step=1, perm=None,
-                 lamb=0.01):
-        # inheritate from bp
-        BP.__init__(self, mesh, elPos, exMtx, step, perm)
-        # normalize Jacobian
-        G = np.diag(1./self.v0)
-        F = np.dot(G, self.J)
-        # pseudo inverse of FB
-        self.H = np.dot(F, self.B.transpose())
-        R = np.dot(self.H.transpose(), self.H)
-        # regularized H
-        self.Hr = R + lamb*np.diag(np.diag(R))
-
-    def solve(self, v1):
-        vn = - (v1 - self.v0)/self.v0
-        vfilter = la.solve(self.Hr, np.dot(self.H.transpose(), vn))
-        ds = np.dot(self.B.transpose(), vfilter)
-        return np.real(ds)

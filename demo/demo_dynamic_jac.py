@@ -42,6 +42,7 @@ fig = plt.figure()
 plt.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, np.real(ds),
               shading='flat', cmap=plt.cm.Blues)
 plt.colorbar()
-plt.axis('tight')
+plt.axis('equal')
+plt.axis([-1.2, 1.2, -1.2, 1.2])
 # fig.set_size_inches(4, 3)
 # plt.savefig('demo_jac.png', dpi=96)

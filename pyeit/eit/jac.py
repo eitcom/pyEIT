@@ -1,5 +1,6 @@
 # coding: utf-8
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, no-member, too-many-arguments
+# pylint: disable=too-many-instance-attributes, too-many-locals
 """ dynamic EIT solver using JAC """
 from __future__ import absolute_import
 
@@ -108,22 +109,26 @@ class JAC(object):
             complex-valued NDArray, changes of conductivities
         """
         # normalize is not required for JAC
-        dv = (v1 - v0)
+        if normalize:
+            dv = - (v1 - v0)/v0
+        else:
+            dv = (v1 - v0)
         # s = -Hv
         ds = - np.dot(self.H, dv)
         # return average epsilon on element
-        self.ds = ds / self.ae
-        return self.ds
+        return ds / self.ae
 
     def bp_solve(self, v1, v0, normalize=False):
         """ solve via a 'naive' back projection. """
         # normalize is not required for JAC
-        dv = (v1 - v0)
+        if normalize:
+            dv = - (v1 - v0)/v0
+        else:
+            dv = (v1 - v0)
         # s_r = J^Tv_r
         ds = - np.dot(self.Jac.T.conjugate(), dv)
         # return average epsilon on element
-        self.ds = ds / self.ae
-        return self.ds
+        return ds / self.ae
 
     def gn_solve(self, v,
                  x0=None, maxiter=1,
@@ -147,6 +152,14 @@ class JAC(object):
         -------
         NDArray
             Complex-valued conductivities
+
+        Note
+        ----
+        Gauss-Newton Iterative solver,
+            x1 = x0 - (J^TJ + lamb*R)^(-1) * r0
+        where:
+            R = diag(J^TJ)**p
+            r0 (residual) = real_measure - forward_v
         """
         if x0 is None:
             x0 = self.x0
@@ -157,13 +170,6 @@ class JAC(object):
         if method is None:
             method = self.method
 
-        """
-        Gauss-Newton Iterative solver,
-            x1 = x0 - (J^TJ + lamb*R)^(-1) * r0
-        where:
-            R = diag(J^TJ)**p
-            r0 (residual) = real_measure - forward_v
-        """
         for i in range(maxiter):
             if verbose:
                 print('iter = ', i)
@@ -174,13 +180,17 @@ class JAC(object):
             r0 = v - fs.v
             Jac = fs.Jac
             Jr = np.dot(Jac.T.conjugate(), r0)
+
             # Gaussian-Newton
             JWJ = np.dot(Jac.T.conjugate(), Jac)
+
+            # pseudo inverse
             if method is 'kotre':
                 R = np.diag(np.diag(JWJ) ** p)
             else:
                 R = np.eye(Jac.shape[1])
             H = (JWJ + lamb*R)
+
             # update
             d_k = la.solve(H, Jr)
             x0 = x0 - d_k
@@ -209,17 +219,13 @@ def h_matrix(Jac, p, lamb, method='kotre'):
     """
     JWJ = np.dot(Jac.transpose(), Jac)
     if method is 'kotre':
-        """
-        see adler-dai-lionheart-2007, when
-        p=0   : noise distribute on the boundary
-        p=0.5 : noise distribute on the middle
-        p=1   : noise distribute on the center
-        """
+        # see adler-dai-lionheart-2007, when
+        # p=0   : noise distribute on the boundary
+        # p=0.5 : noise distribute on the middle
+        # p=1   : noise distribute on the center
         R = np.diag(np.diag(JWJ) ** p)
     else:
-        """
-        Marquardt–Levenberg, 'lm'
-        """
+        # Marquardt–Levenberg, 'lm'
         R = np.eye(Jac.shape[1])
 
     # build H

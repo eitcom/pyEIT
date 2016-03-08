@@ -1,15 +1,16 @@
 # coding: utf-8
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, no-member, no-name-in-module
+# pylint: disable=too-many-arguments, too-many-locals
 """ implement a 2D distmesh """
 from __future__ import absolute_import
 
 import numpy as np
 from numpy import sqrt
-from scipy.spatial import Delaunay
-from scipy.sparse import csr_matrix
 import matplotlib
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
+from scipy.spatial import Delaunay
+from scipy.sparse import csr_matrix
 
 
 def delaunay(pts):
@@ -119,8 +120,8 @@ def triangulate(pts, fd, geps):
     return tri
 
 
-def build(fd, fh, pfix=[],
-          bbox=[-1, -1, 1, 1], h0=0.1, densityctrlfreq=30,
+def build(fd, fh, pfix=None,
+          bbox=None, h0=0.1, densityctrlfreq=30,
           dptol=0.001, ttol=0.1, Fscale=1.2, deltat=0.2,
           maxiter=1000):
     """ main function for distmesh2d
@@ -176,6 +177,8 @@ def build(fd, fh, pfix=[],
     geps = 0.001 * h0
 
     # p : Nx2 coordinates (x,y) of meshes
+    if bbox is None:
+        bbox = [-1, -1, 1, 1]
     p = bbox2p(h0, bbox)
 
     # discard points out of the distance function fd
@@ -187,6 +190,8 @@ def build(fd, fh, pfix=[],
     p = p[selection]
 
     # pre-pend fixed points (warning : avoid overlap mesh points)
+    if pfix is None:
+        pfix = []
     nfix = len(pfix)
     if len(pfix) > 0:
         p = remove_duplicate_nodes(p, pfix, geps)
@@ -217,19 +222,17 @@ def build(fd, fh, pfix=[],
         L0 = hbars * Fscale * sqrt(np.sum(L**2) / np.sum(hbars**2))
 
         if (i % densityctrlfreq) == 0 and (L0 > 2*L).any():
-            """
-            Density control - remove points that are too close
-            L0 : Kx1, L : Kx1, bars : Kx2
-            bars[L0 > 2*L] only returns bar[:, 0] where L0 > 2L
-            """
+            # Density control - remove points that are too close
+            # L0 : Kx1, L : Kx1, bars : Kx2
+            # bars[L0 > 2*L] only returns bar[:, 0] where L0 > 2L
             ixout = (L0 > 2*L).ravel()
             ixdel = np.setdiff1d(bars[ixout, :].reshape(-1), np.arange(nfix))
             p = p[np.setdiff1d(np.arange(N), ixdel)]
-            Nold = N
+            # Nold = N
             N = p.shape[0]
             pold = np.inf * np.ones((N, 2))
+            # print('density control ratio : %f' % (float(N)/Nold))
             # continue to triangulate
-            print('density control ratio : %f' % (float(N)/Nold))
             continue
 
         # forces on bars
@@ -237,11 +240,9 @@ def build(fd, fh, pfix=[],
         # normalized and vectorized forces
         Fvec = F * (barvec / L)
 
-        """
-        using sparse matrix to perform automatic summation
-        rows : left, left, right, right
-        cols : x, y, x, y
-        """
+        # using sparse matrix to perform automatic summation
+        # rows : left, left, right, right
+        # cols : x, y, x, y
         data = np.hstack([Fvec, -Fvec])
         rows = bars[:, [0, 0, 1, 1]]
         cols = np.dot(np.ones(np.shape(F)), np.array([[0, 1, 0, 1]]))
@@ -254,19 +255,14 @@ def build(fd, fh, pfix=[],
         # zero out forces at fixed points:
         Ftot[0:len(pfix)] = 0
 
-        """
-        update p
-        """
+        # update p
         p += deltat * Ftot
 
-        """
-        if a point ends up outside, move it back to the closest
-        on the boundary using the distance function
-        """
+        # if a point ends up outside, move it back to the closest
+        # on the boundary using the distance function
         d = fd(p)
         ix = d > 0
-        pgrad = edge_project(p[ix], fd)
-        p[ix] -= pgrad
+        p[ix] -= edge_project(p[ix], fd)
 
         # the stopping ctriterion (movements interior are small)
         delta_move = deltat * Ftot[d < -geps]
@@ -344,7 +340,7 @@ def edge_list(tri):
     return bars[np.array(ix)].view('i')
 
 
-def dcircle(pts, pc=[0, 0], r=1.0):
+def dcircle(pts, pc=None, r=1.0):
     """ Distance function for the circle centered at pc = [xc, yc]
 
     Parameters
@@ -365,10 +361,12 @@ def dcircle(pts, pc=[0, 0], r=1.0):
     ----
     copied and modified from https://github.com/ckhroulev/py_distmesh2d
     """
+    if pc is None:
+        pc = [0, 0]
     return dist(pts - pc) - r
 
 
-def drectangle(pts, p1=[0, 0], p2=[1, 1]):
+def drectangle(pts, p1=None, p2=None):
     """
     Distance function for the rectangle p1=[x1, y1] and p2=[x2, y2]
 
@@ -390,6 +388,10 @@ def drectangle(pts, p1=[0, 0], p2=[1, 1]):
     array_like
         distance
     """
+    if p1 is None:
+        p1 = [0, 0]
+    if p2 is None:
+        p2 = [1, 1]
     pd_left = [-min(row) for row in pts - p1]
     pd_right = [max(row) for row in pts - p2]
 
@@ -497,7 +499,7 @@ def dboxCircle(pts):
     return dcircle(pts, pc=[0.5, 0.5], r=0.5)
 
 
-def pcircle(pc=[0, 0], r=1., numEl=16):
+def pcircle(pc=None, r=1., numEl=16):
     """
     return fixed and uniformly distributed points on
     a circle with radius r
@@ -516,6 +518,9 @@ def pcircle(pc=[0, 0], r=1., numEl=16):
         coordinates of fixed points
 
     """
+    if pc is None:
+        pc = [0, 0]
+
     theta = 2. * np.pi * np.arange(numEl)/float(numEl)
     pfix = [[r*np.sin(th), r*np.cos(th)] for th in theta]
     return np.array(pfix) + pc
@@ -581,10 +586,11 @@ def voronoi(pts, tri, fd=None):
     for i in range(pts.shape[0]):
         cells.append(list())
 
-    # append center (x,y) of triangle-circumcircle to the cell list
     def extract_xy(i):
-        x, y, r = circumcircle(pts[tri[i, 0]], pts[tri[i, 1]], pts[tri[i, 2]])
+        """ append center (x,y) of triangle-circumcircle to the cell list """
+        x, y, _ = circumcircle(pts[tri[i, 0]], pts[tri[i, 1]], pts[tri[i, 2]])
         return [x, y]
+
     # list(map(extract_xy, range(n)))
     pc = np.array([extract_xy(i) for i in range(n)])
 
@@ -602,12 +608,9 @@ def voronoi(pts, tri, fd=None):
         cells[tri[i, 1]].append(pc_tuple)
         cells[tri[i, 2]].append(pc_tuple)
 
-    """
-    append middle (x, y) of edge-bars to the cells,
-    make a closed patch of the voronoi tessellation.
-
-    note : it may be better if you peoject this point on fd
-    """
+    # append middle (x, y) of edge-bars to the cells,
+    # make a closed patch of the voronoi tessellation.
+    # note : it may be better if you peoject this point on fd
     edge_bars = edge_list(tri)
     hbars = np.mean(pts[edge_bars], axis=1)
     if fd is not None:
@@ -679,8 +682,9 @@ def voronoi_plot(pts, tri, val=None, fd=None):
         # map values on nodes to colormap
         # e.g., color = np.random.uniform(.4, .9, 3)
         color = mapper.to_rgba(val[i])
-        patch = matplotlib.patches.PathPatch(
-                path, facecolor=color, edgecolor='w', zorder=-1, lw=0.4)
+        patch = matplotlib.patches.PathPatch(path, facecolor=color,
+                                             edgecolor='w', zorder=-1,
+                                             lw=0.4)
         ax.add_patch(patch)
     plt.axis('equal')
     return fig, ax
@@ -741,13 +745,12 @@ def set_alpha(mesh, anom=None, background=None):
     no2xy = mesh['node']
     alpha = mesh['alpha']
     tri_centers = np.mean(no2xy[el2no], axis=1)
-    """
-    this code is equivalent to:
-    >>> N = np.shape(el2no)[0]
-    >>> for i in range(N):
-    >>>     tri_centers[i] = np.mean(no2xy[el2no[i]], axis=0)
-    >>> plt.plot(tri_centers[:,0], tri_centers[:,1], 'kx')
-    """
+
+    # this code is equivalent to:
+    # >>> N = np.shape(el2no)[0]
+    # >>> for i in range(N):
+    # >>>     tri_centers[i] = np.mean(no2xy[el2no[i]], axis=0)
+    # >>> plt.plot(tri_centers[:,0], tri_centers[:,1], 'kx')
     N = np.size(mesh['alpha'])
 
     # reset background if needed
@@ -755,11 +758,11 @@ def set_alpha(mesh, anom=None, background=None):
         alpha = background * np.ones(N, dtype='complex')
 
     if anom is not None:
-        for i in range(len(anom)):
-            cx = anom[i]['x']
-            cy = anom[i]['y']
-            diameter = anom[i]['d']
-            alpha_anomaly = anom[i]['alpha']
+        for _, attr in enumerate(anom):
+            cx = attr['x']
+            cy = attr['y']
+            diameter = attr['d']
+            alpha_anomaly = attr['alpha']
             # find elements whose distance to (cx,cy) is smaller than d
             indice = np.sqrt((tri_centers[:, 0] - cx)**2 +
                              (tri_centers[:, 1] - cy)**2) < diameter
@@ -771,29 +774,32 @@ def set_alpha(mesh, anom=None, background=None):
     return mesh_new
 
 
-# show you a demo
-if __name__ == "__main__":
-
+def demo():
+    """ show you a demo """
     # number of electrodes
     numEl = 16
     pfix = pcircle(numEl=numEl)
-    p, t = build(dunitCircle, huniform, pfix=pfix, h0=0.16, Fscale=1.2)
+    pts, tri = build(dunitCircle, huniform, pfix=pfix, h0=0.16, Fscale=1.2)
     elPos = np.arange(numEl)
 
     # 1. show nods using pylab.plot
-    fig, ax = plt.subplots()
-    ax.plot(p[:, 0], p[:, 1], 'ro')
+    _, ax = plt.subplots()
+    ax.plot(pts[:, 0], pts[:, 1], 'ro')
     plt.axis('equal')
 
     # 2. show meshes (delaunay) using triplot
-    fig, ax = plt.subplots()
-    ax.triplot(p[:, 0], p[:, 1], t)
-    ax.plot(p[elPos, 0], p[elPos, 1], 'ro')
+    _, ax = plt.subplots()
+    ax.triplot(pts[:, 0], pts[:, 1], tri)
+    ax.plot(pts[elPos, 0], pts[elPos, 1], 'ro')
     # c = np.mean(p[tri], axis=1)
     plt.axis('equal')
 
     # 3. show voronoi tessellation
-    vals = np.random.rand(p.shape[0]) - 0.5
-    fig, ax = voronoi_plot(p, t, vals, fd=dunitCircle)
-    ax.plot(p[elPos, 0], p[elPos, 1], 'ro')
-    ax.triplot(p[:, 0], p[:, 1], t, color='k', alpha=0.4)
+    vals = np.random.rand(pts.shape[0]) - 0.5
+    _, ax = voronoi_plot(pts, tri, vals, fd=dunitCircle)
+    ax.plot(pts[elPos, 0], pts[elPos, 1], 'ro')
+    ax.triplot(pts[:, 0], pts[:, 1], tri, color='k', alpha=0.4)
+
+
+if __name__ == "__main__":
+    demo()

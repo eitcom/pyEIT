@@ -1,11 +1,11 @@
 # coding: utf-8
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, no-member, too-many-locals
 """ 2D FEM routines for EIT """
 from __future__ import absolute_import
 
+from collections import namedtuple
 import numpy as np
 import scipy.linalg as la
-from collections import namedtuple
 
 from .utils import eit_scan_lines
 
@@ -66,7 +66,7 @@ class forward(object):
         # extratct scan lines of EIT
         if exMtx is None:
             exMtx = eit_scan_lines(16, 8)
-        numLines, numEl = np.shape(exMtx)
+        numLines = np.shape(exMtx)[0]
 
         # calculate f and Jacobian loop over all excitation lines
         Jac, vb, B = None, None, None
@@ -76,26 +76,25 @@ class forward(object):
             f, J = self.solve_once(exLine, tri_perm)
             diff_array = diff_pairs(exLine, step, parser)
 
-            """ 1. concat vb. voltage at the electrodes is differenced """
+            # 1. concat vb. voltage at the electrodes is differenced
             v_diff = diff(f[self.elPos], diff_array)
             vb = v_diff if vb is None else np.hstack([vb, v_diff])
 
-            """ 2. concat Jac. Jac or sensitivity matrix is formed vstack """
+            # 2. concat Jac. Jac or sensitivity matrix is formed vstack
             Ji = diff(J, diff_array)
             Jac = Ji if Jac is None else np.vstack([Jac, Ji])
 
-            """ 3. build bp map B
-            3.1 we can either smear at the center of elements, using
-                >> fe = np.mean(f[self.el2no], axis=1)
-            3.2 or, more simply, smear at the nodes using f.
-            """
+            # 3. build bp map B
+            # 3.1 we can either smear at the center of elements, using
+            #     >> fe = np.mean(f[self.el2no], axis=1)
+            # 3.2 or, more simply, smear at the nodes using f.
             fe = np.mean(f[self.el2no], axis=1)
             Bi = smear(fe, f[self.elPos], diff_array)
             B = Bi if B is None else np.vstack([B, Bi])
 
         # update output
-        forward = namedtuple("forward", ['Jac', 'v', 'B'])
-        return forward(Jac=Jac, v=vb, B=B)
+        r = namedtuple("forward", ['Jac', 'v', 'B'])
+        return r(Jac=Jac, v=vb, B=B)
 
     def solve_once(self, exLine, tri_perm):
         """
@@ -175,7 +174,7 @@ def smear(f, fb, pairs):
     return np.array(Bi) / float(L)
 
 
-def diff(v, pairs, axis=None):
+def diff(v, pairs):
     """
     vdiff[k] = v[i, :] - v[j, :]
 
@@ -185,8 +184,6 @@ def diff(v, pairs, axis=None):
         boundary measurements
     pairs : NDArray
         diff pairs
-    axis : int
-        difference is calculated along which axis (deprecated)
 
     Returns
     -------
@@ -306,11 +303,9 @@ def CmpElMtx(xy):
 
     Atot = 0.5*(s2[0]*s3[1] - s3[0]*s2[1])
     if Atot < 0:
-        """
-        idealy nodes should be given in anti-clockwise,
-        but Yang Bin's .mes file is in clockwise manner,
-        so we make this script compatible to his file format
-        """
+        # idealy nodes should be given in anti-clockwise,
+        # but Yang Bin's .mes file is in clockwise manner,
+        # so we make this script compatible to his file format
         Atot *= -1.
 
     grad_phi = np.zeros((3, 2))
@@ -318,12 +313,12 @@ def CmpElMtx(xy):
     grad_phi[1, :] = np.array([-s2[1], s2[0]]) / (2. * Atot)
     grad_phi[2, :] = np.array([-s3[1], s3[0]]) / (2. * Atot)
 
-    """
-    Ae = np.zeros((3, 3))
-    for i in range(3):
-        for j in range(3):
-            Ae[i, j] = np.dot(grad_phi[i, :], grad_phi[j, :]) * Atot
-    """
+    # using for-loops
+    # Ae = np.zeros((3, 3))
+    # for i in range(3):
+    #     for j in range(3):
+    #         Ae[i, j] = np.dot(grad_phi[i, :], grad_phi[j, :]) * Atot
+
     # vectorize
     Ae = np.dot(grad_phi, grad_phi.transpose()) * Atot
 
@@ -442,29 +437,22 @@ def pdetrg(no2xy, el2no):
     ix = el2no[:, 0]
     iy = el2no[:, 1]
     iz = el2no[:, 2]
-    #
+
     s1 = no2xy[iz, :] - no2xy[iy, :]
     s2 = no2xy[ix, :] - no2xy[iz, :]
     s3 = no2xy[iy, :] - no2xy[ix, :]
-    #
+
     Atot = 0.5*(s2[:, 0]*s3[:, 1] - s3[:, 0]*s2[:, 1])
     if any(Atot) < 0:
         exit("nodes are given in clockwise manner")
 
-    #
-    grad_phi0x = -s1[:, 1] / (2. * Atot)
-    grad_phi0y = s1[:, 0] / (2. * Atot)
-    grad_phi1x = -s2[:, 1] / (2. * Atot)
-    grad_phi1y = s2[:, 0] / (2. * Atot)
-    grad_phi2x = -s3[:, 1] / (2. * Atot)
-    grad_phi2y = s3[:, 0] / (2. * Atot)
     # note in python, reshape place elements first on the right-most index
-    grad_phi_x = np.reshape([grad_phi0x,
-                             grad_phi1x,
-                             grad_phi2x], [-1, M]).T
-    grad_phi_y = np.reshape([grad_phi0y,
-                             grad_phi1y,
-                             grad_phi2y], [-1, M]).T
+    grad_phi_x = np.reshape([-s1[:, 1] / (2. * Atot),
+                             -s2[:, 1] / (2. * Atot),
+                             -s3[:, 1] / (2. * Atot)], [-1, M]).T
+    grad_phi_y = np.reshape([s1[:, 0] / (2. * Atot),
+                             s2[:, 0] / (2. * Atot),
+                             s3[:, 0] / (2. * Atot)], [-1, M]).T
 
     return Atot, grad_phi_x, grad_phi_y
 
