@@ -4,13 +4,13 @@ A python-based, open-source package for Electrical Impedance Tomography (EIT)
 
 **Dependencies:**
 
- - numpy (tested with `numpy-1.10.4`, `numpy-1.11.rc1`)
- - scipy (tested with `scipy-0.17.0`)
- - matplotlib (tested with `matplotlib-1.5.1`)
- - pandas (tested with `pandas-0.17.1`)
- - xarray (*optional*, for large scale data analysis)
- - distmesh or meshpy (both are *optional*), it currently has a build-in distmesh2d module
- - tetgen (*optional*) for generating 3D meshes
+ - **numpy** (tested with `numpy-1.10.4`, `numpy-1.11.rc1`)
+ - **scipy** (tested with `scipy-0.17.0`)
+ - **matplotlib** (tested with `matplotlib-1.5.1`)
+ - **pandas** (*optional*, tested with `pandas-0.17.1`)
+ - **xarray** (*optional*, for long term data analysis)
+ - **distmesh** or **meshpy** (both are *optional*), it currently has a build-in distmesh2d module
+ - **tetgen** (*optional*) for generating 3D meshes
 
 The distribution, [Anaconda from continuum](https://www.continuum.io/downloads), is suggested to be used with this package.
 
@@ -26,24 +26,40 @@ The distribution, [Anaconda from continuum](https://www.continuum.io/downloads),
 
 `pyEIT` is purely python based (in current version), so it can be installed and run without any difficulty.
 
-1, **install global**
+Option 1, **install global**
 
 ```
 $ python setup.py build
 $ python setup.py install
 ```
 
-2, **set PYTHONPATH** (recommended)
+Option 2, **set PYTHONPATH** (recommended)
 
 ```
 export PYTHONPATH=/path/to/pyEIT
 ```
 
-In windows, you may set `PYTHONPATH` as a system wide environment. If you are using spyder, or pyCharm, you can also set `PYTHONPATH` in IDE. Please refer to the specific tool for detailed information.
+In windows, you may set `PYTHONPATH` as a system wide environment. If you are using `spyder-IDE`, or `pyCharm`, you may also set `PYTHONPATH` in the IDE, which is more convenient. Please refer to a specific tool for detailed information.
 
-### Run your demo
+### Run the demo
 
 Enter the demo folder, pick one demo, and run !
+
+Using `demo/demo_dynamic_bp.py`
+
+![demo_bp](figs/demo_bp.png)
+
+Using `demo/demo_dynamic_greit.py`
+
+![demo_greit](figs/demo_greit.png)
+
+Using `demo/demo_dynamic_jac.py`
+
+![demo_greit](figs/demo_jac.png)
+
+Using `demo/demo_static_jac.py`
+
+![demo_static](figs/demo_static.png)
 
 ## Todos
 
