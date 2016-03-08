@@ -4,4 +4,7 @@
 *.so
 *.dll
 __pycache__/
+build/
+dist/
+pyeit.egg-info/
 
