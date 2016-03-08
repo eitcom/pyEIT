@@ -50,12 +50,12 @@ eit = jac.JAC(mesh, elPos, exMtx=exMtx, step=step,
               perm=1., parser='std',
               p=0.2, lamb=0.001, method='kotre')
 # parameter tuning is needed for better display
-ds = eit.solve(f1.v, f0.v, normalize=True)
+ds = eit.solve(f1.v, f0.v)
 ds_jac = pdeprtni(no2xy, el2no, ds)
 
 """ ax4. GREIT """
 eit = greit.GREIT(mesh, elPos, exMtx=exMtx, step=step, parser='std')
-ds = eit.solve(f1.v, f0.v, normalize=True)
+ds = eit.solve(f1.v, f0.v)
 x, y, ds_greit = eit.mask_value(ds, mask_value=np.NAN)
 
 """ build for EIT2016b (orig: 300p x 300p, 150dpi) """

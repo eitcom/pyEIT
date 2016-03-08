@@ -87,7 +87,7 @@ im = ax2.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, ds)
 ax2.set_title(r'$\Delta$ Conductivities')
 ax2.axis('equal')
 fig.colorbar(im)
-fig.set_size_inches(6, 3)
 """ for production figures, use dpi=300 or render pdf """
+fig.set_size_inches(6, 3)
 # fig.savefig('demo_bp.png', dpi=96)
 plt.show()
