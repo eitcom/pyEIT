@@ -45,19 +45,19 @@ In windows, you may set `PYTHONPATH` as a system wide environment. If you are us
 
 Enter the demo folder, pick one demo, and run !
 
-Using `demo/demo_dynamic_bp.py`
+**Using** `demo/demo_dynamic_bp.py`
 
 ![demo_bp](figs/demo_bp.png)
 
-Using `demo/demo_dynamic_greit.py`
+**Using** `demo/demo_dynamic_greit.py`
 
 ![demo_greit](figs/demo_greit.png)
 
-Using `demo/demo_dynamic_jac.py`
+**Using** `demo/demo_dynamic_jac.py`
 
 ![demo_greit](figs/demo_jac.png)
 
-Using `demo/demo_static_jac.py`
+**Using** `demo/demo_static_jac.py`
 
 ![demo_static](figs/demo_static.png)
 
