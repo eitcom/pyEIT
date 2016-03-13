@@ -3,6 +3,8 @@
 *.jpeg
 *.so
 *.dll
+test.*
+
 __pycache__/
 build/
 dist/
