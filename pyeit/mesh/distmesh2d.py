@@ -5,6 +5,7 @@
 """ implement a 2D distmesh """
 from __future__ import absolute_import
 
+from itertools import combinations
 import numpy as np
 from numpy import sqrt
 from scipy.spatial import Delaunay
@@ -13,7 +14,7 @@ from scipy.sparse import csr_matrix
 from .utils import dist, edge_project
 
 
-class DISTMESH2D(object):
+class DISTMESH(object):
     """ class for distmesh2d """
 
     def __init__(self, fd, fh, h0=0.1,
@@ -56,6 +57,7 @@ class DISTMESH2D(object):
         self.fd = fd
         self.fh = fh
         self.h0 = h0
+        # a small gap, allow points who are slightly outside of the region
         self.geps = 0.001 * h0
 
         # control the distmesh computation flow
@@ -65,12 +67,18 @@ class DISTMESH2D(object):
         self.Fscale = Fscale
         self.deltat = deltat
 
-        # p : Nx2 coordinates (x,y) of meshes
+        # default bbox is 2D
         if bbox is None:
-            bbox = [-1, -1, 1, 1]
-        p = bbox2p(h0, bbox)
+            bbox = [[-1, -1],
+                    [1, 1]]
+        # p : coordinates (x,y) or (x,y,z) of meshes
+        self.Ndim = np.shape(bbox)[1]
+        if self.Ndim == 2:
+            p = bbox2d(h0, bbox)
+        else:
+            p = bbox3d(h0, bbox)
 
-        # keep points inside region (specified by fd)
+        # keep points inside region (specified by fd) with a small gap (geps)
         p = p[fd(p) < self.geps]
 
         # rejection points by sampling on fh
@@ -94,8 +102,11 @@ class DISTMESH2D(object):
         self.N = p.shape[0]
         self.p = p
         # initialize pold with inf: it will be re-triangulate at start
-        self.pold = np.inf * np.ones((self.N, 2))
+        self.pold = np.inf * np.ones((self.N, self.Ndim))
 
+        # build edges list for triangle or tetrahedral. i.e., in 2D triangle
+        # edge_combinations is [[0, 1], [1, 2], [2, 0]]
+        self.edge_combinations = list(combinations(range(self.Ndim+1), 2))
         # triangulate, generate simplices and bars
         self.triangulate()
 
@@ -107,12 +118,13 @@ class DISTMESH2D(object):
     def _delaunay(pts, fd, geps):
         """
         Compute the Delaunay triangulation and remove trianges with
-        centroids outside the domain (with a geps gap)
+        centroids outside the domain (with a geps gap).
+        3D, ND compatible
 
         Parameters
         ----------
         pts : array_like
-            points on 2D
+            points
         fd : str
             distance function
         geps : float
@@ -138,7 +150,7 @@ class DISTMESH2D(object):
         # generate new simplices
         t = self._delaunay(self.p, self.fd, self.geps)
         # extract edges (bars)
-        bars = t[:, [[0, 1], [1, 2], [2, 0]]].reshape((-1, 2))
+        bars = t[:, self.edge_combinations].reshape((-1, 2))
         # sort and remove duplicated edges, eg (1,2) and (2,1)
         # note : for all edges, non-duplicated edge is boundary edge
         bars = np.sort(bars, axis=1)
@@ -169,15 +181,21 @@ class DISTMESH2D(object):
         Fvec = F * (barvec / L)
         # now, we get forces and sum them up on nodes
         # using sparse matrix to perform automatic summation
-        # rows : left, left, right, right
-        # cols : x, y, x, y
+        # rows : left, left, right, right (2D)
+        #      : left, left, left, right, right, right (3D)
+        # cols : x, y, x, y (2D)
+        #      : x, y, z, x, y, z (3D)
         data = np.hstack([Fvec, -Fvec])
-        rows = self.bars[:, [0, 0, 1, 1]]
-        cols = np.dot(np.ones(np.shape(F)), np.array([[0, 1, 0, 1]]))
+        if self.Ndim == 2:
+            rows = self.bars[:, [0, 0, 1, 1]]
+            cols = np.dot(np.ones(np.shape(F)), np.array([[0, 1, 0, 1]]))
+        else:
+            rows = self.bars[:, [0, 0, 0, 1, 1, 1]]
+            cols = np.dot(np.ones(np.shape(F)), np.array([[0, 1, 2, 0, 1, 2]]))
         # sum nodes at duplicated locations using sparse matrices
         Ftot = csr_matrix((data.reshape(-1),
                            [rows.reshape(-1), cols.reshape(-1)]),
-                          shape=(self.N, 2))
+                          shape=(self.N, self.Ndim))
         Ftot = Ftot.toarray()
         # zero out forces at fixed points, as they do not move
         Ftot[0:len(self.pfix)] = 0
@@ -195,7 +213,7 @@ class DISTMESH2D(object):
         self.p = self.p[np.setdiff1d(np.arange(self.N), ixdel)]
         # Nold = N
         self.N = self.p.shape[0]
-        self.pold = np.inf * np.ones((self.N, 2))
+        self.pold = np.inf * np.ones((self.N, self.Ndim))
         # print('density control ratio : %f' % (float(N)/Nold))
 
     def move_p(self, Ftot):
@@ -203,19 +221,21 @@ class DISTMESH2D(object):
         # move p along forces
         self.p += self.deltat * Ftot
 
-        # if a point ends up outside, move it back to the closest
-        # on the boundary using the distance function
+        # if there is any point ends up outside
+        # move it back to the closest point on the boundary
+        # using the numerical gradient of distance function
         d = self.fd(self.p)
         ix = d > 0
-        self.p[ix] -= edge_project(self.p[ix], self.fd)
+        if len(ix) > 0:
+            self.p[ix] -= edge_project(self.p[ix], self.fd)
 
-        # check whether convergence
+        # check whether convergence : no big movements
         ix_interior = d < -self.geps
         delta_move = self.deltat * Ftot[ix_interior]
         return np.max(dist(delta_move)/self.h0) < self.dptol
 
 
-def bbox2p(h0, bbox):
+def bbox2d(h0, bbox):
     """
     convert bbox to p (not including the ending point of bbox)
     shift every second row h0/2 to the right, therefore,
@@ -226,15 +246,16 @@ def bbox2p(h0, bbox):
     h0 : float
         minimal distance of points
     bbox : array_like
-        [x0, y0, x1, y1]
+        [[x0, y0],
+         [x1, y1]]
 
     Returns
     -------
     array_like
         points in bbox
     """
-    x, y = np.meshgrid(np.arange(bbox[0], bbox[2], h0),
-                       np.arange(bbox[1], bbox[3], h0*sqrt(3)/2.),
+    x, y = np.meshgrid(np.arange(bbox[0][0], bbox[1][0], h0),
+                       np.arange(bbox[0][1], bbox[1][1], h0*sqrt(3)/2.),
                        indexing='xy')
     # shift even rows of x
     x[1::2, :] += h0/2.
@@ -243,13 +264,29 @@ def bbox2p(h0, bbox):
     return p
 
 
+def bbox3d(h0, bbox):
+    """ converting bbox to 3D points
+
+    See Also
+    --------
+    bbox2d : converting bbox to 2D points
+    """
+    x, y, z = np.meshgrid(np.arange(bbox[0][0], bbox[1][0], h0),
+                          np.arange(bbox[0][1], bbox[1][1], h0),
+                          np.arange(bbox[0][2], bbox[1][2], h0),
+                          indexing='xy')
+
+    p = np.array([x.ravel(), y.ravel(), z.ravel()]).T
+    return p
+
+
 def remove_duplicate_nodes(p, pfix, geps):
-    """ remove duplicate points in p who are closed to pfix
+    """ remove duplicate points in p who are closed to pfix. 3D, ND compatible
 
     Parameters
     ----------
     p : array_like
-        points in 2D
+        points in 2D, 3D, ND
     pfix : array_like
         points that are fixed (can not be moved in distmesh)
     geps : float, optional (default=0.01*h0)
@@ -258,10 +295,11 @@ def remove_duplicate_nodes(p, pfix, geps):
     Returns
     -------
     array_like
-        non-duplicated points in 2D
+        non-duplicated points
     """
     for row in pfix:
         pdist = dist(p - row)
+        # extract non-duplicated row slices
         p = p[pdist > geps]
     return p
 
@@ -298,8 +336,10 @@ def build(fd, fh, pfix=None,
        SIAM Review, Volume 46 (2), pp. 329-345, June 2004
 
     """
-    dm = DISTMESH2D(fd, fh, h0, pfix, bbox,
-                    densityctrlfreq, dptol, ttol, Fscale, deltat)
+    dm = DISTMESH(fd, fh,
+                  h0=h0, pfix=pfix, bbox=bbox,
+                  densityctrlfreq=densityctrlfreq,
+                  dptol=dptol, ttol=ttol, Fscale=Fscale, deltat=deltat)
 
     # now iterate to push to equilibrium
     for i in range(maxiter):

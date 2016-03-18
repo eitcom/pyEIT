@@ -4,33 +4,40 @@
 from __future__ import absolute_import
 
 import numpy as np
-from numpy import sqrt
 
 
 def dist(p):
-    """ distances to origin of nodes
+    """ distances to origin of nodes. '3D', 'ND' compatible
 
     Parameters
     ----------
     p : array_like
-        points in 2D
+        points in 2D, 3D. i.e., in 3D
+        [[x, y, z],
+         [2, 3, 3],
+         ...
+         [1, 2, 1]]
 
     Returns
     -------
     array_like
         distances of points to origin
     """
-    return np.array([sqrt(row[0]**2 + row[1]**2) for row in p])
+    if len(p.shape) == 1:
+        return np.sqrt(np.sum(p**2))
+    else:
+        return np.sqrt(np.sum(p**2, axis=1))
 
 
 def edge_project(pts, fd, h0=1.0):
     """
     project points back on the boundary (where fd=0) using numerical gradient
+    3D, ND compatible
 
     Parameters
     ----------
     pts : array_like
-        points on 2D
+        points on 2D, 3D
     fd : str
         function handler of distances
     h0 : float
@@ -45,14 +52,39 @@ def edge_project(pts, fd, h0=1.0):
     ----
     you should specify h0 according to your actual mesh size
     """
-    deps = sqrt(np.finfo(float).eps)*h0
-    d = fd(pts)
-    dgradx = (fd(pts + [deps, 0]) - d) / deps
-    dgrady = (fd(pts + [0, deps]) - d) / deps
-    dgrad2 = dgradx**2 + dgrady**2
-    dgrad2[dgrad2 == 0] = 1.
-    # calculate gradient vector (minus)
-    pgrad = np.vstack([d*dgradx/dgrad2, d*dgrady/dgrad2]).T
+    deps = np.sqrt(np.finfo(float).eps)*h0
+    # get dimensions
+    Ndim = np.shape(pts)[1]
+
+    def grad(p):
+        """ calculate numerical gradient on a single point
+
+        Parameters
+        ----------
+        p : array_like
+            a point in ND
+
+        Return
+        ------
+        array_like
+            gradient on each dimensions
+
+        Note
+        ----
+        numerical gradient, f'_x = (f(p+delta_x) - f(x)) / delta
+        """
+        d = fd(p)
+        ugrad = (fd(p + deps*np.eye(Ndim)) - d) / deps
+        # normalize, avoid devide by zero
+        ugrad2 = np.sqrt(np.sum(ugrad**2)) + deps
+        return d * ugrad/ugrad2
+
+    # calculate gradients
+    if len(np.shape(pts)) == 1:
+        pgrad = grad(pts)
+    else:
+        # apply on slices taken along the axis (=1)
+        pgrad = np.apply_along_axis(grad, 1, pts)
     return pgrad
 
 
@@ -85,3 +117,18 @@ def edge_list(tri):
                 break
 
     return bars[np.array(ix)].view('i')
+
+
+if __name__ == "__main__":
+    # test 'edge_project'
+    def fd_test(p):
+        """ unit circle/ball """
+        if len(p.shape) == 1:
+            return np.sqrt(np.sum(p**2)) - 1.
+        else:
+            return np.sqrt(np.sum(p**2, axis=1)) - 1.
+
+    p_test = [[1, 2, 3], [2, 2, 2], [1, 3, 3], [1, 1, 1]]
+    a = edge_project(p_test, fd_test)
+
+    # test 'edge_list'

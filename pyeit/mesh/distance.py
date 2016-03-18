@@ -54,6 +54,23 @@ def box_circle(pts):
     return circle(pts, pc=[0.5, 0.5], r=0.5)
 
 
+def ball(pts, pc=None, r=1.0):
+    """ generate balls in 3D
+
+    See Also
+    --------
+    circle : generate circles in 2D
+    """
+    if pc is None:
+        pc = [0, 0, 0]
+    return circle(pts, pc, r)
+
+
+def unit_ball(pts):
+    """ generate unit ball in 3D """
+    return ball(pts)
+
+
 def rectangle(pts, p1=None, p2=None):
     """
     Distance function for the rectangle p1=[x1, y1] and p2=[x2, y2]
@@ -190,4 +207,4 @@ def huniform(p):
         ones
 
     """
-    return np.array([1. for _ in p])
+    return np.ones(p.shape[0])

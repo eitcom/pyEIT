@@ -172,3 +172,4 @@ def voronoi_plot(pts, tri, val=None, fd=None):
         ax.add_patch(patch)
     plt.axis('equal')
     return fig, ax
+
