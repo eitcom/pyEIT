@@ -5,28 +5,29 @@ from __future__ import absolute_import
 
 from itertools import combinations
 import numpy as np
-from vispy import app, gloo
-from vispy.util.transforms import translate, perspective, rotate
+import sys
+
+from vispy import app, gloo, visuals, scene
+
 
 # build vertex shader for tetplot
-vertex = """
-uniform mat4   u_model;         // Model matrix
-uniform mat4   u_view;          // View matrix
-uniform mat4   u_projection;    // Projection matrix
-uniform vec4   u_color;         // mask color for edge plotting
-attribute vec3 a_position;
+vert = """
+uniform vec4 u_color;
 attribute vec4 a_color;
-varying vec4   v_color;
+varying vec4 v_color;
 
 void main()
 {
-    gl_Position = u_projection * u_view * u_model * vec4(a_position, 1.0);
+    vec4 visual_pos = vec4($position, 1);
+    vec4 doc_pos = $visual_to_doc(visual_pos);
+    gl_Position = $doc_to_render(doc_pos);
+
     v_color = a_color * u_color;
 }
 """
 
 # build fragment shader for tetplot
-fragment = """
+frag = """
 varying vec4 v_color;
 
 void main()
@@ -36,120 +37,14 @@ void main()
 """
 
 
-class Canvas(app.Canvas):
-    """ build canvas class for this demo """
-
-    def __init__(self, V, C, I, E,
-                 figsize=(512, 512), title='tetplot'):
-        """ initialize the canvas """
-        app.Canvas.__init__(self, size=figsize, title=title,
-                            keys='interactive')
-
-        # shader program
-        tet = gloo.Program(vert=vertex, frag=fragment)
-
-        # bind to data
-        tet['a_position'] = V
-        tet['a_color'] = C
-        self.I = gloo.IndexBuffer(I)
-        self.E = gloo.IndexBuffer(E)
-
-        # intialize transformation matrix
-        view = np.eye(4, dtype=np.float32)
-        model = np.eye(4, dtype=np.float32)
-        projection = np.eye(4, dtype=np.float32)
-
-        tet['u_model'] = model
-        tet['u_view'] = view
-        tet['u_projection'] = projection
-
-        # bind your program
-        self.program = tet
-
-        # config and set viewport
-        gloo.set_viewport(0, 0, *self.physical_size)
-        gloo.set_clear_color('white')
-        gloo.set_state('translucent')
-        gloo.set_polygon_offset(1.0, 1.0)
-
-        # update parameters
-        self.theta = 0.0
-        self.phi = 0.0
-        self.z = 5.0
-
-        # bind a timer
-        self.timer = app.Timer('auto', self.on_timer)
-        self.timer.start()
-
-        # control plots
-        gloo.set_line_width(1.0)
-
-        # show the canvas
-        self.show()
-
-    def on_resize(self, event):
-        """ canvas resize callback """
-        ratio = event.physical_size[0] / float(event.physical_size[1])
-        self.program['u_projection'] = perspective(45.0, ratio, 2.0, 10.0)
-        gloo.set_viewport(0, 0, *event.physical_size)
-
-    def on_draw(self, event):
-        """ canvas update callback """
-        gloo.clear()
-
-        # Filled cube
-        gloo.set_state(blend=True, depth_test=False,
-                       polygon_offset_fill=True)
-        self.program['u_color'] = [1.0, 1.0, 1.0, 0.8]
-        self.program.draw('triangles', self.I)
-
-        # draw outline
-        # gloo.set_state(blend=True, depth_test=False,
-        #                polygon_offset_fill=True)
-        # self.program['u_color'] = [0.0, 0.0, 0.0, 0.2]
-        # self.program.draw('lines', self.E)
-
-    def on_timer(self, event):
-        self.theta += 0.5
-        self.phi += 0.5
-        self.view(theta=self.theta, phi=self.phi)
-
-    def tetplot(self, V, C=None, I=None, E=None):
-        """ plot tetrahedron """
-        self.program['a_position'] = V
-        self.program['a_color'] = C
-        self.I = gloo.IndexBuffer(I)
-        self.E = gloo.IndexBuffer(E)
-        self.update()
-
-    def view(self, z=5, theta=0.0, phi=0.0):
-        """ change the zoom factor and view point """
-        self.program['u_view'] = translate((0, 0, -self.z))
-        model = np.dot(rotate(self.theta, (0, 1, 0)),
-                       rotate(self.phi, (0, 0, 1)))
-        self.program['u_model'] = model
-        self.update()
-
-
-def tetplot(points, simplices):
-    """ main function for tetplot """
-    colors = np.random.rand(points.shape[0], 4)
-    colors[:, -1] = 1.0
-    colors = colors.astype(np.float32)
-
-    # extract triangles and edges
-    triangles = sim2tri(simplices)
-    edges = sim2edge(simplices)
-
-    # plot
-    Canvas(points, colors, triangles, edges)
-    app.run()
-
-
 def sim_conv(simplices, N=3):
     """ simplices to any dimension """
     v = [list(combinations(sim, N)) for sim in simplices]
-    return np.array(v, dtype=np.uint32).reshape(-1, N)
+    # change to (num_of_points x N)
+    t = np.sort(np.array(v).reshape(-1, N), axis=1)
+    # delete duplicated entries
+    t_unique = np.unique(t.view([('', t.dtype)]*N)).view(np.uint32)
+    return t_unique
 
 
 def sim2tri(simplices):
@@ -162,7 +57,108 @@ def sim2edge(simplices):
     return sim_conv(simplices, 2)
 
 
-if __name__ == "__main__":
+class TetPlotVisual(visuals.Visual):
+    """ template """
+
+    def __init__(self, points, simplices, vertex_color=None,
+                 color=None, alpha=1.0,
+                 mode='triangles'):
+        """ initialize tetrahedra face plot
+
+        Parameters
+        ----------
+        points : NDArray of float32
+            N x 3 points coordinates
+        simplices : NDArray of uint32
+            N x 4 connectivity matrix
+
+        Note
+        ----
+        initialize triangles structure
+        """
+        visuals.Visual.__init__(self, vcode=vert, fcode=frag)
+
+        # set data
+        self.shared_program.vert['position'] = gloo.VertexBuffer(points)
+        if vertex_color is None:
+            vertex_color = np.ones((points.shape[0], 4), dtype=np.float32)
+        else:
+            assert(vertex_color.shape[0] == points.shape[0])
+        self.shared_program['a_color'] = vertex_color
+
+        # currently, do not support color parsing
+        if color is None:
+            color = [1.0, 1.0, 1.0, 1.0]
+        else:
+            assert(len(color) == 4)
+        color[-1] *= alpha
+        self.shared_program['u_color'] = color
+
+        # build buffer
+        if mode is 'triangles':
+            vbo = sim2tri(simplices)
+        elif mode is 'lines':
+            vbo = sim2edge(simplices)
+        else:
+            raise ValueError('Drawing mode = ' + mode + ' not supported')
+        self._index_buffer = gloo.IndexBuffer(vbo)
+
+        # config OpenGL
+        self.set_gl_state('additive',
+                          blend=True,
+                          depth_test=False,
+                          polygon_offset_fill=True)
+        self._draw_mode = mode
+
+    def _prepare_transforms(self, view):
+        """ This method is called when the user or the scenegraph has assigned
+        new transforms to this visual """
+        # Note we use the "additive" GL blending settings so that we do not
+        # have to sort the mesh triangles back-to-front before each draw.
+        tr = view.transforms
+        view_vert = view.view_program.vert
+        view_vert['visual_to_doc'] = tr.get_transform('visual', 'document')
+        view_vert['doc_to_render'] = tr.get_transform('document', 'render')
+
+
+def tetplot(points, simplices, vertex_color=None,
+            edge_color=None, alpha=1.0, axis=True):
+    """ main function for tetplot """
+    TetPlot = scene.visuals.create_visual_node(TetPlotVisual)
+
+    # convert data types for OpenGL
+    pts_float32 = points.astype(np.float32)
+    sim_uint32 = simplices.astype(np.uint32)
+
+    # The real-things : plot using scene
+    # build canvas
+    canvas = scene.SceneCanvas(keys='interactive', show=True)
+
+    # Add a ViewBox to let the user zoom/rotate
+    view = canvas.central_widget.add_view()
+    view.camera = 'turntable'
+    view.camera.fov = 50
+    view.camera.distance = 5
+
+    # toggle drawing mode
+    TetPlot(pts_float32, sim_uint32, vertex_color,
+            color=None, alpha=alpha, mode='triangles', parent=view.scene)
+    if edge_color is not None:
+        TetPlot(pts_float32, sim_uint32, vertex_color,
+                color=edge_color, alpha=alpha, mode='lines',
+                parent=view.scene)
+
+    # show axis
+    if axis:
+        scene.visuals.XYZAxis(parent=view.scene)
+
+    # run
+    if sys.flags.interactive != 1:
+        app.run()
+
+# run
+if __name__ == '__main__':
+    # data
     pts = np.array([(0.0, 0.0, 0.0),
                     (1.0, 0.0, 0.0),
                     (0.0, 1.0, 0.0),
@@ -172,4 +168,4 @@ if __name__ == "__main__":
     sim = np.array([(0, 1, 2, 3),
                     (1, 3, 2, 4)], dtype=np.uint32)
 
-    tetplot(pts, sim)
+    tetplot(pts, sim, edge_color=[0.2, 0.2, 1.0, 1.0], alpha=0.1)
