@@ -155,7 +155,8 @@ class DISTMESH(object):
         # note : for all edges, non-duplicated edge is boundary edge
         bars = np.sort(bars, axis=1)
         # save
-        self.bars = np.unique(bars.view('i, i')).view('i').reshape((-1, 2))
+        bars_tuple = bars.view([('', bars.dtype)]*bars.shape[1])
+        self.bars = np.unique(bars_tuple).view(bars.dtype).reshape((-1, 2))
         self.t = t
 
     def bar_length(self):
@@ -226,7 +227,7 @@ class DISTMESH(object):
         # using the numerical gradient of distance function
         d = self.fd(self.p)
         ix = d > 0
-        if len(ix) > 0:
+        if sum(ix) > 0:
             self.p[ix] -= edge_project(self.p[ix], self.fd)
 
         # check whether convergence : no big movements
