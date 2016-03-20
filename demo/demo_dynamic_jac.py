@@ -3,13 +3,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pyeit.mesh import distmesh2d
+import pyeit.mesh as mesh
 from pyeit.eit.fem import forward
 from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.jac as jac
 
 """ 0. construct mesh """
-ms, elPos = distmesh2d.create(16, h0=0.1)
+ms, elPos = mesh.create(16, h0=0.1)
 
 # extract node, element, alpha
 no2xy = ms['node']
@@ -17,7 +17,7 @@ el2no = ms['element']
 
 """ 1. problem setup """
 anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'alpha': 100.0}]
-ms1 = distmesh2d.set_alpha(ms, anom=anomaly, background=1.0)
+ms1 = mesh.set_alpha(ms, anom=anomaly, background=1.0)
 
 """ 2. FEM simulation """
 elDist, step = 1, 1

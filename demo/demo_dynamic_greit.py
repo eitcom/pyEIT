@@ -3,13 +3,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pyeit.mesh import distmesh2d
+import pyeit.mesh as mesh
 from pyeit.eit.fem import forward
 from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.greit as greit
 
 """ 0. construct mesh """
-ms, elPos = distmesh2d.create(16, h0=0.1)
+ms, elPos = mesh.create(16, h0=0.1)
 
 # extract node, element, alpha
 no2xy = ms['node']
@@ -17,14 +17,14 @@ el2no = ms['element']
 
 """ 1. problem setup """
 # this step is not needed, actually
-ms0 = distmesh2d.set_alpha(ms, background=1.0)
+ms0 = mesh.set_alpha(ms, background=1.0)
 
 # test function for altering the 'alpha' in mesh dictionary
 anomaly = [{'x': 0.4,  'y': 0,    'd': 0.1, 'alpha': 10},
            {'x': -0.4, 'y': 0,    'd': 0.1, 'alpha': 10},
            {'x': 0,    'y': 0.5,  'd': 0.1, 'alpha': 0.1},
            {'x': 0,    'y': -0.5, 'd': 0.1, 'alpha': 0.1}]
-ms1 = distmesh2d.set_alpha(ms, anom=anomaly, background=1.0)
+ms1 = mesh.set_alpha(ms, anom=anomaly, background=1.0)
 alpha = np.real(ms1['alpha'] - ms0['alpha'])
 
 # show alpha

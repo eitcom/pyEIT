@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # pyEIT 2D algo modules
-from pyeit.mesh.distmesh2d import create, set_alpha
+from pyeit.mesh import create, set_alpha
 from pyeit.eit.fem import forward
 from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.jac as jac
@@ -53,6 +53,6 @@ plt.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, np.real(ds),
 plt.colorbar()
 plt.axis('equal')
 plt.axis([-1.2, 1.2, -1.2, 1.2])
-plt.title(r'Conductivities Reconstructed')
+plt.title('Conductivities Reconstructed')
 # fig.set_size_inches(4, 3)
 # fig.savefig('demo_static.png', dpi=96)

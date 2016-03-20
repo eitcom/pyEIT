@@ -1,6 +1,6 @@
 # coding: utf-8
 # pylint: disable=invalid-name, no-member
-""" implement distance functions for distmesh2d and 3d """
+""" implement distance functions for distmesh """
 from __future__ import absolute_import
 
 

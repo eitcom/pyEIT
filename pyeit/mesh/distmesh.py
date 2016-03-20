@@ -2,7 +2,7 @@
 # pylint: disable=invalid-name, no-member, no-name-in-module
 # pylint: disable=too-many-arguments, too-many-locals
 # pylint: disable=too-many-instance-attributes
-""" implement a 2D distmesh """
+""" implement 2D/3D distmesh """
 from __future__ import absolute_import
 
 from itertools import combinations
@@ -15,13 +15,13 @@ from .utils import dist, edge_project
 
 
 class DISTMESH(object):
-    """ class for distmesh2d """
+    """ class for distmesh """
 
     def __init__(self, fd, fh, h0=0.1,
                  pfix=None, bbox=None,
                  densityctrlfreq=30,
                  dptol=0.001, ttol=0.1, Fscale=1.2, deltat=0.2):
-        """ initial distmesh2d class
+        """ initial distmesh class
 
         Parameters
         ----------
@@ -309,11 +309,11 @@ def build(fd, fh, pfix=None,
           bbox=None, h0=0.1, densityctrlfreq=30,
           dptol=0.001, ttol=0.1, Fscale=1.2, deltat=0.2,
           maxiter=500):
-    """ main function for distmesh2d
+    """ main function for distmesh
 
     See Also
     --------
-    DISTMESH2D : main class for distmesh2d
+    DISTMESH : main class for distmesh
 
     Parameters
     ----------

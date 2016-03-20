@@ -8,7 +8,7 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .utils import edge_project, edge_list
+from ..utils import edge_project, edge_list
 
 
 def circumcircle(P1, P2, P3):

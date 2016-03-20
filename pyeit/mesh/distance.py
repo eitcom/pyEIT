@@ -1,6 +1,6 @@
 # coding: utf-8
 # pylint: disable=invalid-name, no-member
-""" implement distance functions for distmesh2d and 3d """
+""" implement distance functions for distmesh """
 from __future__ import absolute_import
 
 import numpy as np
@@ -97,6 +97,8 @@ def rectangle(pts, p1=None, p2=None):
         p1 = [0, 0]
     if p2 is None:
         p2 = [1, 1]
+    if pts.ndim == 1:
+        pts = pts[np.newaxis]
     pd_left = [-min(row) for row in pts - p1]
     pd_right = [max(row) for row in pts - p2]
 

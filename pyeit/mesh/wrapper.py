@@ -5,7 +5,7 @@ from __future__ import absolute_import
 
 import numpy as np
 
-from .distmesh2d import build
+from .distmesh import build
 from .distance import unit_circle, huniform, pfix_circle
 
 

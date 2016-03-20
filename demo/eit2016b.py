@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
 # pyEIT 2D algo modules
-from pyeit.mesh import distmesh2d
+import pyeit.mesh as mesh
 from pyeit.eit.fem import forward, pdeprtni
 from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.greit as greit
@@ -12,23 +12,23 @@ import pyeit.eit.bp as bp
 import pyeit.eit.jac as jac
 
 """ 0. construct mesh structure """
-mesh, elPos = distmesh2d.create(16, h0=0.1)
+ms, elPos = mesh.create(16, h0=0.1)
 
 # extract node, element, alpha
-no2xy = mesh['node']
-el2no = mesh['element']
+no2xy = ms['node']
+el2no = ms['element']
 
 """ 1. problem setup """
 # this step is not needed, actually
-mesh0 = distmesh2d.set_alpha(mesh, background=1.0)
+ms0 = mesh.set_alpha(ms, background=1.0)
 
 # test function for altering the 'alpha' in mesh dictionary
 anomaly = [{'x': 0.4,  'y': 0,    'd': 0.1, 'alpha': 10},
            {'x': -0.4, 'y': 0,    'd': 0.1, 'alpha': 10},
            {'x': 0,    'y': 0.5,  'd': 0.1, 'alpha': 0.1},
            {'x': 0,    'y': -0.5, 'd': 0.1, 'alpha': 0.1}]
-mesh1 = distmesh2d.set_alpha(mesh, anom=anomaly, background=1.0)
-alpha = np.real(mesh1['alpha'] - mesh0['alpha'])
+ms1 = mesh.set_alpha(ms, anom=anomaly, background=1.0)
+alpha = np.real(ms1['alpha'] - ms0['alpha'])
 
 """ ax1. FEM forward simulations """
 # setup EIT scan conditions
@@ -36,17 +36,17 @@ elDist, step = 1, 1
 exMtx = eit_scan_lines(16, elDist)
 
 # calculate simulated data
-fwd = forward(mesh, elPos)
-f0 = fwd.solve(exMtx, step=step, perm=mesh0['alpha'])
-f1 = fwd.solve(exMtx, step=step, perm=mesh1['alpha'])
+fwd = forward(ms, elPos)
+f0 = fwd.solve(exMtx, step=step, perm=ms0['alpha'])
+f1 = fwd.solve(exMtx, step=step, perm=ms1['alpha'])
 
 """ ax2. BP """
-eit = bp.BP(mesh, elPos, exMtx, step=1, parser='std')
+eit = bp.BP(ms, elPos, exMtx, step=1, parser='std')
 ds = eit.solve(f1.v, f0.v, normalize=True)
 ds_bp = pdeprtni(no2xy, el2no, ds)
 
 """ ax3. JAC """
-eit = jac.JAC(mesh, elPos, exMtx=exMtx, step=step,
+eit = jac.JAC(ms, elPos, exMtx=exMtx, step=step,
               perm=1., parser='std',
               p=0.2, lamb=0.001, method='kotre')
 # parameter tuning is needed for better display
@@ -54,7 +54,7 @@ ds = eit.solve(f1.v, f0.v)
 ds_jac = pdeprtni(no2xy, el2no, ds)
 
 """ ax4. GREIT """
-eit = greit.GREIT(mesh, elPos, exMtx=exMtx, step=step, parser='std')
+eit = greit.GREIT(ms, elPos, exMtx=exMtx, step=step, parser='std')
 ds = eit.solve(f1.v, f0.v)
 x, y, ds_greit = eit.mask_value(ds, mask_value=np.NAN)
 
