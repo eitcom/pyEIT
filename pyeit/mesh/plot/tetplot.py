@@ -90,7 +90,9 @@ class TetPlotVisual(visuals.Visual):
         if color is None:
             color = [1.0, 1.0, 1.0, 1.0]
         else:
+            # using colors for edge plot
             assert(len(color) == 4)
+        color = np.array(color)
         color[-1] *= alpha
         self.shared_program['u_color'] = color
 
@@ -144,7 +146,7 @@ def tetplot(points, simplices, vertex_color=None,
     TetPlot(pts_float32, sim_uint32, vertex_color,
             color=None, alpha=alpha, mode='triangles', parent=view.scene)
     if edge_color is not None:
-        TetPlot(pts_float32, sim_uint32, vertex_color,
+        TetPlot(pts_float32, sim_uint32, vertex_color=None,
                 color=edge_color, alpha=alpha, mode='lines',
                 parent=view.scene)
 
