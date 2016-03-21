@@ -7,18 +7,30 @@ A python-based, open-source package for Electrical Impedance Tomography (EIT)
  - **numpy** (tested with `numpy-1.10.4`, `numpy-1.11.rc1`)
  - **scipy** (tested with `scipy-0.17.0`)
  - **matplotlib** (tested with `matplotlib-1.5.1`)
+ - **vispy** (tested with `vispy-git`)
  - **pandas** (*optional*, tested with `pandas-0.17.1`)
  - **xarray** (*optional*, for long term data analysis)
- - **distmesh** or **meshpy** (both are *optional*), it currently has a build-in distmesh2d module
+ - **distmesh** (*optional*), it currently has a build-in distmesh module (supports 2D and 3D!)
  - **tetgen** (*optional*) for generating 3D meshes
 
-The distribution, [Anaconda from continuum](https://www.continuum.io/downloads), is suggested to be used with this package.
+**Note 1, Why vispy ?** `pyEIT` uses `vispy` for visualizing 3D meshes (tetrahedron). `vispy` has minimal system dependencies, all you need is a decent graphical card with `OpenGL` support. It supports fast rendering, which I think is more superior to `vtk` or `mayavi`. Please go to the website [vispy.org](http://vispy.org/) or github repository [vispy.github](https://github.com/vispy/vispy) for more details.
 
-**Currently suppots:**
+**Note 2, How to contribute ?** The interested user can contribute **(create a PR! any type of improvement is welcome)** forward simulation, inverse solving algorithms as well as their models at current stage. We will setup a wiki page dedicated to this topic.
 
- - 2D forward and inverse computing of EIT
- - Reconstruction algorithms : Gauss-Newton solver (JAC), Back-projection (BP), 2D GREIT
- - 2D visualization code
+The [Anaconda from continuum](https://www.continuum.io/downloads), is suggested to be used with this package.
+
+**Features:**
+
+ - [x] 2D forward and inverse computing of EIT
+ - [x] Reconstruction algorithms : Gauss-Newton solver (JAC), Back-projection (BP), 2D GREIT
+ - [x] 2D/3D visualization!
+
+**Todo:**
+
+ - [ ] Generate complex shape using distmesh
+ - [ ] Add support for 3D forward and inverse computing
+ - [x] 3D mesh generation and visualization
+ - [ ] More algorithms and data pre-processing modules
 
 ## Demos
 
@@ -60,11 +72,3 @@ Enter the demo folder, pick one demo, and run !
 **Using** `demo/demo_static_jac.py`
 
 ![demo_static](figs/demo_static.png)
-
-## Todos
-
- - [ ] Generate complex shape using distmesh2d, modify `create` and `pcircle`
- - [ ] Add support for 3D forward and inverse computing
- - [ ] Port iso2mesh to python, and use MRI data as input for 3D mesh generation
- - [ ] More algorithms and data pre-processing modules
-
