@@ -6,14 +6,16 @@
 
 ### 1.1 Dependencies
 
- - **numpy** (tested with `numpy-1.10.4`, `numpy-1.11.rc1`)
- - **scipy** (tested with `scipy-0.17.0`)
- - **matplotlib** (tested with `matplotlib-1.5.1`)
- - **vispy** (tested with `vispy-git`)
- - **pandas** (*optional*, tested with `pandas-0.17.1`)
- - **xarray** (*optional*, for long term data analysis)
- - **distmesh** (*optional*), it currently has a build-in distmesh module (supports 2D and 3D!)
- - **tetgen** (*optional*) for generating 3D meshes
+| Packages |  Optional | Note |
+| ---- | ---- | ---- |
+| **numpy** | | tested with `numpy-1.10.4`, `numpy-1.11.rc1` |
+| **scipy** | | tested with `scipy-0.17.0` |
+| **matplotlib** | | tested with `matplotlib-1.5.1` |
+| **vispy** | | tested with `vispy-git` |
+| **pandas** | *Optional* | tested with `pandas-0.17.1` |
+| **xarray** | *Optional* | for long term data analysis |
+| **distmesh** | *Optional* | it currently has a build-in distmesh module (supports 2D and 3D!) |
+| **tetgen** | *Optional* | for generating 3D meshes |
 
 **Note 1, Why vispy ?** `pyEIT` uses `vispy` for visualizing 3D meshes (tetrahedron). `vispy` has minimal system dependencies, all you need is a decent graphical card with `OpenGL` support. It supports fast rendering, which I think is more superior to `vtk` or `mayavi`. Please go to the website [vispy.org](http://vispy.org/) or github repository [vispy.github](https://github.com/vispy/vispy) for more details.
 
