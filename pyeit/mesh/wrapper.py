@@ -6,7 +6,7 @@ from __future__ import absolute_import
 import numpy as np
 
 from .distmesh import build
-from .distance import unit_circle, huniform, pfix_circle
+from .shape import unit_circle, huniform, pfix_circle
 
 
 def create(numEl=16, h0=0.1, fd=unit_circle, fh=huniform):

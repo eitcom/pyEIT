@@ -5,7 +5,7 @@ from __future__ import absolute_import
 
 import numpy as np
 import matplotlib.pyplot as plt
-from pyeit.mesh import distance as dm
+from pyeit.mesh import shape
 from pyeit.mesh import distmesh
 import pyeit.mesh.plot as mplot
 
@@ -14,15 +14,15 @@ import pyeit.mesh.plot as mplot
 def example1():
     # shape function
     def _fd(pts):
-        return dm.circle(pts, pc=[0, 0], r=1.)
+        return shape.circle(pts, pc=[0, 0], r=1.)
 
     # build fix points, may be used as the position for electrodes
     num = 16
-    pfix = dm.pfix_circle(numEl=num)
+    pfix = shape.pfix_circle(numEl=num)
     elPos = np.arange(num)
 
     # build triangle
-    p, t = distmesh.build(_fd, dm.huniform, pfix=pfix, h0=0.12)
+    p, t = distmesh.build(_fd, shape.huniform, pfix=pfix, h0=0.1)
 
     # plot
     fig, ax = plt.subplots()
@@ -34,10 +34,11 @@ def example1():
 # unit circle with a whole at the center
 def example2():
     def _fd(pts):
-        return dm.ddiff(dm.circle(pts, r=0.7), dm.circle(pts, r=0.3))
+        return shape.ddiff(shape.circle(pts, r=0.7),
+                           shape.circle(pts, r=0.3))
 
     # build triangle
-    p, t = distmesh.build(_fd, dm.huniform, h0=0.1)
+    p, t = distmesh.build(_fd, shape.huniform, h0=0.1)
 
     # plot
     fig, ax = plt.subplots()
@@ -49,12 +50,12 @@ def example2():
 def example3():
     # interior
     def _fd(pts):
-        return dm.ddiff(dm.rectangle(pts, p1=[-1, -0.6], p2=[1, 0.6]),
-                        dm.circle(pts, r=0.3))
+        return shape.ddiff(shape.rectangle(pts, p1=[-1, -0.6], p2=[1, 0.6]),
+                           shape.circle(pts, r=0.3))
 
     # constraints
     def _fh(pts):
-        return 0.05 + 0.05 * dm.circle(pts, r=0.3)
+        return 0.05 + 0.05 * shape.circle(pts, r=0.3)
 
     # build triangle
     p, t = distmesh.build(_fd, _fh, h0=0.05)
@@ -75,7 +76,8 @@ def example4():
         return np.sum((pts/[a, b])**2, axis=1) - 1.0
 
     # build triangle
-    p, t = distmesh.build(_fd, dm.huniform, bbox=[[-2, -1], [2, 1]], h0=0.15)
+    p, t = distmesh.build(_fd, shape.huniform,
+                          bbox=[[-2, -1], [2, 1]], h0=0.15)
 
     # plot
     fig, ax = plt.subplots()
@@ -94,11 +96,11 @@ def example5():
     pfix = np.array(pfix)
 
     def _fd(pts):
-        return dm.ddiff(dm.rectangle(pts, p1=[-1, -1], p2=[1, 1]),
-                        dm.rectangle(pts, p1=[0, 0], p2=[1, 1]))
+        return shape.ddiff(shape.rectangle(pts, p1=[-1, -1], p2=[1, 1]),
+                           shape.rectangle(pts, p1=[0, 0], p2=[1, 1]))
 
     # build
-    p, t = distmesh.build(_fd, dm.huniform, pfix=pfix, h0=0.15)
+    p, t = distmesh.build(_fd, shape.huniform, pfix=pfix, h0=0.15)
 
     # plot
     fig, ax = plt.subplots()
@@ -111,10 +113,11 @@ def example5():
 def example_voronoi():
     def _fd(pts):
         # return d2d.dcircle(pts, pc=[0, 0], r=1.)
-        return dm.ddiff(dm.circle(pts, r=0.7), dm.circle(pts, r=0.3))
+        return shape.ddiff(shape.circle(pts, r=0.7),
+                           shape.circle(pts, r=0.3))
 
     # build triangle
-    p, t = distmesh.build(_fd, dm.huniform, h0=0.1)
+    p, t = distmesh.build(_fd, shape.huniform, h0=0.1)
 
     mplot.voronoi_plot(p, t)
 
