@@ -1,8 +1,10 @@
 # ![pyeit](figs/logo.png)
 
-A python-based, open-source package for Electrical Impedance Tomography (EIT)
+*A python-based, open-source package for Electrical Impedance Tomography (EIT)*
 
-**Dependencies:**
+## 1. Introduction
+
+### 1.1 Dependencies
 
  - **numpy** (tested with `numpy-1.10.4`, `numpy-1.11.rc1`)
  - **scipy** (tested with `scipy-0.17.0`)
@@ -17,35 +19,34 @@ A python-based, open-source package for Electrical Impedance Tomography (EIT)
 
 **Note 2, How to contribute ?** The interested user can contribute **(create a PR! any type of improvement is welcome)** forward simulation, inverse solving algorithms as well as their models at current stage. We will setup a wiki page dedicated to this topic.
 
-The [Anaconda from continuum](https://www.continuum.io/downloads), is suggested to be used with this package.
+**Note 3, Fast setup.** [Anaconda from continuum](https://www.continuum.io/downloads) is highly recommended for this package.
 
-**Features:**
+### 1.2 Features
 
  - [x] 2D forward and inverse computing of EIT
  - [x] Reconstruction algorithms : Gauss-Newton solver (JAC), Back-projection (BP), 2D GREIT
  - [x] 2D/3D visualization!
 
-**Todo:**
+### 1.3 Todo
 
  - [ ] Generate complex shape using distmesh
  - [ ] Add support for 3D forward and inverse computing
  - [x] 3D mesh generation and visualization
  - [ ] More algorithms and data pre-processing modules
+ - [ ] Complete electrode model
 
-## Demos
-
-### Installation
+## 2. Installation
 
 `pyEIT` is purely python based (in current version), so it can be installed and run without any difficulty.
 
-Option 1, **install global**
+### 2.1 Install global
 
 ```
 $ python setup.py build
 $ python setup.py install
 ```
 
-Option 2, **set PYTHONPATH** (recommended)
+### 2.2 set PYTHONPATH (recommended)
 
 ```
 export PYTHONPATH=/path/to/pyEIT
@@ -53,9 +54,11 @@ export PYTHONPATH=/path/to/pyEIT
 
 In windows, you may set `PYTHONPATH` as a system wide environment. If you are using `spyder-IDE`, or `pyCharm`, you may also set `PYTHONPATH` in the IDE, which is more convenient. Please refer to a specific tool for detailed information.
 
-### Run the demo
+## 3. Run the demo
 
 Enter the demo folder, pick one demo, and run !
+
+### 3.1 (2D) forward and inverse computing
 
 **Using** `demo/demo_dynamic_bp.py`
 
@@ -72,3 +75,5 @@ Enter the demo folder, pick one demo, and run !
 **Using** `demo/demo_static_jac.py`
 
 ![demo_static](figs/demo_static.png)
+
+### 3.2 (3D) forward and inverse computing
