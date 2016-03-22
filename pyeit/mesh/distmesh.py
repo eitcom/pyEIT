@@ -20,7 +20,8 @@ class DISTMESH(object):
     def __init__(self, fd, fh, h0=0.1,
                  pfix=None, bbox=None,
                  densityctrlfreq=30,
-                 dptol=0.001, ttol=0.1, Fscale=1.2, deltat=0.2):
+                 dptol=0.01, ttol=0.1, Fscale=1.2, deltat=0.2,
+                 verbose=False):
         """ initial distmesh class
 
         Parameters
@@ -77,6 +78,12 @@ class DISTMESH(object):
             p = bbox2d(h0, bbox)
         else:
             p = bbox3d(h0, bbox)
+
+        # control debug messages
+        self.verbose = verbose
+        self.num_triangulate = 0
+        self.num_density = 0
+        self.num_move = 0
 
         # keep points inside region (specified by fd) with a small gap (geps)
         p = p[fd(p) < self.geps]
@@ -145,6 +152,8 @@ class DISTMESH(object):
 
     def triangulate(self):
         """ retriangle by delaunay """
+        self.debug('enter triangulate = ', self.num_triangulate)
+        self.num_triangulate += 1
         # pnew[:] = pold[:] makes a new copy, not reference
         self.pold[:] = self.p[:]
         # generate new simplices
@@ -208,6 +217,9 @@ class DISTMESH(object):
         L0 : Kx1, L : Kx1, bars : Kx2
         bars[L0 > 2*L] only returns bar[:, 0] where L0 > 2L
         """
+        self.debug('enter density control = ', self.num_density)
+        self.num_density += 1
+        # quality control
         ixout = (L0 > 2*L).ravel()
         ixdel = np.setdiff1d(self.bars[ixout, :].reshape(-1),
                              np.arange(self.nfix))
@@ -219,6 +231,8 @@ class DISTMESH(object):
 
     def move_p(self, Ftot):
         """ update p """
+        self.debug('  number of moves = ', self.num_move)
+        self.num_move += 1
         # move p along forces
         self.p += self.deltat * Ftot
 
@@ -233,7 +247,14 @@ class DISTMESH(object):
         # check whether convergence : no big movements
         ix_interior = d < -self.geps
         delta_move = self.deltat * Ftot[ix_interior]
-        return np.max(dist(delta_move)/self.h0) < self.dptol
+        score = np.max(dist(delta_move)/self.h0)
+        # debug
+        self.debug('  score = ', score)
+        return score < self.dptol
+
+    def debug(self, *args):
+        if self.verbose:
+            print(*args)
 
 
 def bbox2d(h0, bbox):
@@ -307,8 +328,8 @@ def remove_duplicate_nodes(p, pfix, geps):
 
 def build(fd, fh, pfix=None,
           bbox=None, h0=0.1, densityctrlfreq=30,
-          dptol=0.001, ttol=0.1, Fscale=1.2, deltat=0.2,
-          maxiter=500):
+          dptol=0.01, ttol=0.1, Fscale=1.2, deltat=0.2,
+          maxiter=500, verbose=False):
     """ main function for distmesh
 
     See Also
@@ -340,7 +361,8 @@ def build(fd, fh, pfix=None,
     dm = DISTMESH(fd, fh,
                   h0=h0, pfix=pfix, bbox=bbox,
                   densityctrlfreq=densityctrlfreq,
-                  dptol=dptol, ttol=ttol, Fscale=Fscale, deltat=deltat)
+                  dptol=dptol, ttol=ttol, Fscale=Fscale, deltat=deltat,
+                  verbose=verbose)
 
     # now iterate to push to equilibrium
     for i in range(maxiter):
