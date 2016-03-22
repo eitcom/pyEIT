@@ -100,7 +100,7 @@ class TetPlotVisual(visuals.Visual):
             raise ValueError('Drawing mode = ' + mode + ' not supported')
         self._index_buffer = gloo.IndexBuffer(vbo)
 
-        # config OpenGL
+        # config OpenGL, 'translucent' or 'additive'
         self.set_gl_state('additive',
                           blend=True,
                           depth_test=False,
