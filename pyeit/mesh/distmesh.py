@@ -295,11 +295,25 @@ def bbox3d(h0, bbox):
     --------
     bbox2d : converting bbox to 2D points
     """
-    x, y, z = np.meshgrid(np.arange(bbox[0][0], bbox[1][0], h0),
-                          np.arange(bbox[0][1], bbox[1][1], h0),
-                          np.arange(bbox[0][2], bbox[1][2], h0),
+    xspace = h0
+    yspace = h0*sqrt(3)/2.0
+    zspace = h0*sqrt(3/2.0)
+    # build meshgrid with Cartesian indexing
+    x, y, z = np.meshgrid(np.arange(bbox[0][0], bbox[1][0], xspace),
+                          np.arange(bbox[0][1], bbox[1][1], yspace),
+                          np.arange(bbox[0][2], bbox[1][2], zspace),
                           indexing='xy')
 
+    # shift every second row of x h0/2 to the right, therefore,
+    # all points on xy-plane will have equal distance h0
+    # from their closest neighbors
+    x[1::2, :, :] += h0/2.0
+    # shift every second z, where x += h0/2, y += h0/(2*sqrt(3))
+    # note : in tetrahedral, the distance to all neighbores of a point
+    # is not equilength, aka, equi-tetrahedral can not fill space.
+    x[:, :, 1::2] += h0/2.0
+    y[:, :, 1::2] += h0/(2.0*sqrt(3))
+    # p : Nx3 ndarray
     p = np.array([x.ravel(), y.ravel(), z.ravel()]).T
     return p
 
