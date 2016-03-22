@@ -382,7 +382,7 @@ def build(fd, fh, pfix=None,
             g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.2
         else:
             # default parameters for 3D
-            g_dptol, g_ttol, g_Fscale = 0.04, 0.15, 1.12
+            g_dptol, g_ttol, g_Fscale = 0.045, 0.150, 1.125
 
     # override default if user has specified any
     if dptol is not None:
