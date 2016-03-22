@@ -42,6 +42,8 @@ class DISTMESH(object):
             default=[-1, -1, 1, 1]
         densityctrlfreq : int, optional
             cycles of iterations of density control, default=20
+        deltat : float, optional
+            mapping forces to distances, default=0.2
         dptol : float, optional
             exit criterion for minimal distance all points moved, default=0.001
         ttol : float, optional
@@ -50,9 +52,9 @@ class DISTMESH(object):
             rescaled string forces, default=1.2
             if set too small, points near boundary will be pushed back
             if set too large, points will be pushed towards boundary
-        deltat : float, optional
-            mapping forces to distances, default=0.2
 
+        Notes
+        -----
         """
         # shape description
         self.fd = fd
@@ -260,8 +262,6 @@ class DISTMESH(object):
 def bbox2d(h0, bbox):
     """
     convert bbox to p (not including the ending point of bbox)
-    shift every second row h0/2 to the right, therefore,
-    all points will be a distance h0 from their closest neighbors
 
     Parameters
     ----------
@@ -280,6 +280,8 @@ def bbox2d(h0, bbox):
                        np.arange(bbox[0][1], bbox[1][1], h0*sqrt(3)/2.),
                        indexing='xy')
     # shift even rows of x
+    # shift every second row h0/2 to the right, therefore,
+    # all points will be a distance h0 from their closest neighbors
     x[1::2, :] += h0/2.
     # p : Nx2 ndarray
     p = np.array([x.ravel(), y.ravel()]).T
@@ -327,8 +329,8 @@ def remove_duplicate_nodes(p, pfix, geps):
 
 
 def build(fd, fh, pfix=None,
-          bbox=None, h0=0.1, densityctrlfreq=30,
-          dptol=0.01, ttol=0.1, Fscale=1.2, deltat=0.2,
+          bbox=None, h0=0.1, densityctrlfreq=32, deltat=0.2,
+          dptol=None, ttol=None, Fscale=None,
           maxiter=500, verbose=False):
     """ main function for distmesh
 
@@ -348,8 +350,8 @@ def build(fd, fh, pfix=None,
     t : array_like
         triangles describe the mesh structure
 
-    Note
-    ----
+    Notes
+    -----
     there are many python or hybrid python + C implementations in github,
     this implementation is merely implemented from scratch
     using PER-OLOF PERSSON's Ph.D thesis and SIAM paper.
@@ -357,11 +359,44 @@ def build(fd, fh, pfix=None,
     .. [1] P.-O. Persson, G. Strang, "A Simple Mesh Generator in MATLAB".
        SIAM Review, Volume 46 (2), pp. 329-345, June 2004
 
+    Also, the user should be aware that, equal-edged tetrahedron cannot fill
+    space without gaps. So, in 3D, you can lower dptol, or limit the maximum
+    iteration steps.
+
     """
+    # parsing arguments
+    if bbox is None:
+        g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.2
+    else:
+        # perform error check on bbox
+        bbox = np.array(bbox)
+        if bbox.ndim == 1:
+            raise TypeError('only 2D and 3D are supported, bbox = ', bbox)
+        if bbox.shape[1] not in [2, 3]:
+            raise TypeError('only 2D and 3D are allowed, bbox = ', bbox)
+        if bbox.shape[0] != 2:
+            raise TypeError('please specify lower and upper bound of bbox')
+        # assign default values
+        if bbox.shape[1] == 2:
+            # default parameters for 2D
+            g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.2
+        else:
+            # default parameters for 3D
+            g_dptol, g_ttol, g_Fscale = 0.04, 0.15, 1.12
+
+    # override default if user has specified any
+    if dptol is not None:
+        g_dptol = dptol
+    if ttol is not None:
+        g_ttol = ttol
+    if Fscale is not None:
+        g_Fscale = Fscale
+
+    # initialize distmesh
     dm = DISTMESH(fd, fh,
                   h0=h0, pfix=pfix, bbox=bbox,
-                  densityctrlfreq=densityctrlfreq,
-                  dptol=dptol, ttol=ttol, Fscale=Fscale, deltat=deltat,
+                  densityctrlfreq=densityctrlfreq, deltat=deltat,
+                  dptol=g_dptol, ttol=g_ttol, Fscale=g_Fscale,
                   verbose=verbose)
 
     # now iterate to push to equilibrium
