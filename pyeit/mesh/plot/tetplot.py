@@ -104,6 +104,7 @@ class TetPlotVisual(visuals.Visual):
         self.set_gl_state('additive',
                           blend=True,
                           depth_test=False,
+                          cull_face=False,
                           polygon_offset_fill=True)
         self._draw_mode = mode
 
