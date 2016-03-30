@@ -61,7 +61,7 @@ class TetPlotVisual(visuals.Visual):
     """ template """
 
     def __init__(self, points, simplices, vertex_color=None,
-                 color=None, alpha=1.0,
+                 mask_color=None, alpha=1.0,
                  mode='triangles'):
         """ initialize tetrahedra face plot
 
@@ -86,13 +86,10 @@ class TetPlotVisual(visuals.Visual):
             assert(vertex_color.shape[0] == points.shape[0])
         self.shared_program['a_color'] = vertex_color
 
-        # currently, do not support color parsing
-        if color is None:
-            color = [1.0, 1.0, 1.0, 1.0]
-        else:
-            assert(len(color) == 4)
-        color[-1] *= alpha
-        self.shared_program['u_color'] = color
+        # mask colors, alpha channel is not used when mask_color is given.
+        if mask_color is None:
+            mask_color = [1.0, 1.0, 1.0, alpha]
+        self.shared_program['u_color'] = mask_color
 
         # build buffer
         if mode is 'triangles':
@@ -103,10 +100,11 @@ class TetPlotVisual(visuals.Visual):
             raise ValueError('Drawing mode = ' + mode + ' not supported')
         self._index_buffer = gloo.IndexBuffer(vbo)
 
-        # config OpenGL
+        # config OpenGL, 'translucent' or 'additive'
         self.set_gl_state('additive',
                           blend=True,
                           depth_test=False,
+                          cull_face=False,
                           polygon_offset_fill=True)
         self._draw_mode = mode
 
@@ -140,12 +138,20 @@ def tetplot(points, simplices, vertex_color=None,
     view.camera.fov = 50
     view.camera.distance = 5
 
-    # toggle drawing mode
+    # drawing only triangles
+    # 1. turn off mask_color, default = [1.0, 1.0, 1.0, alpha]
+    # 2. mode = 'triangles'
     TetPlot(pts_float32, sim_uint32, vertex_color,
-            color=None, alpha=alpha, mode='triangles', parent=view.scene)
+            mask_color=None, alpha=alpha, mode='triangles',
+            parent=view.scene)
+
+    # drawing only lines
+    # 1. turn off vertex_color, default = [[1.0, 1.0, 1.0, 1.0]*N]
+    # 2. mode = 'lines'
+    # 3. alpha channel is specified instead of mask_color
     if edge_color is not None:
-        TetPlot(pts_float32, sim_uint32, vertex_color,
-                color=edge_color, alpha=alpha, mode='lines',
+        TetPlot(pts_float32, sim_uint32, vertex_color=None,
+                mask_color=edge_color, alpha=alpha, mode='lines',
                 parent=view.scene)
 
     # show axis
@@ -168,4 +174,5 @@ if __name__ == '__main__':
     sim = np.array([(0, 1, 2, 3),
                     (1, 3, 2, 4)], dtype=np.uint32)
 
-    tetplot(pts, sim, edge_color=[0.2, 0.2, 1.0, 1.0], alpha=0.1)
+    tetplot(pts, sim, edge_color=[0.2, 0.2, 1.0, 0.2],
+            alpha=0.1, axis=False)

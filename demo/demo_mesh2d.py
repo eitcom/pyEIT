@@ -7,7 +7,7 @@ from pyeit.mesh import wrapper
 from pyeit.eit.fem import pdeprtni
 
 """ 0. create mesh """
-ms, elPos = wrapper.create(16)
+ms, elPos = wrapper.create(16, h0=0.1)
 
 # extract nodes and triangles (truss)
 no2xy = ms['node']

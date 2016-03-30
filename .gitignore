@@ -3,7 +3,9 @@
 *.jpeg
 *.so
 *.dll
-test.*
+test*.*
+
+.directory
 
 __pycache__/
 build/

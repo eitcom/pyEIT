@@ -20,7 +20,8 @@ class DISTMESH(object):
     def __init__(self, fd, fh, h0=0.1,
                  pfix=None, bbox=None,
                  densityctrlfreq=30,
-                 dptol=0.001, ttol=0.1, Fscale=1.2, deltat=0.2):
+                 dptol=0.01, ttol=0.1, Fscale=1.2, deltat=0.2,
+                 verbose=False):
         """ initial distmesh class
 
         Parameters
@@ -41,6 +42,8 @@ class DISTMESH(object):
             default=[-1, -1, 1, 1]
         densityctrlfreq : int, optional
             cycles of iterations of density control, default=20
+        deltat : float, optional
+            mapping forces to distances, default=0.2
         dptol : float, optional
             exit criterion for minimal distance all points moved, default=0.001
         ttol : float, optional
@@ -49,9 +52,9 @@ class DISTMESH(object):
             rescaled string forces, default=1.2
             if set too small, points near boundary will be pushed back
             if set too large, points will be pushed towards boundary
-        deltat : float, optional
-            mapping forces to distances, default=0.2
 
+        Notes
+        -----
         """
         # shape description
         self.fd = fd
@@ -77,6 +80,12 @@ class DISTMESH(object):
             p = bbox2d(h0, bbox)
         else:
             p = bbox3d(h0, bbox)
+
+        # control debug messages
+        self.verbose = verbose
+        self.num_triangulate = 0
+        self.num_density = 0
+        self.num_move = 0
 
         # keep points inside region (specified by fd) with a small gap (geps)
         p = p[fd(p) < self.geps]
@@ -145,6 +154,8 @@ class DISTMESH(object):
 
     def triangulate(self):
         """ retriangle by delaunay """
+        self.debug('enter triangulate = ', self.num_triangulate)
+        self.num_triangulate += 1
         # pnew[:] = pold[:] makes a new copy, not reference
         self.pold[:] = self.p[:]
         # generate new simplices
@@ -208,6 +219,9 @@ class DISTMESH(object):
         L0 : Kx1, L : Kx1, bars : Kx2
         bars[L0 > 2*L] only returns bar[:, 0] where L0 > 2L
         """
+        self.debug('enter density control = ', self.num_density)
+        self.num_density += 1
+        # quality control
         ixout = (L0 > 2*L).ravel()
         ixdel = np.setdiff1d(self.bars[ixout, :].reshape(-1),
                              np.arange(self.nfix))
@@ -219,6 +233,8 @@ class DISTMESH(object):
 
     def move_p(self, Ftot):
         """ update p """
+        self.debug('  number of moves = ', self.num_move)
+        self.num_move += 1
         # move p along forces
         self.p += self.deltat * Ftot
 
@@ -233,14 +249,19 @@ class DISTMESH(object):
         # check whether convergence : no big movements
         ix_interior = d < -self.geps
         delta_move = self.deltat * Ftot[ix_interior]
-        return np.max(dist(delta_move)/self.h0) < self.dptol
+        score = np.max(dist(delta_move)/self.h0)
+        # debug
+        self.debug('  score = ', score)
+        return score < self.dptol
+
+    def debug(self, *args):
+        if self.verbose:
+            print(*args)
 
 
 def bbox2d(h0, bbox):
     """
     convert bbox to p (not including the ending point of bbox)
-    shift every second row h0/2 to the right, therefore,
-    all points will be a distance h0 from their closest neighbors
 
     Parameters
     ----------
@@ -259,6 +280,8 @@ def bbox2d(h0, bbox):
                        np.arange(bbox[0][1], bbox[1][1], h0*sqrt(3)/2.),
                        indexing='xy')
     # shift even rows of x
+    # shift every second row h0/2 to the right, therefore,
+    # all points will be a distance h0 from their closest neighbors
     x[1::2, :] += h0/2.
     # p : Nx2 ndarray
     p = np.array([x.ravel(), y.ravel()]).T
@@ -272,11 +295,25 @@ def bbox3d(h0, bbox):
     --------
     bbox2d : converting bbox to 2D points
     """
-    x, y, z = np.meshgrid(np.arange(bbox[0][0], bbox[1][0], h0),
-                          np.arange(bbox[0][1], bbox[1][1], h0),
-                          np.arange(bbox[0][2], bbox[1][2], h0),
+    xspace = h0
+    yspace = h0*sqrt(3)/2.0
+    zspace = h0*sqrt(3/2.0)
+    # build meshgrid with Cartesian indexing
+    x, y, z = np.meshgrid(np.arange(bbox[0][0], bbox[1][0], xspace),
+                          np.arange(bbox[0][1], bbox[1][1], yspace),
+                          np.arange(bbox[0][2], bbox[1][2], zspace),
                           indexing='xy')
 
+    # shift every second row of x h0/2 to the right, therefore,
+    # all points on xy-plane will have equal distance h0
+    # from their closest neighbors
+    x[1::2, :, :] += h0/2.0
+    # shift every second z, where x += h0/2, y += h0/(2*sqrt(3))
+    # note : in tetrahedral, the distance to all neighbores of a point
+    # is not equilength, aka, equi-tetrahedral can not fill space.
+    x[:, :, 1::2] += h0/2.0
+    y[:, :, 1::2] += h0/(2.0*sqrt(3))
+    # p : Nx3 ndarray
     p = np.array([x.ravel(), y.ravel(), z.ravel()]).T
     return p
 
@@ -306,9 +343,9 @@ def remove_duplicate_nodes(p, pfix, geps):
 
 
 def build(fd, fh, pfix=None,
-          bbox=None, h0=0.1, densityctrlfreq=30,
-          dptol=0.001, ttol=0.1, Fscale=1.2, deltat=0.2,
-          maxiter=500):
+          bbox=None, h0=0.1, densityctrlfreq=32, deltat=0.2,
+          dptol=None, ttol=None, Fscale=None,
+          maxiter=500, verbose=False):
     """ main function for distmesh
 
     See Also
@@ -327,8 +364,8 @@ def build(fd, fh, pfix=None,
     t : array_like
         triangles describe the mesh structure
 
-    Note
-    ----
+    Notes
+    -----
     there are many python or hybrid python + C implementations in github,
     this implementation is merely implemented from scratch
     using PER-OLOF PERSSON's Ph.D thesis and SIAM paper.
@@ -336,11 +373,45 @@ def build(fd, fh, pfix=None,
     .. [1] P.-O. Persson, G. Strang, "A Simple Mesh Generator in MATLAB".
        SIAM Review, Volume 46 (2), pp. 329-345, June 2004
 
+    Also, the user should be aware that, equal-edged tetrahedron cannot fill
+    space without gaps. So, in 3D, you can lower dptol, or limit the maximum
+    iteration steps.
+
     """
+    # parsing arguments
+    if bbox is None:
+        g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.2
+    else:
+        # perform error check on bbox
+        bbox = np.array(bbox)
+        if bbox.ndim == 1:
+            raise TypeError('only 2D and 3D are supported, bbox = ', bbox)
+        if bbox.shape[1] not in [2, 3]:
+            raise TypeError('only 2D and 3D are allowed, bbox = ', bbox)
+        if bbox.shape[0] != 2:
+            raise TypeError('please specify lower and upper bound of bbox')
+        # assign default values
+        if bbox.shape[1] == 2:
+            # default parameters for 2D
+            g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.2
+        else:
+            # default parameters for 3D
+            g_dptol, g_ttol, g_Fscale = 0.045, 0.150, 1.125
+
+    # override default if user has specified any
+    if dptol is not None:
+        g_dptol = dptol
+    if ttol is not None:
+        g_ttol = ttol
+    if Fscale is not None:
+        g_Fscale = Fscale
+
+    # initialize distmesh
     dm = DISTMESH(fd, fh,
                   h0=h0, pfix=pfix, bbox=bbox,
-                  densityctrlfreq=densityctrlfreq,
-                  dptol=dptol, ttol=ttol, Fscale=Fscale, deltat=deltat)
+                  densityctrlfreq=densityctrlfreq, deltat=deltat,
+                  dptol=g_dptol, ttol=g_ttol, Fscale=g_Fscale,
+                  verbose=verbose)
 
     # now iterate to push to equilibrium
     for i in range(maxiter):
