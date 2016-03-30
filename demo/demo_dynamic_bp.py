@@ -32,8 +32,8 @@ im = ax.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, delta_alpha,
 ax.set_title(r'$\Delta$ Conductivities')
 fig.colorbar(im)
 ax.axis('equal')
-fig.set_size_inches(6, 3)
-# fig.savefig('demo_bp.png', dpi=96)
+fig.set_size_inches(6, 4)
+# fig.savefig('demo_bp_0.png', dpi=96)
 plt.show()
 
 """ 2. FEM forward simulations """
@@ -61,6 +61,6 @@ ax1.set_title(r'$\Delta$ Conductivities')
 ax1.axis('equal')
 fig.colorbar(im)
 """ for production figures, use dpi=300 or render pdf """
-fig.set_size_inches(6, 3)
+fig.set_size_inches(6, 4)
 # fig.savefig('demo_bp.png', dpi=96)
 plt.show()
