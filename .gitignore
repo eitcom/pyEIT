@@ -5,6 +5,8 @@
 *.dll
 test*.*
 
+.directory
+
 __pycache__/
 build/
 dist/
