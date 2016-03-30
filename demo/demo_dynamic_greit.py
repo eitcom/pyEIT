@@ -29,10 +29,12 @@ alpha = np.real(ms1['alpha'] - ms0['alpha'])
 
 # show alpha
 fig = plt.figure()
-plt.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, alpha, shading='flat')
+plt.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, alpha,
+              shading='flat', cmap=plt.cm.viridis)
 plt.colorbar()
 plt.title(r'$\Delta$ Conductivity')
-fig.set_size_inches(6, 4.5)
+fig.set_size_inches(6, 4)
+plt.axis('equal')
 
 """ 2. FEM forward simulations """
 # setup EIT scan conditions
@@ -60,7 +62,9 @@ cmap = cm.gray
 cmap.set_bad('w', 1.)
 plt.imshow(np.real(ds), interpolation='nearest', cmap=cmap)
 """
-plt.imshow(np.real(ds), interpolation='nearest')
+plt.imshow(np.real(ds), interpolation='none', cmap=plt.cm.viridis)
 plt.colorbar()
-fig.set_size_inches(4, 3)
-# fig.savefig('demo_greit.png', dpi=96)
+plt.axis('equal')
+fig.set_size_inches(6, 4)
+# fig.savefig('../figs/demo_greit.png', dpi=96)
+plt.show()

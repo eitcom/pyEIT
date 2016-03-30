@@ -16,7 +16,7 @@ no2xy = ms['node']
 el2no = ms['element']
 
 """ 1. problem setup """
-anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'alpha': 100.0}]
+anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'alpha': 10.0}]
 ms1 = mesh.set_alpha(ms, anom=anomaly, background=1.0)
 
 """ 2. FEM simulation """
@@ -40,9 +40,9 @@ ds = eit.solve(f1.v, f0.v)
 # plot
 fig = plt.figure()
 plt.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, np.real(ds),
-              shading='flat', cmap=plt.cm.Blues)
+              shading='flat', cmap=plt.cm.viridis)
 plt.colorbar()
 plt.axis('equal')
-plt.axis([-1.2, 1.2, -1.2, 1.2])
-# fig.set_size_inches(4, 3)
-# plt.savefig('demo_jac.png', dpi=96)
+fig.set_size_inches(6, 4)
+# plt.savefig('../figs/demo_jac.png', dpi=96)
+plt.show()

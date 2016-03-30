@@ -9,23 +9,18 @@ from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.bp as bp
 
 """ 0. build mesh """
-ms, elPos = mesh.create(16, h0=0.075)
+ms, elPos = mesh.create(16, h0=0.1)
 
 # extract node, element, alpha
 no2xy = ms['node']
 el2no = ms['element']
 
 """ 1. problem setup """
-# test function for altering the 'alpha' in mesh dictionary
 anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'alpha': 10.0}]
-ms0 = mesh.set_alpha(ms, anom=anomaly, background=1.0)
-
-# test function for altering the 'alpha' in mesh dictionary
-anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'alpha': 100.0}]
 ms1 = mesh.set_alpha(ms, anom=anomaly, background=1.0)
 
 # draw
-delta_alpha = np.real(ms1['alpha'] - ms0['alpha'])
+delta_alpha = np.real(ms1['alpha'] - ms['alpha'])
 fig, ax = plt.subplots()
 im = ax.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, delta_alpha,
                   shading='flat', cmap=plt.cm.viridis)
@@ -43,7 +38,7 @@ exMtx = eit_scan_lines(16, elDist)
 
 # calculate simulated data
 fwd = forward(ms, elPos)
-f0 = fwd.solve(exMtx, step=step, perm=ms0['alpha'])
+f0 = fwd.solve(exMtx, step=step, perm=ms['alpha'])
 f1 = fwd.solve(exMtx, step=step, perm=ms1['alpha'])
 
 """
@@ -62,5 +57,5 @@ ax1.axis('equal')
 fig.colorbar(im)
 """ for production figures, use dpi=300 or render pdf """
 fig.set_size_inches(6, 4)
-# fig.savefig('demo_bp.png', dpi=96)
+# fig.savefig('../figs/demo_bp.png', dpi=96)
 plt.show()
