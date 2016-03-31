@@ -5,21 +5,25 @@ from __future__ import absolute_import
 
 import numpy as np
 import matplotlib.pyplot as plt
+
 from pyeit.mesh import shape
 from pyeit.mesh import distmesh
 import pyeit.mesh.plot as mplot
 
 
-# unit circle mesh
 def example1():
-    # shape function
+    """unit circle mesh"""
+
     def _fd(pts):
+        """shape function"""
         return shape.circle(pts, pc=[0, 0], r=1.)
 
     # build fix points, may be used as the position for electrodes
     num = 16
     pfix = shape.pfix_circle(numEl=num)
-    elPos = np.arange(num)
+
+    # firs num nodes are the positions for electrodes
+    epos = np.arange(num)
 
     # build triangle
     p, t = distmesh.build(_fd, shape.huniform, pfix=pfix, h0=0.1)
@@ -27,12 +31,15 @@ def example1():
     # plot
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
-    ax.plot(p[elPos, 0], p[elPos, 1], 'ro')
+    ax.plot(p[epos, 0], p[epos, 1], 'ro')
     plt.axis('equal')
+    plt.axis([-1.5, 1.5, -1.1, 1.1])
+    plt.show()
 
 
-# unit circle with a whole at the center
 def example2():
+    """unit circle with a whole at the center"""
+
     def _fd(pts):
         return shape.ddiff(shape.circle(pts, r=0.7),
                            shape.circle(pts, r=0.3))
@@ -44,10 +51,12 @@ def example2():
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
     plt.axis('equal')
+    plt.show()
 
 
-# rectangle with a whole at the center
 def example3():
+    """rectangle with a whole at the center"""
+
     # interior
     def _fd(pts):
         return shape.ddiff(shape.rectangle(pts, p1=[-1, -0.6], p2=[1, 0.6]),
@@ -65,10 +74,12 @@ def example3():
     ax.triplot(p[:, 0], p[:, 1], t)
     ax.set_xlim([-1.2, 1.2])
     ax.set_ylim([-1, 1])
+    plt.show()
 
 
-# ellipse
 def example4():
+    """ellipse"""
+
     def _fd(pts):
         if pts.ndim == 1:
             pts = pts[np.newaxis]
@@ -83,12 +94,12 @@ def example4():
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
     plt.axis('equal')
+    plt.show()
 
 
-# L shape
 def example5():
-    """L-shaped domain from 'Finite Elements and Fast Iterative Solvers'
-    by Elman, Silvester, and Wathen."""
+    """ L-shaped domain from 'Finite Elements and Fast Iterative Solvers'
+    by Elman, Silvester, and Wathen. """
 
     # set fixed points
     pfix = [[1, 0],  [1, -1], [0, -1], [-1, -1],
@@ -108,9 +119,12 @@ def example5():
     ax.plot(pfix[:, 0], pfix[:, 1], 'ro')
     ax.set_xlim([-1.2, 1.2])
     ax.set_ylim([-1.2, 1.2])
+    plt.show()
 
 
 def example_voronoi():
+    """draw voronoi plots for triangle elements"""
+
     def _fd(pts):
         # return d2d.dcircle(pts, pc=[0, 0], r=1.)
         return shape.ddiff(shape.circle(pts, r=0.7),
@@ -119,6 +133,7 @@ def example_voronoi():
     # build triangle
     p, t = distmesh.build(_fd, shape.huniform, h0=0.1)
 
+    # plot using customized voronoi function
     mplot.voronoi_plot(p, t)
 
 
