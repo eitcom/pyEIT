@@ -9,7 +9,7 @@ from pyeit.eit.fem import forward
 from pyeit.eit.utils import eit_scan_lines
 
 """ 0. build mesh """
-ms, elPos = mesh.create(16, h0=0.05)
+ms, elPos = mesh.create(16, h0=0.06)
 
 # extract node, element, alpha
 no2xy = ms['node']
@@ -37,7 +37,7 @@ tri_perm = ms_test['alpha']
 # solving once using fem
 f, _ = fwd.solve_once(exLine, tri_perm)
 f = np.real(f)
-vf = np.linspace(min(f), max(f), 50)
+vf = np.linspace(min(f), max(f), 20)
 
 # plot
 fig = plt.figure()
