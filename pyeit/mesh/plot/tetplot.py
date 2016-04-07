@@ -7,7 +7,8 @@ from itertools import combinations
 import numpy as np
 import sys
 
-from vispy import app, gloo, visuals, scene
+from vispy import app, gloo, scene
+from vispy.visuals import Visual
 
 
 # build vertex shader for tetplot
@@ -57,7 +58,7 @@ def sim2edge(simplices):
     return sim_conv(simplices, 2)
 
 
-class TetPlotVisual(visuals.Visual):
+class TetPlotVisual(Visual):
     """ template """
 
     def __init__(self, points, simplices, vertex_color=None,
@@ -76,7 +77,7 @@ class TetPlotVisual(visuals.Visual):
         ----
         initialize triangles structure
         """
-        visuals.Visual.__init__(self, vcode=vert, fcode=frag)
+        Visual.__init__(self, vcode=vert, fcode=frag)
 
         # set data
         self.shared_program.vert['position'] = gloo.VertexBuffer(points)
@@ -101,11 +102,12 @@ class TetPlotVisual(visuals.Visual):
         self._index_buffer = gloo.IndexBuffer(vbo)
 
         # config OpenGL, 'translucent' or 'additive'
-        self.set_gl_state('additive',
+        self.set_gl_state('translucent',
                           blend=True,
                           depth_test=False,
                           cull_face=False,
-                          polygon_offset_fill=True)
+                          polygon_offset_fill=True,
+                          polygon_offset=(1, 1))
         self._draw_mode = mode
 
     def _prepare_transforms(self, view):
