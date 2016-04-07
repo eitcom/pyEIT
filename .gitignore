@@ -8,6 +8,7 @@ test*.*
 .directory
 
 __pycache__/
+.idea/
 build/
 dist/
 pyeit.egg-info/

@@ -138,7 +138,7 @@ def tetplot(points, simplices, vertex_color=None,
     view = canvas.central_widget.add_view()
     view.camera = 'turntable'
     view.camera.fov = 50
-    view.camera.distance = 5
+    view.camera.distance = 3
 
     # drawing only triangles
     # 1. turn off mask_color, default = [1.0, 1.0, 1.0, alpha]
@@ -161,20 +161,20 @@ def tetplot(points, simplices, vertex_color=None,
         scene.visuals.XYZAxis(parent=view.scene)
 
     # run
-    if sys.flags.interactive != 1:
-        app.run()
+    app.run()
 
-# run
+# demo
 if __name__ == '__main__':
-    # data
-    pts = np.array([(0.0, 0.0, 0.0),
-                    (1.0, 0.0, 0.0),
-                    (0.0, 1.0, 0.0),
-                    (0.0, 0.0, 1.0),
-                    (1.0, 1.0, 1.0)], dtype=np.float32)
+    if sys.flags.interactive != 1:
+        # data
+        pts = np.array([(0.0, 0.0, 0.0),
+                        (1.0, 0.0, 0.0),
+                        (0.0, 1.0, 0.0),
+                        (0.0, 0.0, 1.0),
+                        (1.0, 1.0, 1.0)], dtype=np.float32)
 
-    sim = np.array([(0, 1, 2, 3),
-                    (1, 3, 2, 4)], dtype=np.uint32)
+        sim = np.array([(0, 1, 2, 3),
+                        (1, 3, 2, 4)], dtype=np.uint32)
 
-    tetplot(pts, sim, edge_color=[0.2, 0.2, 1.0, 0.2],
-            alpha=0.1, axis=False)
+        tetplot(pts, sim, edge_color=[0.2, 0.2, 1.0, 0.2],
+                alpha=0.1, axis=False)
