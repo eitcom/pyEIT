@@ -9,7 +9,7 @@ from pyeit.eit.fem import forward
 from pyeit.eit.utils import eit_scan_lines
 
 """ 0. build mesh """
-ms, elPos = mesh.create(16, h0=0.06)
+ms, elPos = mesh.create(16, h0=0.05)
 
 # extract node, element, alpha
 no2xy = ms['node']
