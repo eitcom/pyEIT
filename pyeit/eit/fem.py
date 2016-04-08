@@ -6,6 +6,7 @@ from __future__ import absolute_import
 from collections import namedtuple
 import numpy as np
 import scipy.linalg as la
+import scipy.sparse as sparse
 
 from .utils import eit_scan_lines
 
@@ -121,8 +122,8 @@ class forward(object):
         b = np.zeros((noNum, 1))
         Vpos = self.elPos[np.where(exLine == 1)]
         Vneg = self.elPos[np.where(exLine == -1)]
-        b[Vpos] = 1
-        b[Vneg] = -1
+        b[Vpos] = 1.
+        b[Vneg] = -1.
 
         # assemble
         A, Ke = assembpde(self.no2xy, self.el2no, perm=tri_perm)
@@ -259,9 +260,21 @@ def assembpde(no2xy, el2no, perm=None):
     if perm is None:
         perm = np.ones(elNum)
 
+    # check dimension
+    ndim = no2xy.shape[1]
+
+    # for triangle, the shape of local Ke is (3, 3)
+    # for tetrahedron, the shape is (4, 4)
+    if ndim == 2:
+        nshape = 3
+        CmpElMtx = CmpElMtx2D
+    elif ndim==3:
+        nshape = 4
+        CmpElMtx = CmpElMtx3D
+
     # Assemble the matrix A
     A = np.zeros((noNum, noNum), dtype='complex')
-    Ke = np.zeros((elNum, 3, 3), dtype='complex')
+    Ke = np.zeros((elNum, nshape, nshape), dtype='complex')
 
     for ei in range(elNum):
         # get the nodes and their coordinates for element ei
@@ -271,18 +284,63 @@ def assembpde(no2xy, el2no, perm=None):
 
         # compute the KIJ (without permitivity)
         KIJ = CmpElMtx(xy)
-
-        # 'add' the 'contribution' to the 'global' matrix
-        # warning : in python A[no, no] will return a 3x1 array,
-        # we use np.ix_ to construct an open mesh from multiple sequences.
-        ij = np.ix_(no, no)
-        A[ij] = A[ij] + (KIJ * pe)
         Ke[ei] = KIJ
 
+        # 'add' the 'contribution' to the 'global' matrix.
+        # warning, in python A[no, no] will return a 3x1 array,
+        # use np.ix_ to construct an open mesh from multiple sequences.
+        ij = np.ix_(no, no)
+        A[ij] = A[ij] + (KIJ * pe)
+
+    # return
     return A, Ke
 
 
-def CmpElMtx(xy):
+def assembpde_sparse(no2xy, el2no, perm=None):
+    """
+    assemble the stiffness matrix for PDE using coo_sparse
+
+    Notes
+    -----
+    A.toarray() should not be used, as the major advantage of sparse
+    matrix is in solving linear equations. Should figure out how to
+    set the reference node in sparse matrix.
+    """
+    noNum = np.size(no2xy, 0)
+    elNum = np.size(el2no, 0)
+
+    # initialize the permitivity on element
+    if perm is None:
+        perm = np.ones(elNum)
+
+    # prepare IJV
+    Ke = np.zeros((elNum, 3, 3), dtype='complex')
+    row = np.zeros((elNum, 3, 3), dtype=np.int32)
+    col = np.zeros((elNum, 3, 3), dtype=np.int32)
+
+    for ei in range(elNum):
+        # get the nodes and their coordinates for element ei
+        no = el2no[ei, :]
+        xy = no2xy[no, :]
+
+        # compute the KIJ (without permitivity)
+        KIJ = CmpElMtx2D(xy)
+        Ke[ei] = KIJ
+
+        # build row, col
+        row[ei], col[ei] = np.meshgrid(no, no)
+
+    # 'add' the 'contribution' to the 'global' matrix.
+    K = np.array([Ke[i]*perm[i] for i in range(elNum)])
+    A = sparse.coo_matrix((K.ravel(), (row.ravel(), col.ravel())),
+                          shape=(noNum, noNum),
+                          dtype='complex')
+
+    # return
+    return A, Ke
+
+
+def CmpElMtx2D(xy):
     """
     given a point-matrix of an element, solving for Kij analytically
     using barycentric coordinates (simplex coordinates)
@@ -297,21 +355,18 @@ def CmpElMtx(xy):
     NDArray
         Ae, local stiffness matrix
     """
-    s1 = xy[2, :] - xy[1, :]
-    s2 = xy[0, :] - xy[2, :]
-    s3 = xy[1, :] - xy[0, :]
+    # s1 = xy[2, :] - xy[1, :]
+    # s2 = xy[0, :] - xy[2, :]
+    # s3 = xy[1, :] - xy[0, :]
+    s = xy[[2, 0, 1]] - xy[[1, 2, 0]]
 
-    Atot = 0.5*(s2[0]*s3[1] - s3[0]*s2[1])
+    # Atot = 0.5 * (s2[0]*s3[1] - s3[0]*s2[1])
+    Atot = 0.5 * la.det(s[[0, 1]])
     if Atot < 0:
         # idealy nodes should be given in anti-clockwise,
         # but Yang Bin's .mes file is in clockwise manner,
         # so we make this script compatible to his file format
         Atot *= -1.
-
-    grad_phi = np.zeros((3, 2))
-    grad_phi[0, :] = np.array([-s1[1], s1[0]]) / (2. * Atot)
-    grad_phi[1, :] = np.array([-s2[1], s2[0]]) / (2. * Atot)
-    grad_phi[2, :] = np.array([-s3[1], s3[0]]) / (2. * Atot)
 
     # using for-loops
     # Ae = np.zeros((3, 3))
@@ -320,9 +375,49 @@ def CmpElMtx(xy):
     #         Ae[i, j] = np.dot(grad_phi[i, :], grad_phi[j, :]) * Atot
 
     # vectorize
-    Ae = np.dot(grad_phi, grad_phi.transpose()) * Atot
+    Ae = np.dot(s, s.transpose()) / (4. * Atot)
 
     return Ae
+
+
+def CmpElMtx3D(xy):
+    """
+    given a point-matrix of an element, solving for Kij analytically
+    using barycentric coordinates (simplex coordinates)
+
+    Parameters
+    ----------
+    xy : NDArray
+        (x,y) of nodes 1,2,3,4 given in counterclockwise manner
+
+    Returns
+    -------
+    NDArray
+        Ae, local stiffness matrix
+    """
+    s = xy[[2, 3, 0, 1]] - xy[[1, 2, 3, 0]]
+
+    # calculate Volume from vertices (make volume compatible)
+    Vtot = 1/6. * la.det(s[[0, 1, 2]])
+    if Vtot < 0:
+        Vtot = -Vtot
+
+    # calculate area vector
+    A = [cross_product(s[ij]) for ij in [[0, 1], [1, 2], [2, 3], [3, 0]]]
+    A = np.array(A)
+
+    # vectorize
+    Ae = np.dot(A, A.transpose()) / (36. * Vtot)
+
+    return Ae
+
+
+def cross_product(xyz):
+    """ calculate cross product of xyz[0] and xyz[1] """
+    v = [la.det(xyz[:, [1, 2]]),   #  x
+         -la.det(xyz[:, [0, 2]]),  #  y
+         la.det(xyz[:, [0, 1]])]   #  z
+    return np.array(v)
 
 
 def CmpAoE(no2xy, el2no):
@@ -366,13 +461,22 @@ def tri_area(xy):
     float
         area of this element
     """
-    s2 = xy[0, :] - xy[2, :]
-    s3 = xy[1, :] - xy[0, :]
-    Atot = 0.5*(s2[0]*s3[1] - s3[0]*s2[1])
+    # s2 = xy[0, :] - xy[2, :]
+    # s3 = xy[1, :] - xy[0, :]
+    s = xy[[0, 1]] - xy[[2, 0]]
+    # Atot = 0.5*(s2[0]*s3[1] - s3[0]*s2[1])
+    Atot = 0.5*la.det(s)
     # (should be possitive if tri-points are counter-clockwise)
     # abs is for compatibility with Yang-Bin's .mes file
     # whose tri-points are clockwise
     return abs(Atot)
+
+
+def tet_volume(xyz):
+    """ calculate the volume of tetrahedron """
+    s = xyz[[2, 3, 0]] - xyz[[1, 2, 3]]
+    Vtot = 1/6. * la.det(s)
+    return abs(Vtot)
 
 
 def pdeintrp(no2xy, el2no, node_value):

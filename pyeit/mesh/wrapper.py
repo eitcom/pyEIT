@@ -6,10 +6,10 @@ from __future__ import absolute_import
 import numpy as np
 
 from .distmesh import build
-from .shape import unit_circle, huniform, pfix_circle
+from .shape import unit_circle, pfix_circle, unit_ball, pfix_ball, huniform
 
 
-def create(numEl=16, h0=0.1, fd=unit_circle, fh=huniform):
+def create(numEl=16, h0=0.1, bbox=None, fd=None, fh=None, pfix=None):
     """ wrapper for pyEIT interface
 
     Parameters
@@ -24,8 +24,32 @@ def create(numEl=16, h0=0.1, fd=unit_circle, fh=huniform):
     dict
         {'element', 'node', 'alpha'}
     """
-    pfix = pfix_circle(numEl=numEl)
-    p, t = build(fd, fh, pfix=pfix, h0=h0, Fscale=1.2)
+    if bbox is None:
+        bbox = [[-1, -1], [1, 1]]
+    # infer ndim
+    bbox = np.array(bbox)
+    ndim = bbox.shape[1]
+    if ndim not in [2, 3]:
+        raise TypeError('distmesh only support 2D or 3D')
+    if bbox.shape[0] != 2:
+        raise TypeError('please specify lower and upper bound of bbox')
+        
+    if ndim == 2:
+        if pfix is None:
+            pfix = pfix_circle(numEl=numEl)
+        if fd is None:
+            fd = unit_circle
+    elif ndim == 3:
+        if pfix is None:
+            pfix = pfix_ball(numEl=numEl)
+        if fd is None:
+            fd = unit_ball
+    
+    if fh is None:
+        fh = huniform
+        
+    # build mesh
+    p, t = build(fd, fh, pfix=pfix, bbox=bbox, h0=h0, Fscale=1.2)
     # electrodes are the same as pfix (top numEl)
     elPos = np.arange(numEl)
     # build output dictionary, uniform element sigma
@@ -80,11 +104,19 @@ def set_alpha(mesh, anom=None, background=None):
         for _, attr in enumerate(anom):
             cx = attr['x']
             cy = attr['y']
+            cz = None
+            if 'z' in attr:
+                cz = attr['z']
             diameter = attr['d']
             alpha_anomaly = attr['alpha']
             # find elements whose distance to (cx,cy) is smaller than d
-            indice = np.sqrt((tri_centers[:, 0] - cx)**2 +
-                             (tri_centers[:, 1] - cy)**2) < diameter
+            if cz is None:
+                indice = np.sqrt((tri_centers[:, 0] - cx)**2 +
+                                 (tri_centers[:, 1] - cy)**2) < diameter
+            else:
+                indice = np.sqrt((tri_centers[:, 0] - cx)**2 +
+                                 (tri_centers[:, 1] - cy)**2 +
+                                 (tri_centers[:, 2] - cz)**2) < diameter
             alpha[indice] = alpha_anomaly
 
     mesh_new = {'node': no2xy,

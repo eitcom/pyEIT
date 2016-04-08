@@ -5,6 +5,9 @@ from __future__ import absolute_import
 
 from itertools import combinations
 import numpy as np
+import matplotlib
+import matplotlib.cm as cm
+from matplotlib.colors import LinearSegmentedColormap    
 import sys
 
 from vispy import app, gloo, scene
@@ -85,6 +88,12 @@ class TetPlotVisual(Visual):
             vertex_color = np.ones((points.shape[0], 4), dtype=np.float32)
         else:
             assert(vertex_color.shape[0] == points.shape[0])
+            # vertex color may be grayscale
+            if np.ndim(vertex_color) == 1:
+                f = vertex_color[:, np.newaxis]
+                v = np.repeat(f, 4, axis=1)
+                v[:, -1] = 1.0
+                vertex_color = v.astype(np.float32)
         self.shared_program['a_color'] = vertex_color
 
         # mask colors, alpha channel is not used when mask_color is given.
@@ -102,11 +111,11 @@ class TetPlotVisual(Visual):
         self._index_buffer = gloo.IndexBuffer(vbo)
 
         # config OpenGL, 'translucent' or 'additive'
-        self.set_gl_state('translucent',
+        self.set_gl_state('additive',
                           blend=True,
                           depth_test=False,
                           cull_face=False,
-                          polygon_offset_fill=True,
+                          polygon_offset_fill=False,
                           polygon_offset=(1, 1))
         self._draw_mode = mode
 
@@ -139,6 +148,30 @@ def tetplot(points, simplices, vertex_color=None,
     view.camera = 'turntable'
     view.camera.fov = 50
     view.camera.distance = 3
+    
+    # convert vertex_color
+    cdict1 = {'red':   ((0.0, 0.0, 0.0),
+                       (0.5, 0.0, 0.0),
+                       (1.0, 1.0, 1.0)),
+              'green': ((0.0, 0.0, 0.0),
+                       (1.0, 0.0, 0.0)),
+              'blue':  ((0.0, 0.0, 1.0),
+                       (0.5, 0.0, 0.0),
+                       (1.0, 0.0, 0.0))
+             }
+         
+    def blue_red():
+        return LinearSegmentedColormap('BlueRed', cdict1)
+        
+    if vertex_color is not None and vertex_color.ndim == 1:
+        maxima = np.max(np.abs(vertex_color))
+        minima = -maxima
+        print(maxima)
+        brcmap = blue_red()
+        norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
+        mapper = cm.ScalarMappable(norm=norm, cmap=brcmap)
+        vertex_color = mapper.to_rgba(vertex_color)
+        vertex_color = vertex_color.astype(np.float32)
 
     # drawing only triangles
     # 1. turn off mask_color, default = [1.0, 1.0, 1.0, alpha]

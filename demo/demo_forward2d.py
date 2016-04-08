@@ -1,4 +1,4 @@
-""" demo on bp """
+""" demo on forward 2D """
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,14 +20,14 @@ quality.fstats(no2xy, el2no)
 
 """ 1. FEM forward simulations """
 # setup EIT scan conditions
-elDist, step = 3, 1
+elDist, step = 7, 1
 exMtx = eit_scan_lines(16, elDist)
 
 # calculate simulated data
 fwd = forward(ms, elPos)
 
 # in python, index start from 0
-exLine = exMtx[1].ravel()
+exLine = exMtx[0].ravel()
 
 # change alpha
 anomaly = [{'x': 0.50, 'y': 0.50, 'd': 0.2, 'alpha': 10.0}]
