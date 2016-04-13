@@ -151,14 +151,19 @@ def tetplot(points, simplices, vertex_color=None,
 
     # convert vertex_color
     cdict1 = {'red':   ((0.0, 0.0, 0.0),
-                        (0.5, 0.0, 0.0),
+                        (0.5, 0.0, 0.1),
                         (1.0, 1.0, 1.0)),
               'green': ((0.0, 0.0, 0.0),
                         (1.0, 0.0, 0.0)),
-              'blue':  ((0.0, 0.0, 1.0),
-                        (0.5, 0.0, 0.0),
+              'blue':  ((0.0, 1.0, 1.0),
+                        (0.5, 0.1, 0.0),
                         (1.0, 0.0, 0.0))
               }
+    cdict1['alpha'] = ((0.00, 1.0, 1.0),
+                       (0.25, 0.8, 0.8),
+                       (0.50, 0.0, 0.0),
+                       (0.75, 0.8, 0.8),
+                       (1.00, 1.0, 1.0))
 
     def blue_red():
         return LinearSegmentedColormap('BlueRed', cdict1)
@@ -166,7 +171,6 @@ def tetplot(points, simplices, vertex_color=None,
     if vertex_color is not None and vertex_color.ndim == 1:
         maxima = np.max(np.abs(vertex_color))
         minima = -maxima
-        print(maxima)
         brcmap = blue_red()
         norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
         mapper = cm.ScalarMappable(norm=norm, cmap=brcmap)
