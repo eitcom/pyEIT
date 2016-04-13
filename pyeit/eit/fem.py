@@ -268,13 +268,16 @@ def assembpde(no2xy, el2no, perm=None):
     if ndim == 2:
         nshape = 3
         CmpElMtx = CmpElMtx2D
-    elif ndim==3:
+    elif ndim == 3:
         nshape = 4
         CmpElMtx = CmpElMtx3D
 
     # Assemble the matrix A
     A = np.zeros((noNum, noNum), dtype='complex')
     Ke = np.zeros((elNum, nshape, nshape), dtype='complex')
+
+    # we have ae
+    ae, el2no = CmpAoE(no2xy, el2no)
 
     for ei in range(elNum):
         # get the nodes and their coordinates for element ei
@@ -284,7 +287,7 @@ def assembpde(no2xy, el2no, perm=None):
 
         # compute the KIJ (without permitivity)
         KIJ = CmpElMtx(xy)
-        Ke[ei] = KIJ
+        Ke[ei] = KIJ / ae[ei]
 
         # 'add' the 'contribution' to the 'global' matrix.
         # warning, in python A[no, no] will return a 3x1 array,
@@ -360,22 +363,8 @@ def CmpElMtx2D(xy):
     # s3 = xy[1, :] - xy[0, :]
     s = xy[[2, 0, 1]] - xy[[1, 2, 0]]
 
-    # Atot = 0.5 * (s2[0]*s3[1] - s3[0]*s2[1])
-    Atot = 0.5 * la.det(s[[0, 1]])
-    if Atot < 0:
-        # idealy nodes should be given in anti-clockwise,
-        # but Yang Bin's .mes file is in clockwise manner,
-        # so we make this script compatible to his file format
-        Atot *= -1.
-
-    # using for-loops
-    # Ae = np.zeros((3, 3))
-    # for i in range(3):
-    #     for j in range(3):
-    #         Ae[i, j] = np.dot(grad_phi[i, :], grad_phi[j, :]) * Atot
-
     # vectorize
-    Ae = np.dot(s, s.transpose()) / (4. * Atot)
+    Ae = np.dot(s, s.transpose()) / 4.
 
     return Ae
 
@@ -397,26 +386,25 @@ def CmpElMtx3D(xy):
     """
     s = xy[[2, 3, 0, 1]] - xy[[1, 2, 3, 0]]
 
-    # calculate Volume from vertices (make volume compatible)
-    Vtot = 1/6. * la.det(s[[0, 1, 2]])
-    if Vtot < 0:
-        Vtot = -Vtot
-
     # calculate area vector
     A = [cross_product(s[ij]) for ij in [[0, 1], [1, 2], [2, 3], [3, 0]]]
     A = np.array(A)
+    k = [1., -1., 1., -1.]
+    # k = [1, 1, 1, 1]
+    for i in range(4):
+        A[i] = A[i] * k[i]
 
     # vectorize
-    Ae = np.dot(A, A.transpose()) / (36. * Vtot)
+    Ae = np.dot(A, A.transpose()) / 36.
 
     return Ae
 
 
 def cross_product(xyz):
     """ calculate cross product of xyz[0] and xyz[1] """
-    v = [la.det(xyz[:, [1, 2]]),   #  x
-         -la.det(xyz[:, [0, 2]]),  #  y
-         la.det(xyz[:, [0, 1]])]   #  z
+    v = [la.det(xyz[:, [1, 2]]),
+         -la.det(xyz[:, [0, 2]]),
+         la.det(xyz[:, [0, 1]])]
     return np.array(v)
 
 
@@ -436,15 +424,29 @@ def CmpAoE(no2xy, el2no):
     -------
     NDArray
         ae, area of each element
+
+    Notes
+    -----
     """
-    elNum = np.size(el2no, 0)
+    elNum, elDim = np.shape(el2no)
+    # select ae function
+    if elDim == 3:
+        ae_fn = tri_area
+    elif elDim == 4:
+        ae_fn = tet_volume
+    # calculate ae and re-order el2no if necessary
     ae = np.zeros(elNum)
     for ei in range(elNum):
         no = el2no[ei, :]
         xy = no2xy[no, :]
-        ae[ei] = tri_area(xy)
+        v = ae_fn(xy)
+        if v < 0:
+            ae[ei] = -v
+            el2no[ei, [1, 2]] = el2no[ei, [2, 1]]
+        else:
+            ae[ei] = v
 
-    return ae
+    return ae, el2no
 
 
 def tri_area(xy):
@@ -461,22 +463,17 @@ def tri_area(xy):
     float
         area of this element
     """
-    # s2 = xy[0, :] - xy[2, :]
-    # s3 = xy[1, :] - xy[0, :]
-    s = xy[[0, 1]] - xy[[2, 0]]
-    # Atot = 0.5*(s2[0]*s3[1] - s3[0]*s2[1])
-    Atot = 0.5*la.det(s)
+    s = xy[[1, 2]] - xy[[0, 1]]
+    Atot = 0.5 * la.det(s)
     # (should be possitive if tri-points are counter-clockwise)
-    # abs is for compatibility with Yang-Bin's .mes file
-    # whose tri-points are clockwise
-    return abs(Atot)
+    return Atot
 
 
 def tet_volume(xyz):
     """ calculate the volume of tetrahedron """
     s = xyz[[2, 3, 0]] - xyz[[1, 2, 3]]
-    Vtot = 1/6. * la.det(s)
-    return abs(Vtot)
+    Vtot = 1./6. * la.det(s)
+    return Vtot
 
 
 def pdeintrp(no2xy, el2no, node_value):
