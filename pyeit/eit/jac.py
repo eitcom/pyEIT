@@ -44,7 +44,7 @@ class JAC(object):
         self.el2no = mesh['element']
         self.elPos = elPos
         # extract structural elements, calculate area of element
-        self.ae = CmpAoE(self.no2xy, self.el2no)
+        self.ae, _ = CmpAoE(self.no2xy, self.el2no)
 
         # generate excitation patterns
         if exMtx is None:
