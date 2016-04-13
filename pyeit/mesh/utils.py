@@ -153,6 +153,7 @@ def check_order(no2xy, el2no):
         no = el2no[ei, :]
         xy = no2xy[no, :]
         v = _fn(xy)
+        # if CCW, area should be positive, otherwise,
         if v < 0:
             el2no[ei, [1, 2]] = el2no[ei, [2, 1]]
 
