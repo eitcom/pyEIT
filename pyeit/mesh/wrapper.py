@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import numpy as np
 
 from .distmesh import build
+from .utils import check_order
 from .shape import unit_circle, pfix_circle, unit_ball, pfix_ball, huniform
 
 
@@ -33,7 +34,7 @@ def create(numEl=16, h0=0.1, bbox=None, fd=None, fh=None, pfix=None):
         raise TypeError('distmesh only support 2D or 3D')
     if bbox.shape[0] != 2:
         raise TypeError('please specify lower and upper bound of bbox')
-        
+
     if ndim == 2:
         if pfix is None:
             pfix = pfix_circle(numEl=numEl)
@@ -44,16 +45,19 @@ def create(numEl=16, h0=0.1, bbox=None, fd=None, fh=None, pfix=None):
             pfix = pfix_ball(numEl=numEl)
         if fd is None:
             fd = unit_ball
-    
+
     if fh is None:
         fh = huniform
-        
-    # build mesh
+
+    # 1. build mesh
     p, t = build(fd, fh, pfix=pfix, bbox=bbox, h0=h0, Fscale=1.2)
-    # electrodes are the same as pfix (top numEl)
+    # 2. check whether t is counter-clock-wise, otherwise reshape it
+    t = check_order(p, t)
+    # 3. generate electrodes, the same as pfix (top numEl)
     elPos = np.arange(numEl)
-    # build output dictionary, uniform element sigma
+    # 4. init uniform element sigma
     alpha = 1. * np.ones(t.shape[0])
+    # 5. build output structure
     mesh = {'element': t,
             'node': p,
             'alpha': alpha}
