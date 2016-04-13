@@ -7,7 +7,7 @@ from itertools import combinations
 import numpy as np
 import matplotlib
 import matplotlib.cm as cm
-from matplotlib.colors import LinearSegmentedColormap    
+from matplotlib.colors import LinearSegmentedColormap
 import sys
 
 from vispy import app, gloo, scene
@@ -148,21 +148,21 @@ def tetplot(points, simplices, vertex_color=None,
     view.camera = 'turntable'
     view.camera.fov = 50
     view.camera.distance = 3
-    
+
     # convert vertex_color
     cdict1 = {'red':   ((0.0, 0.0, 0.0),
-                       (0.5, 0.0, 0.0),
-                       (1.0, 1.0, 1.0)),
+                        (0.5, 0.0, 0.0),
+                        (1.0, 1.0, 1.0)),
               'green': ((0.0, 0.0, 0.0),
-                       (1.0, 0.0, 0.0)),
+                        (1.0, 0.0, 0.0)),
               'blue':  ((0.0, 0.0, 1.0),
-                       (0.5, 0.0, 0.0),
-                       (1.0, 0.0, 0.0))
-             }
-         
+                        (0.5, 0.0, 0.0),
+                        (1.0, 0.0, 0.0))
+              }
+
     def blue_red():
         return LinearSegmentedColormap('BlueRed', cdict1)
-        
+
     if vertex_color is not None and vertex_color.ndim == 1:
         maxima = np.max(np.abs(vertex_color))
         minima = -maxima
