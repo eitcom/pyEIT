@@ -7,7 +7,7 @@ from __future__ import absolute_import
 import numpy as np
 import scipy.linalg as la
 
-from .fem import forward, CmpAoE
+from .fem import forward
 from .utils import eit_scan_lines
 
 
@@ -43,8 +43,6 @@ class JAC(object):
         self.no2xy = mesh['node']
         self.el2no = mesh['element']
         self.elPos = elPos
-        # extract structural elements, calculate area of element
-        self.ae, _ = CmpAoE(self.no2xy, self.el2no)
 
         # generate excitation patterns
         if exMtx is None:
@@ -116,7 +114,7 @@ class JAC(object):
         # s = -Hv
         ds = - np.dot(self.H, dv)
         # return average epsilon on element
-        return ds / self.ae
+        return ds
 
     def bp_solve(self, v1, v0, normalize=False):
         """ solve via a 'naive' back projection. """
@@ -128,7 +126,7 @@ class JAC(object):
         # s_r = J^Tv_r
         ds = - np.dot(self.Jac.T.conjugate(), dv)
         # return average epsilon on element
-        return ds / self.ae
+        return ds
 
     def gn_solve(self, v,
                  x0=None, maxiter=1,
