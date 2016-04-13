@@ -31,7 +31,7 @@ f1 = fwd.solve(exMtx, step=step, perm=ms1['alpha'])
 """ 3. JAC solver """
 # number of excitation lines & excitation patterns
 eit = jac.JAC(ms, elPos, exMtx=exMtx, step=step,
-              perm=0.01, parser='std',
+              perm=1., parser='std',
               p=0.10, lamb=0.01, method='kotre')
 ds = eit.solve(f1.v, f0.v)
 # static EIT
