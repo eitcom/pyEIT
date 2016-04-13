@@ -12,7 +12,7 @@ from pyeit.eit.utils import eit_scan_lines
 # 3D tetrahedron must have a bbox
 bbox = [[-1, -1, -1], [1, 1, 1]]
 # save calling convention as distmesh 2D
-ms, elPos = mesh.create(h0=0.2, bbox=bbox)
+ms, elPos = mesh.create(h0=0.15, bbox=bbox)
 
 no2xy = ms['node']
 el2no = ms['element']
@@ -29,10 +29,10 @@ exMtx = eit_scan_lines(16, elDist)
 fwd = forward(ms, elPos)
 
 # in python, index start from 0
-exLine = exMtx[0].ravel()
+exLine = exMtx[2].ravel()
 
 # change alpha
-anomaly = [{'x': 0.4, 'y': 0.4, 'z': 0.0, 'd': 0.3, 'alpha': 100.0}]
+anomaly = [{'x': 0.20, 'y': 0.40, 'z': 0.0, 'd': 0.30, 'alpha': 100.0}]
 ms_test = mesh.set_alpha(ms, anom=anomaly, background=1.0)
 tri_perm = ms_test['alpha']
 node_perm = pdeprtni(no2xy, el2no, np.real(tri_perm))
@@ -41,11 +41,5 @@ node_perm = pdeprtni(no2xy, el2no, np.real(tri_perm))
 f, _ = fwd.solve_once(exLine, tri_perm)
 f = np.real(f)
 
-# change alpha
-anomaly = [{'x': 0.4, 'y': 0.4, 'z': 0.0, 'd': 0.3, 'alpha': 100.0}]
-ms_test = mesh.set_alpha(ms, anom=anomaly, background=-40.0)
-tri_perm = ms_test['alpha']
-node_perm = pdeprtni(no2xy, el2no, np.real(tri_perm))
-
 # mplot.tetplot(p, t, edge_color=(0.2, 0.2, 1.0, 1.0), alpha=0.01)
-mplot.tetplot(no2xy, el2no, vertex_color=f, alpha=1.0)
+mplot.tetplot(no2xy, el2no, vertex_color=f, alpha=0.1)
