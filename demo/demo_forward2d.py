@@ -9,7 +9,7 @@ from pyeit.eit.fem import forward
 from pyeit.eit.utils import eit_scan_lines
 
 """ 0. build mesh """
-ms, elPos = mesh.create(16, h0=0.05)
+ms, elPos = mesh.create(16, h0=0.06)
 
 # extract node, element, alpha
 no2xy = ms['node']
@@ -30,14 +30,14 @@ fwd = forward(ms, elPos)
 exLine = exMtx[0].ravel()
 
 # change alpha
-anomaly = [{'x': 0.50, 'y': 0.50, 'd': 0.2, 'alpha': 10.0}]
+anomaly = [{'x': 0.50, 'y': 0.50, 'd': 0.20, 'alpha': 10.0}]
 ms_test = mesh.set_alpha(ms, anom=anomaly, background=1.0)
 tri_perm = ms_test['alpha']
 
 # solving once using fem
 f, _ = fwd.solve_once(exLine, tri_perm)
 f = np.real(f)
-vf = np.linspace(min(f), max(f), 20)
+vf = np.linspace(min(f), max(f), 32)
 
 # plot
 fig = plt.figure()
