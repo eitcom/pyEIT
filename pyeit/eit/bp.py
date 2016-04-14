@@ -82,7 +82,7 @@ class BP(object):
             v0 = self.v0
         # choose normalize method, we use sign
         if normalize:
-            vn = - (v1 - v0) / np.sign(self.v0)
+            vn = - (v1 - v0) / np.sign(v0)
         else:
             vn = (v1 - v0)
         # smearing

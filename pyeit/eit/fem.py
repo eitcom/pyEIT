@@ -45,7 +45,7 @@ class forward(object):
         perm : NDArray
             Mx1 ndarray, initial x0
         parser : str
-            if parser is 'et3', then diff_pairs are re-arranged
+            if parser is 'fmmu', then diff_pairs are re-arranged
             if parser is 'std', standard diff from the 1st electrode
 
         Returns
