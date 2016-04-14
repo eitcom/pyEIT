@@ -23,4 +23,4 @@ print('simplices = ', t.shape)
 
 # mplot.tetplot(p, t, edge_color=(0.2, 0.2, 1.0, 1.0), alpha=0.01)
 f = np.random.randn(p.shape[0])
-mplot.tetplot(p, t, f, alpha=0.02)
+mplot.tetplot(p, t, f, alpha=0.25)

@@ -46,7 +46,7 @@ f1 = fwd.solve(exMtx, step, perm=ms1['alpha'])
 """ 3. solving using dynamic EIT """
 # number of excitation lines & excitation patterns
 eit = jac.JAC(ms, elPos, exMtx=exMtx, step=step,
-              p=0.20, lamb=1e-4,
+              p=0.40, lamb=1e-3,
               parser='std', method='kotre')
 ds = eit.solve(f1.v, f0.v)
 

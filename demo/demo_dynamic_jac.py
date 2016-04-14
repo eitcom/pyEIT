@@ -32,10 +32,8 @@ f1 = fwd.solve(exMtx, step=step, perm=ms1['alpha'])
 # number of excitation lines & excitation patterns
 eit = jac.JAC(ms, elPos, exMtx=exMtx, step=step,
               perm=1., parser='std',
-              p=0.25, lamb=1e-4, method='kotre')
+              p=0.30, lamb=1e-4, method='kotre')
 ds = eit.solve(f1.v, f0.v)
-# static EIT
-# ds = eit.gn_solve(f0.v, maxiter=5)
 
 # plot
 fig = plt.figure()

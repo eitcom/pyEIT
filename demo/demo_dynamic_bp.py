@@ -45,7 +45,7 @@ f1 = fwd.solve(exMtx, step=step, perm=ms1['alpha'])
 3. naive inverse solver using back-projection
 """
 eit = bp.BP(ms, elPos, exMtx, step=1, parser='std', weight='none')
-ds = eit.solve(f1.v, f0.v, normalize=True)
+ds = eit.solve(f1.v, f0.v)
 ds = 10000. * pdeprtni(no2xy, el2no, ds)
 
 # plot

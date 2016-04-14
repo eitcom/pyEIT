@@ -255,6 +255,7 @@ class DISTMESH(object):
         return score < self.dptol
 
     def debug(self, *args):
+        """ print debug messages """
         if self.verbose:
             print(*args)
 
@@ -342,9 +343,8 @@ def remove_duplicate_nodes(p, pfix, geps):
     return p
 
 
-def build(fd, fh, pfix=None,
-          bbox=None, h0=0.1, densityctrlfreq=32, deltat=0.2,
-          dptol=None, ttol=None, Fscale=None,
+def build(fd, fh, pfix=None, bbox=None, h0=0.1,
+          densityctrlfreq=32, deltat=0.2,
           maxiter=500, verbose=False):
     """ main function for distmesh
 
@@ -384,27 +384,16 @@ def build(fd, fh, pfix=None,
     else:
         # perform error check on bbox
         bbox = np.array(bbox)
-        if bbox.ndim == 1:
-            raise TypeError('only 2D and 3D are supported, bbox = ', bbox)
-        if bbox.shape[1] not in [2, 3]:
-            raise TypeError('only 2D and 3D are allowed, bbox = ', bbox)
+        if (bbox.ndim == 1) or (bbox.shape[1] not in [2, 3]):
+            raise TypeError('only 2D, 3D are supported, bbox = ', bbox)
         if bbox.shape[0] != 2:
             raise TypeError('please specify lower and upper bound of bbox')
-        # assign default values
         if bbox.shape[1] == 2:
             # default parameters for 2D
             g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.2
         else:
             # default parameters for 3D
             g_dptol, g_ttol, g_Fscale = 0.045, 0.150, 1.125
-
-    # override default if user has specified any
-    if dptol is not None:
-        g_dptol = dptol
-    if ttol is not None:
-        g_ttol = ttol
-    if Fscale is not None:
-        g_Fscale = Fscale
 
     # initialize distmesh
     dm = DISTMESH(fd, fh,

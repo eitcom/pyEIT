@@ -106,9 +106,11 @@ class JAC(object):
         NDArray
             complex-valued NDArray, changes of conductivities
         """
-        # normalize is not required for JAC
-        # >> dv = - (v1 - v0) / v0
-        dv = (v1 - v0)
+        # normalize usually is not required for JAC
+        if normalize:
+            dv = - (v1 - v0) / v0
+        else:
+            dv = (v1 - v0)
         # s = -Hv
         ds = - np.dot(self.H, dv)
         # return average epsilon on element
@@ -116,7 +118,7 @@ class JAC(object):
 
     def bp_solve(self, v1, v0, normalize=False):
         """ solve via a 'naive' back projection. """
-        # normalize is not required for JAC
+        # normalize usually is not required for JAC
         if normalize:
             dv = - (v1 - v0)/v0
         else:

@@ -59,7 +59,7 @@ class BP(object):
             self.WB = B
 
     # pylint: enable=too-many-arguments
-    def solve(self, v1, v0=None, normalize=False):
+    def solve(self, v1, v0=None, normalize=True):
         """
         back projection : mapping boundary data on element
         (note) normalize method affect the shape (resolution) of bp

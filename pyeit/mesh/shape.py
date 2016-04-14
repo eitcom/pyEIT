@@ -157,7 +157,7 @@ def pfix_ball(pc=None, r=1., z=0., numEl=16):
     ry = np.sqrt(r**2 - z**2)
     pfix = [[ry*np.sin(th), ry*np.cos(th), z] for th in theta]
     return np.array(pfix) + pc
-    
+
 
 def ddiff(d1, d2):
     """ Distance function for the difference of two sets.

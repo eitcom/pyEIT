@@ -1,5 +1,5 @@
 # coding: utf-8
-# pylint: disable=invalid-name, no-member, too-many-locals
+# pylint: disable=invalid-name, no-member, too-many-arguments
 """ wrapper function of distmesh for EIT """
 from __future__ import absolute_import
 
@@ -10,7 +10,7 @@ from .utils import check_order
 from .shape import unit_circle, pfix_circle, unit_ball, pfix_ball, huniform
 
 
-def create(numEl=16, h0=0.1, bbox=None, fd=None, fh=None, pfix=None):
+def create(numEl=16, fd=None, fh=None, pfix=None, bbox=None, h0=0.1):
     """ wrapper for pyEIT interface
 
     Parameters
@@ -50,7 +50,7 @@ def create(numEl=16, h0=0.1, bbox=None, fd=None, fh=None, pfix=None):
         fh = huniform
 
     # 1. build mesh
-    p, t = build(fd, fh, pfix=pfix, bbox=bbox, h0=h0, Fscale=1.2)
+    p, t = build(fd, fh, pfix=pfix, bbox=bbox, h0=h0)
     # 2. check whether t is counter-clock-wise, otherwise reshape it
     t = check_order(p, t)
     # 3. generate electrodes, the same as pfix (top numEl)
@@ -106,22 +106,17 @@ def set_alpha(mesh, anom=None, background=None):
 
     if anom is not None:
         for _, attr in enumerate(anom):
-            cx = attr['x']
-            cy = attr['y']
-            cz = None
-            if 'z' in attr:
-                cz = attr['z']
-            diameter = attr['d']
-            alpha_anomaly = attr['alpha']
+            d = attr['d']
             # find elements whose distance to (cx,cy) is smaller than d
-            if cz is None:
-                indice = np.sqrt((tri_centers[:, 0] - cx)**2 +
-                                 (tri_centers[:, 1] - cy)**2) < diameter
+            if 'z' in attr:
+                indice = np.sqrt((tri_centers[:, 0] - attr['x'])**2 +
+                                 (tri_centers[:, 1] - attr['y'])**2 +
+                                 (tri_centers[:, 2] - attr['z'])**2) < d
             else:
-                indice = np.sqrt((tri_centers[:, 0] - cx)**2 +
-                                 (tri_centers[:, 1] - cy)**2 +
-                                 (tri_centers[:, 2] - cz)**2) < diameter
-            alpha[indice] = alpha_anomaly
+                indice = np.sqrt((tri_centers[:, 0] - attr['x'])**2 +
+                                 (tri_centers[:, 1] - attr['y'])**2) < d
+            # update alpha within indices
+            alpha[indice] = attr['alpha']
 
     mesh_new = {'node': no2xy,
                 'element': el2no,

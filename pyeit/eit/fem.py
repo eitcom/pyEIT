@@ -225,7 +225,8 @@ def diff_pairs(exPat, step=1, parser=None):
             j = (i + A) % L
             k = (j + step) % L
             if not(j == A or j == B or k == A or k == B):
-                v.append([j, k])
+                # reverse the order, hardware is [k, j]
+                v.append([k, j])
     else:
         for i in range(L):
             j = (i + step) % L
