@@ -107,10 +107,8 @@ class JAC(object):
             complex-valued NDArray, changes of conductivities
         """
         # normalize is not required for JAC
-        if normalize:
-            dv = - (v1 - v0)/v0
-        else:
-            dv = (v1 - v0)
+        # >> dv = - (v1 - v0) / v0
+        dv = (v1 - v0)
         # s = -Hv
         ds = - np.dot(self.H, dv)
         # return average epsilon on element

@@ -209,7 +209,7 @@ def diff_pairs(exPat, step=1, parser=None):
     step : int
         measurement method (which two electrodes are used for measuring)
     parser : str
-        if parser is 'et3', data are trimmed, start index (i) is always 'A'.
+        if parser is 'fmmu', data are trimmed, start index (i) is always 'A'.
 
     Returns
     -------
@@ -220,7 +220,7 @@ def diff_pairs(exPat, step=1, parser=None):
     B = np.where(exPat == -1)[0][0]
     L = len(exPat)
     v = []
-    if parser is 'et3':
+    if parser is 'fmmu':
         for i in range(L):
             j = (i + A) % L
             k = (j + step) % L
