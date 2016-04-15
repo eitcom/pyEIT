@@ -59,7 +59,7 @@ class BP(object):
             self.WB = B
 
     # pylint: enable=too-many-arguments
-    def solve(self, v1, v0=None, normalize=False):
+    def solve(self, v1, v0=None, normalize=True):
         """
         back projection : mapping boundary data on element
         (note) normalize method affect the shape (resolution) of bp
@@ -82,7 +82,7 @@ class BP(object):
             v0 = self.v0
         # choose normalize method, we use sign
         if normalize:
-            vn = - (v1 - v0) / np.sign(self.v0)
+            vn = - (v1 - v0) / np.sign(v0)
         else:
             vn = (v1 - v0)
         # smearing

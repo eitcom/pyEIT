@@ -25,7 +25,7 @@ class GREIT(object):
     """ the GREIT algorithm """
 
     def __init__(self, mesh, elPos, method='dist',
-                 w=None, lamb=1e-6, N=32, s=20., Ratio=0.1,
+                 w=None, lamb=1e-6, N=32, s=20., ratio=0.1,
                  exMtx=None, step=1, perm=None, parser='std'):
         """ GREIT algorithm
 
@@ -45,7 +45,7 @@ class GREIT(object):
             grid size
         s : float, optional
             control the blur
-        Ratio : float, optional
+        ratio : float, optional
             desired ratio
         exMtx : NDArray, optional
             excitation matrix
@@ -85,7 +85,7 @@ class GREIT(object):
         self.lamb = lamb
         self.N = N
         self.s = s
-        self.Ratio = Ratio
+        self.ratio = ratio
         # action (currently only support set method)
         if method is 'dist':
             self.RM = self._build_dist()
@@ -147,7 +147,7 @@ class GREIT(object):
         """
         ne = self.el2no.shape[0]
         D = np.zeros((self.N**2, ne))
-        R = rmax*self.Ratio
+        R = rmax * self.ratio
         # loop over all elements
         for i in range(ne):
             ei = self.el2no[i, :]

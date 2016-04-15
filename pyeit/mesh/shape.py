@@ -131,6 +131,34 @@ def pfix_circle(pc=None, r=1., numEl=16):
     return np.array(pfix) + pc
 
 
+def pfix_ball(pc=None, r=1., z=0., numEl=16):
+    """
+    return fixed and uniformly distributed points on
+    a circle with radius r
+
+    Parameters
+    ----------
+    pc : array_like, optional
+        center of points
+    r : float, optional
+        radius
+    numEl : number of electrodes, optional
+
+    Returns
+    -------
+    array_like
+        coordinates of fixed points
+    """
+    if pc is None:
+        pc = [0, 0, 0]
+
+    theta = 2. * np.pi * np.arange(numEl)/float(numEl)
+    #
+    ry = np.sqrt(r**2 - z**2)
+    pfix = [[ry*np.sin(th), ry*np.cos(th), z] for th in theta]
+    return np.array(pfix) + pc
+
+
 def ddiff(d1, d2):
     """ Distance function for the difference of two sets.
 

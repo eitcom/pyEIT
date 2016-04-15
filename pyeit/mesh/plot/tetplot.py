@@ -1,14 +1,20 @@
 # coding: utf-8
-# pylint: disable=no-member
+# pylint: disable=no-member, invalid-name, too-many-arguments
 """ plot function based on vispy for tetrahedral plots """
 from __future__ import absolute_import
 
-from itertools import combinations
-import numpy as np
 import sys
+import numpy as np
+import matplotlib
+import matplotlib.cm as cm
+from matplotlib.colors import LinearSegmentedColormap
 
-from vispy import app, gloo, visuals, scene
+#
+from vispy import app, gloo, scene
+from vispy.visuals import Visual
 
+#
+from .simconv import sim2edge, sim2tri
 
 # build vertex shader for tetplot
 vert = """
@@ -37,27 +43,7 @@ void main()
 """
 
 
-def sim_conv(simplices, N=3):
-    """ simplices to any dimension """
-    v = [list(combinations(sim, N)) for sim in simplices]
-    # change to (num_of_points x N)
-    t = np.sort(np.array(v).reshape(-1, N), axis=1)
-    # delete duplicated entries
-    t_unique = np.unique(t.view([('', t.dtype)]*N)).view(np.uint32)
-    return t_unique
-
-
-def sim2tri(simplices):
-    """ convert simplices of high dimension to indices of triangles """
-    return sim_conv(simplices, 3)
-
-
-def sim2edge(simplices):
-    """ convert simplices of high dimension to indices of edges """
-    return sim_conv(simplices, 2)
-
-
-class TetPlotVisual(visuals.Visual):
+class TetPlotVisual(Visual):
     """ template """
 
     def __init__(self, points, simplices, vertex_color=None,
@@ -76,14 +62,20 @@ class TetPlotVisual(visuals.Visual):
         ----
         initialize triangles structure
         """
-        visuals.Visual.__init__(self, vcode=vert, fcode=frag)
+        Visual.__init__(self, vcode=vert, fcode=frag)
 
         # set data
         self.shared_program.vert['position'] = gloo.VertexBuffer(points)
         if vertex_color is None:
             vertex_color = np.ones((points.shape[0], 4), dtype=np.float32)
         else:
-            assert(vertex_color.shape[0] == points.shape[0])
+            assert vertex_color.shape[0] == points.shape[0]
+            # vertex color may be grayscale
+            if np.ndim(vertex_color) == 1:
+                f = vertex_color[:, np.newaxis]
+                v = np.repeat(f, 4, axis=1)
+                v[:, -1] = 1.0
+                vertex_color = v.astype(np.float32)
         self.shared_program['a_color'] = vertex_color
 
         # mask colors, alpha channel is not used when mask_color is given.
@@ -105,7 +97,8 @@ class TetPlotVisual(visuals.Visual):
                           blend=True,
                           depth_test=False,
                           cull_face=False,
-                          polygon_offset_fill=True)
+                          polygon_offset_fill=False,
+                          polygon_offset=(1, 1))
         self._draw_mode = mode
 
     def _prepare_transforms(self, view):
@@ -136,7 +129,10 @@ def tetplot(points, simplices, vertex_color=None,
     view = canvas.central_widget.add_view()
     view.camera = 'turntable'
     view.camera.fov = 50
-    view.camera.distance = 5
+    view.camera.distance = 3
+
+    if vertex_color is not None and vertex_color.ndim == 1:
+        vertex_color = blue_red_colormap(vertex_color)
 
     # drawing only triangles
     # 1. turn off mask_color, default = [1.0, 1.0, 1.0, alpha]
@@ -159,20 +155,51 @@ def tetplot(points, simplices, vertex_color=None,
         scene.visuals.XYZAxis(parent=view.scene)
 
     # run
-    if sys.flags.interactive != 1:
-        app.run()
+    app.run()
 
-# run
+
+def blue_red_colormap(f):
+    """ mapping vector to blue (-) red (+) color map """
+    # convert vertex_color
+    cdict1 = {'red':   ((0.0, 0.0, 0.0),
+                        (0.5, 0.0, 0.1),
+                        (1.0, 1.0, 1.0)),
+              'green': ((0.0, 0.0, 0.0),
+                        (1.0, 0.0, 0.0)),
+              'blue':  ((0.0, 1.0, 1.0),
+                        (0.5, 0.1, 0.0),
+                        (1.0, 0.0, 0.0))}
+    cdict1['alpha'] = ((0.00, 1.0, 1.0),
+                       (0.25, 0.6, 0.6),
+                       (0.50, 0.0, 0.0),
+                       (0.75, 0.6, 0.6),
+                       (1.00, 1.0, 1.0))
+
+    def blue_red():
+        """ interpolate blue red color """
+        return LinearSegmentedColormap('BlueRed', cdict1)
+
+    # map vector to RGBA
+    maxima = np.max(np.abs(f))
+    minima = -maxima
+    brcmap = blue_red()
+    norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
+    mapper = cm.ScalarMappable(norm=norm, cmap=brcmap)
+    v = mapper.to_rgba(f)
+    return v.astype(np.float32)
+
+# demo
 if __name__ == '__main__':
-    # data
-    pts = np.array([(0.0, 0.0, 0.0),
-                    (1.0, 0.0, 0.0),
-                    (0.0, 1.0, 0.0),
-                    (0.0, 0.0, 1.0),
-                    (1.0, 1.0, 1.0)], dtype=np.float32)
+    if sys.flags.interactive != 1:
+        # data
+        pts = np.array([(0.0, 0.0, 0.0),
+                        (1.0, 0.0, 0.0),
+                        (0.0, 1.0, 0.0),
+                        (0.0, 0.0, 1.0),
+                        (1.0, 1.0, 1.0)], dtype=np.float32)
 
-    sim = np.array([(0, 1, 2, 3),
-                    (1, 3, 2, 4)], dtype=np.uint32)
+        sim = np.array([(0, 1, 2, 3),
+                        (1, 3, 2, 4)], dtype=np.uint32)
 
-    tetplot(pts, sim, edge_color=[0.2, 0.2, 1.0, 0.2],
-            alpha=0.1, axis=False)
+        tetplot(pts, sim, edge_color=[0.2, 0.2, 1.0, 0.2],
+                alpha=0.1, axis=False)

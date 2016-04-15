@@ -4,6 +4,7 @@
 from __future__ import absolute_import
 
 import numpy as np
+import scipy.linalg as la
 
 
 def dist(p):
@@ -117,6 +118,73 @@ def edge_list(tri):
                 break
 
     return bars[np.array(ix)].view('i')
+
+
+def check_order(no2xy, el2no):
+    """
+    loop over all elements, calculate the Area of Elements (aoe)
+    if AOE > 0, then the order of element is correct
+    if AOE < 0, reorder the element
+
+    Parameters
+    ----------
+    no2xy : NDArray
+        Nx2 ndarray, (x,y) locations for points
+    el2no : NDArray
+        Mx3 ndarray, elements (triangles) connectivity
+
+    Returns
+    -------
+    NDArray
+        ae, area of each element
+
+    Notes
+    -----
+    tetrahedron should be parsed that the sign of volume is [1, -1, 1, -1]
+    """
+    elNum, nshape = np.shape(el2no)
+    # select ae function
+    if nshape == 3:
+        _fn = tri_area
+    elif nshape == 4:
+        _fn = tet_volume
+    # calculate ae and re-order el2no if necessary
+    for ei in range(elNum):
+        no = el2no[ei, :]
+        xy = no2xy[no, :]
+        v = _fn(xy)
+        # if CCW, area should be positive, otherwise,
+        if v < 0:
+            el2no[ei, [1, 2]] = el2no[ei, [2, 1]]
+
+    return el2no
+
+
+def tri_area(xy):
+    """
+    return area of a triangle, given its tri-coordinates xy
+
+    Parameters
+    ----------
+    xy : NDArray
+        (x,y) of nodes 1,2,3 given in counterclockwise manner
+
+    Returns
+    -------
+    float
+        area of this element
+    """
+    s = xy[[2, 0]] - xy[[1, 2]]
+    Atot = 0.50 * la.det(s)
+    # (should be possitive if tri-points are counter-clockwise)
+    return Atot
+
+
+def tet_volume(xyz):
+    """ calculate the volume of tetrahedron """
+    s = xyz[[2, 3, 0]] - xyz[[1, 2, 3]]
+    Vtot = (1./6.) * la.det(s)
+    return Vtot
 
 
 if __name__ == "__main__":

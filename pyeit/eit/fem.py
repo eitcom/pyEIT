@@ -45,7 +45,7 @@ class forward(object):
         perm : NDArray
             Mx1 ndarray, initial x0
         parser : str
-            if parser is 'et3', then diff_pairs are re-arranged
+            if parser is 'fmmu', then diff_pairs are re-arranged
             if parser is 'std', standard diff from the 1st electrode
 
         Returns
@@ -121,8 +121,8 @@ class forward(object):
         b = np.zeros((noNum, 1))
         Vpos = self.elPos[np.where(exLine == 1)]
         Vneg = self.elPos[np.where(exLine == -1)]
-        b[Vpos] = 1
-        b[Vneg] = -1
+        b[Vpos] = 1.
+        b[Vneg] = -1.
 
         # assemble
         A, Ke = assembpde(self.no2xy, self.el2no, perm=tri_perm)
@@ -209,7 +209,7 @@ def diff_pairs(exPat, step=1, parser=None):
     step : int
         measurement method (which two electrodes are used for measuring)
     parser : str
-        if parser is 'et3', data are trimmed, start index (i) is always 'A'.
+        if parser is 'fmmu', data are trimmed, start index (i) is always 'A'.
 
     Returns
     -------
@@ -220,12 +220,13 @@ def diff_pairs(exPat, step=1, parser=None):
     B = np.where(exPat == -1)[0][0]
     L = len(exPat)
     v = []
-    if parser is 'et3':
+    if parser is 'fmmu':
         for i in range(L):
             j = (i + A) % L
             k = (j + step) % L
             if not(j == A or j == B or k == A or k == B):
-                v.append([j, k])
+                # reverse the order, hardware is [k, j]
+                v.append([k, j])
     else:
         for i in range(L):
             j = (i + step) % L
@@ -241,27 +242,44 @@ def assembpde(no2xy, el2no, perm=None):
     Parameters
     ----------
     no2xy : NDArray
-        Nx2 ndarray, (x,y) locations for points
+        Nx2 (x,y) or Nx3 (x,y,z) coordinates of points
     el2no : NDArray
-        Mx3 ndarray, elements (triangles) connectivity
+        Mx3 (triangle) or Mx4 (tetrahedron) connectivity of elements
     perm : NDArray
-        the conductivities on elements
+        conductivities on elements
 
     Returns
     -------
     NDArray
         A, NxN ndarray of complex stiffness matrix
+
+    Notes
+    -----
+    you can use sparse matrix (IJV) format to automatically add the local
+    stiffness matrix to the global matrix.
     """
     noNum = np.size(no2xy, 0)
     elNum = np.size(el2no, 0)
 
     # initialize the permitivity on element
     if perm is None:
-        perm = np.ones(elNum)
+        perm = np.ones(elNum, dtype=np.float)
 
-    # Assemble the matrix A
+    # check dimension
+    nshape = el2no.shape[1]
+    if nshape == 3:
+        # triangles
+        CmpElMtx = CmpElMtx2D
+    elif nshape == 4:
+        # tetrahedrons
+        CmpElMtx = CmpElMtx3D
+    else:
+        # this code can only handle triangles or tetrahedrons
+        raise TypeError('nshape of el2no must be [3, 4]')
+
+    # Assemble the global matrix A and local stiffness matrix K
     A = np.zeros((noNum, noNum), dtype='complex')
-    Ke = np.zeros((elNum, 3, 3), dtype='complex')
+    Ke = np.zeros((elNum, nshape, nshape), dtype='complex')
 
     for ei in range(elNum):
         # get the nodes and their coordinates for element ei
@@ -271,18 +289,27 @@ def assembpde(no2xy, el2no, perm=None):
 
         # compute the KIJ (without permitivity)
         KIJ = CmpElMtx(xy)
-
-        # 'add' the 'contribution' to the 'global' matrix
-        # warning : in python A[no, no] will return a 3x1 array,
-        # we use np.ix_ to construct an open mesh from multiple sequences.
-        ij = np.ix_(no, no)
-        A[ij] = A[ij] + (KIJ * pe)
         Ke[ei] = KIJ
 
+        # add the contribution to the global matrix.
+        # warning, in python A[no, no] will return a 3x1 array,
+        # use np.ix_ to construct an open mesh from multiple sequences.
+        ij = np.ix_(no, no)
+        # Note, this can also be implemented using IJV index sparse matrix
+        # row[ei], col[ei] = np.meshgrid(no, no)
+        A[ij] = A[ij] + (KIJ * pe)
+
+    # if you are using sparse matrix, you may use
+    # >> import scipy.sparse as sparse
+    # >> K = np.array([Ke[i]*perm[i] for i in range(elNum)])
+    # >> A = sparse.coo_matrix((K.ravel(), (row.ravel(), col.ravel())),
+    #                          shape=(noNum, noNum),
+    #                          dtype='complex')
+    # sparse matrix can automatically add to the global matrix.
     return A, Ke
 
 
-def CmpElMtx(xy):
+def CmpElMtx2D(xy):
     """
     given a point-matrix of an element, solving for Kij analytically
     using barycentric coordinates (simplex coordinates)
@@ -297,82 +324,59 @@ def CmpElMtx(xy):
     NDArray
         Ae, local stiffness matrix
     """
-    s1 = xy[2, :] - xy[1, :]
-    s2 = xy[0, :] - xy[2, :]
-    s3 = xy[1, :] - xy[0, :]
+    # s1 = xy[2, :] - xy[1, :]
+    # s2 = xy[0, :] - xy[2, :]
+    # s3 = xy[1, :] - xy[0, :]
+    s = xy[[2, 0, 1]] - xy[[1, 2, 0]]
 
-    Atot = 0.5*(s2[0]*s3[1] - s3[0]*s2[1])
-    if Atot < 0:
-        # idealy nodes should be given in anti-clockwise,
-        # but Yang Bin's .mes file is in clockwise manner,
-        # so we make this script compatible to his file format
-        Atot *= -1.
-
-    grad_phi = np.zeros((3, 2))
-    grad_phi[0, :] = np.array([-s1[1], s1[0]]) / (2. * Atot)
-    grad_phi[1, :] = np.array([-s2[1], s2[0]]) / (2. * Atot)
-    grad_phi[2, :] = np.array([-s3[1], s3[0]]) / (2. * Atot)
-
-    # using for-loops
-    # Ae = np.zeros((3, 3))
-    # for i in range(3):
-    #     for j in range(3):
-    #         Ae[i, j] = np.dot(grad_phi[i, :], grad_phi[j, :]) * Atot
+    #
+    Atot = 0.5 * la.det(s[[0, 1]])
 
     # vectorize
-    Ae = np.dot(grad_phi, grad_phi.transpose()) * Atot
+    Ae = np.dot(s, s.transpose()) / (4. * Atot)
 
     return Ae
 
 
-def CmpAoE(no2xy, el2no):
+def CmpElMtx3D(xy):
     """
-    loop over all elements and find the Area of Elements (aoe)
-    return a vector triangle area of n_E
-
-    Parameters
-    ----------
-    no2xy : NDArray
-        Nx2 ndarray, (x,y) locations for points
-    el2no : NDArray
-        Mx3 ndarray, elements (triangles) connectivity
-
-    Returns
-    -------
-    NDArray
-        ae, area of each element
-    """
-    elNum = np.size(el2no, 0)
-    ae = np.zeros(elNum)
-    for ei in range(elNum):
-        no = el2no[ei, :]
-        xy = no2xy[no, :]
-        ae[ei] = tri_area(xy)
-
-    return ae
-
-
-def tri_area(xy):
-    """
-    return area of a triangle, given its tri-coordinates xy
+    given a point-matrix of an element, solving for Kij analytically
+    using barycentric coordinates (simplex coordinates)
 
     Parameters
     ----------
     xy : NDArray
-        (x,y) of nodes 1,2,3 given in counterclockwise manner
+        (x,y) of nodes 1,2,3,4 given in counterclockwise manner
 
     Returns
     -------
-    float
-        area of this element
+    NDArray
+        Ae, local stiffness matrix
     """
-    s2 = xy[0, :] - xy[2, :]
-    s3 = xy[1, :] - xy[0, :]
-    Atot = 0.5*(s2[0]*s3[1] - s3[0]*s2[1])
-    # (should be possitive if tri-points are counter-clockwise)
-    # abs is for compatibility with Yang-Bin's .mes file
-    # whose tri-points are clockwise
-    return abs(Atot)
+    s = xy[[2, 3, 0, 1]] - xy[[1, 2, 3, 0]]
+
+    # volume
+    Vtot = 1./6 * la.det(s[[0, 1, 2]])
+
+    # calculate area vector of each triangles
+    # reweighted using alternative (+,-) signs
+    ij_pairs = [[0, 1], [1, 2], [2, 3], [3, 0]]
+    signs = [1, -1, 1, -1]
+    A = [sign*cross_product(s[ij]) for ij, sign in zip(ij_pairs, signs)]
+    A = np.array(A)
+
+    # vectorize
+    Ae = np.dot(A, A.transpose()) / (36. * Vtot)
+
+    return Ae
+
+
+def cross_product(xyz):
+    """ calculate cross product of xyz[0] and xyz[1] """
+    v = [la.det(xyz[:, [1, 2]]),
+         -la.det(xyz[:, [0, 2]]),
+         la.det(xyz[:, [0, 1]])]
+    return np.array(v)
 
 
 def pdeintrp(no2xy, el2no, node_value):

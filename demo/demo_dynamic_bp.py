@@ -45,10 +45,10 @@ f1 = fwd.solve(exMtx, step=step, perm=ms1['alpha'])
 3. naive inverse solver using back-projection
 """
 eit = bp.BP(ms, elPos, exMtx, step=1, parser='std', weight='none')
-ds = eit.solve(f1.v, f0.v, normalize=True)
+ds = eit.solve(f1.v, f0.v)
 ds = 10000. * pdeprtni(no2xy, el2no, ds)
 
-# draw
+# plot
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
 im = ax1.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, ds, cmap=plt.cm.viridis)

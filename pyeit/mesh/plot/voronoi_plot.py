@@ -171,5 +171,7 @@ def voronoi_plot(pts, tri, val=None, fd=None):
                                              lw=0.4)
         ax.add_patch(patch)
     plt.axis('equal')
+    plt.show()
+
     return fig, ax
 

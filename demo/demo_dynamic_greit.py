@@ -52,6 +52,7 @@ eit = greit.GREIT(ms, elPos, exMtx=exMtx, step=step, parser='std')
 ds = eit.solve(f1.v, f0.v)
 x, y, ds = eit.mask_value(ds, mask_value=np.NAN)
 
+# plot
 fig = plt.figure()
 """
 imshow will automatically set NaN (bad values) to 'w',
