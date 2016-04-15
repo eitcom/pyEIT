@@ -116,7 +116,7 @@ class BP(object):
         # infer r
         dis_node = np.sqrt(np.sum(self.no2xy**2, axis=1))
         r = np.max(dis_node)
-        w = (1.01*r - dis_e) / (1.0*r)
+        w = (1.01*r - dis_e) / (1.01*r)
         # weighting by element-wise multiplication W with B
         W = np.dot(np.ones((num_voltages, 1)), w.reshape(1, -1))
         return W
