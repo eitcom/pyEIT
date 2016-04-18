@@ -12,11 +12,16 @@ import pyeit.mesh.plot as mplot
 
 
 def example1():
-    """unit circle mesh"""
+    """ unit circle mesh """
 
     def _fd(pts):
-        """shape function"""
+        """ shape function """
         return shape.circle(pts, pc=[0, 0], r=1.)
+
+    def _fh(pts):
+        """ distance function """
+        r2 = np.sum(pts**2, axis=1)
+        return 0.2*(2.0 - r2)
 
     # build fix points, may be used as the position for electrodes
     num = 16
@@ -26,7 +31,7 @@ def example1():
     epos = np.arange(num)
 
     # build triangle
-    p, t = distmesh.build(_fd, shape.huniform, pfix=pfix, h0=0.1)
+    p, t = distmesh.build(_fd, _fh, pfix=pfix, h0=0.05)
 
     # plot
     fig, ax = plt.subplots()
