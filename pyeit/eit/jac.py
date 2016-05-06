@@ -116,6 +116,14 @@ class JAC(object):
         # return average epsilon on element
         return ds
 
+    def solve_wf(self, v1, v0):
+        """ solving by weighted frequency """
+        a = np.dot(v1, v0) / np.dot(v0, v0)
+        dv = (v1 - a*v0)
+        ds = - np.dot(self.H, dv)
+        # return average epsilon on element
+        return ds
+
     def bp_solve(self, v1, v0, normalize=False):
         """ solve via a 'naive' back projection. """
         # normalize usually is not required for JAC

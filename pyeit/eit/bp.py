@@ -89,6 +89,15 @@ class BP(object):
         ds = np.dot(self.WB.transpose(), vn)
         return np.real(ds)
 
+    def solve_wf(self, v1, v0):
+        """
+        solving using weighted multifrequency
+        """
+        a = np.dot(v1, v0) / np.dot(v0, v0)
+        vn = - (v1 - a*v0) / np.sign(self.v0)
+        ds = np.dot(self.WB.transpose(), vn)
+        return ds
+
     def simple_weight(self, num_voltages):
         """
         building weighting matrix : simple, normalize by radius.
