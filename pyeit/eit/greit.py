@@ -175,10 +175,14 @@ class GREIT(object):
     def solve(self, v1, v0, normalize=False):
         """ solving and interpolating (psf convolve) on grids. """
         if normalize:
-            dv = - (v1 - v0)/v0
+            dv = -(v1 - v0)/v0
         else:
             dv = v1 - v0
-        return - np.dot(self.RM, dv)
+        return -np.dot(self.RM, dv)
+
+    def map_h(self, X):
+        """ return RM*X """
+        return -np.dot(self.RM, X)
 
 
 # pylint: disable=too-few-public-methods

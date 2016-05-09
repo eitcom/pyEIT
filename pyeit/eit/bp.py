@@ -82,7 +82,7 @@ class BP(object):
             v0 = self.v0
         # choose normalize method, we use sign
         if normalize:
-            vn = - (v1 - v0) / np.sign(self.v0)
+            vn = -(v1 - v0) / np.sign(self.v0)
         else:
             vn = (v1 - v0)
         # smearing
@@ -90,13 +90,21 @@ class BP(object):
         return np.real(ds)
 
     def solve_wf(self, v1, v0):
-        """
-        solving using weighted multifrequency
-        """
+        """ solving mfEIT using weighted multifrequency """
         a = np.dot(v1, v0) / np.dot(v0, v0)
-        vn = - (v1 - a*v0) / np.sign(self.v0)
+        vn = -(v1 - a*v0) / np.sign(self.v0)
         ds = np.dot(self.WB.transpose(), vn)
         return ds
+
+    def map_h(self, X):
+        """ return HX """
+        def bp_normalize(v):
+            """ normalize of v """
+            return -v / np.sign(self.v0)
+        # normalize columns (vectors are sliced from axis 0) of X
+        X = np.apply_along_axis(bp_normalize, 0, X)
+        # filtered back-projection of X
+        return np.dot(self.WB.transpose(), X)
 
     def simple_weight(self, num_voltages):
         """
