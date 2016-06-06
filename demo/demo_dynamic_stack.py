@@ -57,5 +57,5 @@ plt.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, np.real(ds),
 plt.colorbar()
 plt.axis('tight')
 plt.title(r'$\Delta$ Permitivity Reconstructed')
-fig.set_size_inches(6, 4.5)
+fig.set_size_inches(6, 4)
 # plt.savefig('quasi-demo-eit.pdf')

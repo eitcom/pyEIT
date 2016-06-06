@@ -122,7 +122,6 @@ class GREIT(object):
         edge_points = self.no2xy[self.elPos]
         path = Path(edge_points, closed=False)
         mask = path.contains_points(points)
-        mask = mask.reshape(xg.shape)
 
         return xg, yg, mask
 
@@ -160,8 +159,8 @@ class GREIT(object):
 
     def mask_value(self, ds, mask_value=0.0):
         """ mask values on nodes outside 2D mesh. """
+        ds[self.mask == 0] = mask_value
         ds = ds.reshape(self.xg.shape)
-        ds[~self.mask] = mask_value
         return self.xg, self.yg, ds
 
     @staticmethod
