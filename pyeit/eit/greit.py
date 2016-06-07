@@ -136,8 +136,16 @@ class GREIT(object):
         return r
 
     def _get_rmax(self):
-        """ calculate max radius using mask and xy """
-        r = self._distance2d(self.xg[self.mask], self.yg[self.mask])
+        """
+        calculate max radius using mask and xy
+
+        Notes
+        -----
+        mask is a 1d boolean array, xg and yg are 2D meshgrids,
+        so mask should be reshaped before indexing (numpy 1.10)
+        """
+        mask = self.mask.reshape(self.xg.shape)
+        r = self._distance2d(self.xg[mask], self.yg[mask])
         return np.max(r)
 
     def _psf_grid(self, rmax=1.):
