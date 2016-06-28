@@ -90,9 +90,11 @@ Enter the demo folder, pick one demo, and run !
 
 ## 4. Contribute to pyEIT !
 
-Give a **star**, **fork** and commit a pull request **(PR)** !
+Please give `pyEIT` a **star**!
 
-## 5. Please cite our work !
+How to contribute: **fork** and commit a pull request **(PR)** !
+
+## 5. Cite our work.
 
 ```bibtex
 @inproceedings{liu2016pyeit,
