@@ -88,13 +88,15 @@ Enter the demo folder, pick one demo, and run !
  - The 3D visualization can be adjusted using mouse wheels interactively. Seeking a perfect visualization mode, transparency or opaque, is in fact an individual taste. User can also use `mayavi` and `vtk` for visualization purpose.
  - Solving the inverse problem of 3D EIT, requires the electrodes to be placed at multiple altitude (z-axis) in order to have (better) z-resolution. This should be done carefully, as adding extra z-belt introduces more excitation patterns, which in turn adds more computational loads.
 
-## 4. Contribute to pyEIT !
+## 4. Contribute to pyEIT.
 
-Please give `pyEIT` a **star**!
+Please give `pyEIT` a **star** !!
 
-How to contribute: **fork** and commit a pull request **(PR)** !
+How to contribute: **fork** and commit a pull request **(PR)** !!
 
 ## 5. Cite our work.
+
+If you find `pyEIT` useful, please cite our work !
 
 ```bibtex
 @inproceedings{liu2016pyeit,
