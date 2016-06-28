@@ -91,3 +91,15 @@ Enter the demo folder, pick one demo, and run !
 ## 4. Contribute to pyEIT !
 
 Give a **star**, **fork** and commit a pull request **(PR)** !
+
+## 5. Please cite our work !
+
+```bibtex
+@inproceedings{liu2016pyeit,
+  title={pyEIT: a python based, open source framework for EIT},
+  author={Liu, Benyuan and Yang, Bin and Xu, Canhua and Xia, Junying and Dong, Xiuzhen and Fu, Feng},
+  booktitle={17th International Conference on Electrical Impedance Tomography},
+  pages={139},
+  year={2016}
+}
+```
