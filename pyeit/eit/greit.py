@@ -25,7 +25,7 @@ class GREIT(object):
     """ the GREIT algorithm """
 
     def __init__(self, mesh, elPos, method='dist',
-                 w=None, lamb=1e-6, N=32, s=20., ratio=0.1,
+                 w=None, p=0.20, lamb=1e-2, N=32, s=20., ratio=0.1,
                  exMtx=None, step=1, perm=None, parser='std'):
         """ GREIT algorithm
 
@@ -82,6 +82,7 @@ class GREIT(object):
         # 3. parameters for GREIT projection
         if w is None:
             self.w = np.ones_like(mesh['alpha'])
+        self.p = p
         self.lamb = lamb
         self.N = N
         self.s = s
@@ -102,8 +103,9 @@ class GREIT(object):
         rmax = self._get_rmax()
         D = self._psf_grid(rmax)
         # E[yy^T]
-        M = J.shape[0]
-        Jinv = la.inv(np.dot(J, J.transpose()) + self.lamb*np.eye(M))
+        JJW = np.dot(J, J.transpose())
+        R = np.diag(np.diag(JJW) ** self.p)
+        Jinv = la.inv(JJW + self.lamb*R)
         # RM = E[xx^T] / E[yy^T]
         RM = np.dot(np.dot(D, J.transpose()), Jinv)
         return RM

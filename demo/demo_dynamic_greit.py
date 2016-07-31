@@ -48,7 +48,8 @@ f1 = fwd.solve(exMtx, step=step, perm=ms1['alpha'])
 
 """ 3. Construct using GREIT
 """
-eit = greit.GREIT(ms, elPos, exMtx=exMtx, step=step, parser='std')
+eit = greit.GREIT(ms, elPos, exMtx=exMtx, step=step, parser='std',
+                  p=0.50, lamb=1e-4)
 ds = eit.solve(f1.v, f0.v)
 x, y, ds = eit.mask_value(ds, mask_value=np.NAN)
 
