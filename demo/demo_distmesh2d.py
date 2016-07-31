@@ -142,10 +142,33 @@ def example_voronoi():
     mplot.voronoi_plot(p, t)
 
 
+def example_dintersect():
+    """example on how to use dintersect and pfix_fd"""
+
+    def _fd(pts):
+        """ _fd must centered at [0, 0] """
+        return shape.dintersect(shape.ellipse(pts, pc=[0, -0.6], ab=[1, 1.5]),
+                                shape.circle(pts, pc=[0, 0], r=1))
+
+    # create equal-distributed electrodes
+    pfix = shape.pfix_fd(_fd)
+
+    # generate mesh
+    bbox = [[-2, -2], [2, 2]]
+    p, t = distmesh.build(_fd, shape.huniform, pfix=pfix, bbox=bbox, h0=0.1)
+
+    # plot
+    fig, ax = plt.subplots()
+    ax.triplot(p[:, 0], p[:, 1], t)
+    ax.plot(pfix[:, 0], pfix[:, 1], 'ro')
+    ax.axis('equal')
+
+
 if __name__ == "__main__":
-    example1()
+    # example1()
     # example2()
     # example3()
     # example4()
     # example5()
     # example_voronoi()
+    example_dintersect()
