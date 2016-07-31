@@ -31,6 +31,11 @@ def dist(p):
 
 
 def edge_project(pts, fd, h0=1.0):
+    """project points back on edge"""
+    return pts - edge_grad(pts, fd, h0)
+
+
+def edge_grad(pts, fd, h0=1.0):
     """
     project points back on the boundary (where fd=0) using numerical gradient
     3D, ND compatible

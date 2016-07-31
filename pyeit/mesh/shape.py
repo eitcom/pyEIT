@@ -5,7 +5,7 @@ from __future__ import absolute_import
 
 import numpy as np
 
-from .utils import dist
+from .utils import dist, edge_project
 
 
 def circle(pts, pc=None, r=1.0):
@@ -32,6 +32,17 @@ def circle(pts, pc=None, r=1.0):
     if pc is None:
         pc = [0, 0]
     return dist(pts - pc) - r
+
+
+def ellipse(pts, pc=None, ab=None):
+    """ Distance function for the ellipse
+    centered at pc = [xc, yc], with a, b = [a, b]
+    """
+    if pc is None:
+        pc = [0, 0]
+    if ab is None:
+        ab = [1., 2.]
+    return dist((pts - pc)/ab) - 1.0
 
 
 def unit_circle(pts):
@@ -103,6 +114,54 @@ def rectangle(pts, p1=None, p2=None):
     pd_right = [max(row) for row in pts - p2]
 
     return np.maximum(pd_left, pd_right)
+
+
+def pfix_fd(fd, numEl=16, pc=None):
+    """
+    return fixed and uniformly distributed points on
+    fd with equally distributed angles
+
+    Parameters
+    ----------
+    fd : distance function
+    pc : array_like, optional
+        center of points
+    numEl : number of electrodes, optional
+
+    Returns
+    -------
+    array_like
+        coordinates of fixed points
+    """
+    if pc is None:
+        pc = [0, 0]
+
+    # initialize points
+    r = 10.0
+    theta = 2. * np.pi * np.arange(numEl)/float(numEl)
+    theta += theta[1] / 2.0
+    pfix = [[r*np.sin(th), r*np.cos(th)] for th in theta]
+    pts = np.array(pfix) + pc
+
+    # project back on edges
+    pts_new = np.inf * np.ones_like(pts)
+    c = False
+    deps = 0.1
+    max_iters = 10
+    niter = 0
+    while not c:
+        # project on fd
+        pts_new = edge_project(pts, fd)
+        # project on rays
+        r = dist(pts_new)
+        pts_new = [[ri*np.sin(ti), ri*np.cos(ti)] for ri, ti in zip(r, theta)]
+        pts_new = np.array(pts_new)
+        # check convergence
+        c = np.sum(dist(pts_new - pts)) < deps or niter > max_iters
+        pts = pts_new
+        #
+        niter += 1
+    return pts_new
 
 
 def pfix_circle(pc=None, r=1., numEl=16):

@@ -244,7 +244,7 @@ class DISTMESH(object):
         d = self.fd(self.p)
         ix = d > 0
         if sum(ix) > 0:
-            self.p[ix] -= edge_project(self.p[ix], self.fd)
+            self.p[ix] = edge_project(self.p[ix], self.fd)
 
         # check whether convergence : no big movements
         ix_interior = d < -self.geps

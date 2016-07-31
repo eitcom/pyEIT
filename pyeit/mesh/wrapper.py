@@ -7,7 +7,8 @@ import numpy as np
 
 from .distmesh import build
 from .utils import check_order
-from .shape import unit_circle, pfix_circle, unit_ball, pfix_ball, huniform
+from .shape import unit_circle, unit_ball, huniform
+from .shape import pfix_fd, pfix_ball
 
 
 def create(numEl=16, fd=None, fh=None, pfix=None, bbox=None, h0=0.1):
@@ -36,15 +37,15 @@ def create(numEl=16, fd=None, fh=None, pfix=None, bbox=None, h0=0.1):
         raise TypeError('please specify lower and upper bound of bbox')
 
     if ndim == 2:
-        if pfix is None:
-            pfix = pfix_circle(numEl=numEl)
         if fd is None:
             fd = unit_circle
-    elif ndim == 3:
         if pfix is None:
-            pfix = pfix_ball(numEl=numEl)
+            pfix = pfix_fd(fd, numEl=numEl)
+    elif ndim == 3:
         if fd is None:
             fd = unit_ball
+        if pfix is None:
+            pfix = pfix_ball(numEl=numEl)
 
     if fh is None:
         fh = huniform
