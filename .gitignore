@@ -9,6 +9,7 @@ test*.*
 
 __pycache__/
 .idea/
+.spyproject/
 build/
 dist/
 pyeit.egg-info/
