@@ -29,6 +29,8 @@ class forward(object):
         self.el2no = mesh['element']
         self.tri_perm = mesh['alpha']
         self.elPos = elPos
+        self.nn = self.no2xy.shape[0]
+        self.ne = self.el2no.shape[0]
 
     def solve(self, exMtx=None, step=1, perm=None, parser=None):
         """
@@ -96,7 +98,7 @@ class forward(object):
         r = namedtuple("forward", ['Jac', 'v', 'B'])
         return r(Jac=Jac, v=vb, B=B)
 
-    def solve_once(self, exLine, tri_perm):
+    def solve_once(self, exLine, tri_perm=None):
         """
         with one-{pos, neg} driven pairs, calculate and
         compute the potential distribution (complex variable)
