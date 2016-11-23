@@ -4,61 +4,20 @@
 from __future__ import absolute_import
 
 import numpy as np
-from .fem import forward
+from .fem import Forward
+from .base import EitBase
 from .utils import eit_scan_lines
 
 
-class BP(object):
+class BP(EitBase):
     """ implement a naive inversion of (Euclidean) back projection. """
 
-    # pylint: disable=too-many-arguments
-    def __init__(self, mesh, elPos,
-                 exMtx=None, step=1, perm=None, parser='std',
-                 weight='none'):
-        """
-        bp projection initialization, default file parser is 'std'
-
-        Parameters
-        ----------
-        mesh : dict
-            mesh structure
-        elPos : array_like
-            position (numbering) of electrodes
-        exMtx : array_like, optional
-            2D array, each row is one excitation pattern
-        step : int, optional
-            measurement method
-        perm : array_like, optional
-            initial permitivities in generating Jacobian
-        parser : str, optional
-            parsing file format
-        weight : str, optional
-            weighting method in BP
-        """
-        if exMtx is None:
-            exMtx = eit_scan_lines(len(elPos), 8)
-        if perm is None:
-            perm = np.ones_like(mesh['alpha'])
-
-        # build forward solver
-        fwd = forward(mesh, elPos)
-        self.no2xy = mesh['node']
-        self.el2no = mesh['element']
-        self.elPos = elPos
-
-        # solving Jacobina using uniform sigma distribution
-        self.parser = parser
-        f = fwd.solve(exMtx, step=step, perm=perm, parser=self.parser)
-        self.J, self.v0, B = f.Jac, f.v, f.B
-
+    def setup(self, weight='none'):
         # build the weighting matrix
         if weight is 'simple':
-            W = self.simple_weight(B.shape[0])
-            self.WB = W * B
-        else:
-            self.WB = B
+            weights = self.simple_weight(self.B.shape[0])
+            self.H = weights * self.B
 
-    # pylint: enable=too-many-arguments
     def solve(self, v1, v0=None, normalize=True):
         """
         back projection : mapping boundary data on element
@@ -77,34 +36,29 @@ class BP(object):
         NDArray
             real-valued NDArray, changes of conductivities
         """
-        # if the user do not specify any reference frame
+        # without specifying any reference frame
         if v0 is None:
             v0 = self.v0
-        # choose normalize method, we use sign
+        # choose normalize method, we use sign by default
         if normalize:
             vn = -(v1 - v0) / np.sign(self.v0)
         else:
             vn = (v1 - v0)
         # smearing
-        ds = np.dot(self.WB.transpose(), vn)
+        ds = np.dot(self.H.transpose(), vn)
         return np.real(ds)
 
-    def solve_wf(self, v1, v0):
-        """ solving mfEIT using weighted multifrequency """
-        a = np.dot(v1, v0) / np.dot(v0, v0)
-        vn = -(v1 - a*v0) / np.sign(self.v0)
-        ds = np.dot(self.WB.transpose(), vn)
-        return ds
+    def map(self, v):
+        """ return Hx """
+        x = -v / np.sign(self.v0)
+        return np.dot(self.H.transpose(), x)
 
-    def map_h(self, X):
-        """ return HX """
-        def bp_normalize(v):
-            """ normalize of v """
-            return -v / np.sign(self.v0)
-        # normalize columns (vectors are sliced from axis 0) of X
-        X = np.apply_along_axis(bp_normalize, 0, X)
-        # filtered back-projection of X
-        return np.dot(self.WB.transpose(), X)
+    def solve_gs(self, v1, v0):
+        """ solving using gram-schmidt """
+        a = np.dot(v1, v0) / np.dot(v0, v0)
+        vn = - (v1 - a*v0) / np.sign(self.v0)
+        ds = np.dot(self.H.transpose(), vn)
+        return ds
 
     def simple_weight(self, num_voltages):
         """

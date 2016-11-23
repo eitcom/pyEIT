@@ -120,7 +120,7 @@ class GREIT(object):
         # 1. create mask based on meshes
         x, y = xg.flatten(), yg.flatten()
         points = np.vstack((x, y)).T
-        # 2. extract edge point using elPos
+        # 2. extract edge point using el_pos
         edge_points = self.no2xy[self.elPos]
         path = Path(edge_points, closed=False)
         mask = path.contains_points(points)

@@ -6,38 +6,51 @@ from __future__ import absolute_import
 import numpy as np
 
 
-def eit_scan_lines(numEl, dist=1):
+def eit_scan_lines(ne=16, dist=1):
     """
-    generate scan matrix,
-
-    Note
-    ----
-    in the scan (or excitation matrix),
-        1 for postive currrent injection,
-        -1 for negative current sink
-    in 'adjacent' mode, excitation dist=1
-    in 'aposition' mode, excitation dist=numEl/2.
-    i.e.,
-
-    if excitation_mode=='neighbore':
-        exMtx = eit_scan_lines(numEl)
-    elif excitation_mode=='apposition':
-        exMtx = eit_scan_lines(numEl, numEl/2)
+    generate scan matrix
 
     Parameters
     ----------
-    numEl : int
+    ne : int
         number of electrodes
     dist  : int
-        distance between vpos and vneg (default=1)
+        distance between A and B (default=1)
 
     Returns
     -------
     exMtx : NDArray
         excitation matrix
+
+    Notes
+    -----
+    in the scan of EIT (or excitation matrix), we use 4-electrodes
+    mode, where A, B are used as positive and negative excitation
+    electrodes and M, N are used as voltage measurements
+
+         1 (A) for positive current injection,
+        -1 (B) for negative current sink
+
+    dist is the distance (number of electrodes) of A to B
+    in 'adjacent' mode, dist=1, in 'apposition' mode, dist=ne/2
+
+    Examples
+    --------
+    if excitation_mode=='neighbor':
+        exMtx = eit_scan_lines(ne)
+    elif excitation_mode=='apposition':
+        exMtx = eit_scan_lines(ne, ne/2)
     """
-    exMtx = np.zeros((numEl, numEl))
-    for i in range(numEl):
-        exMtx[i, i % numEl] = 1
-        exMtx[i, (i+dist) % numEl] = -1
-    return exMtx
+    # A: diagonal
+    ex_pos = np.eye(ne)
+    # B: rotate right by dist
+    ex_neg = -1 * np.roll(ex_pos, dist, axis=1)
+    ex = ex_pos + ex_neg
+
+    return ex
+
+
+if __name__ == "__main__":
+    """ demo """
+    m = eit_scan_lines()
+    print(m)

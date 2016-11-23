@@ -28,7 +28,7 @@ def create(numEl=16, fd=None, fh=None, pfix=None, bbox=None, h0=0.1):
     """
     if bbox is None:
         bbox = [[-1, -1], [1, 1]]
-    # infer ndim
+    # infer dim
     bbox = np.array(bbox)
     ndim = bbox.shape[1]
     if ndim not in [2, 3]:

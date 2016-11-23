@@ -60,7 +60,7 @@ class JAC(object):
 
         # generate Jacobian
         self.fwd = forward(mesh, elPos)
-        fs = self.fwd.solve(exMtx=self.exMtx, step=self.step,
+        fs = self.fwd.solve(ex_mat=self.exMtx, step=self.step,
                             perm=perm_init, parser=parser)
         self.Jac = fs.Jac
         self.v = fs.v
