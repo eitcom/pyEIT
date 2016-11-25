@@ -18,7 +18,7 @@ class EitBase(object):
     """
 
     def __init__(self, mesh, el_pos,
-                 ex_mat=None, step=1, perm=None, parser='std'):
+                 ex_mat=None, step=1, perm=1., parser='std'):
         """
         Parameters
         ----------
@@ -47,19 +47,36 @@ class EitBase(object):
 
         # build forward solver
         fwd = Forward(mesh, el_pos)
+        self.fwd = fwd
+
+        # solving mesh structure
+        self.mesh = mesh
         self.no2xy = mesh['node']
         self.el2no = mesh['element']
+        # shape of the mesh
+        self.no_num, self.dim = self.no2xy.shape
+        self.el_num, self.n_vertices = self.el2no.shape
         self.elPos = el_pos
+        self.parser = parser
+
+        # solving configurations
+        self.ex_mat = ex_mat
+        self.step = step
+        # user may specify a scalar for uniform permittivity
+        if np.size(perm) == 1:
+            self.perm = perm * np.ones(self.el_num)
+        else:
+            self.perm = perm
 
         # solving Jacobian using uniform sigma distribution
-        self.parser = parser
-        f = fwd.solve(ex_mat, step=step, perm=perm, parser=self.parser)
-        self.J, self.v0, self.B = f.Jac, f.v, f.B
+        res = fwd.solve(ex_mat, step=step, perm=self.perm, parser=self.parser)
+        self.J, self.v0, self.B = res.jac, res.v, res.b_matrix
 
         # mapping matrix
         self.H = self.B
 
-        # call other parameters
+        # initialize other parameters
+        self.params = {}
         self.setup()
 
     def setup(self):

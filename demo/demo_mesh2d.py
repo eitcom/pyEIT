@@ -4,50 +4,50 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from pyeit.mesh import wrapper
-from pyeit.eit.fem import pdeprtni
+from pyeit.eit.pde import pdeprtni
 
 """ 0. create mesh """
-ms, elPos = wrapper.create(16, h0=0.1)
+ms, el_pos = wrapper.create(16, h0=0.1)
 
 # extract nodes and triangles (truss)
 no2xy = ms['node']
 el2no = ms['element']
 
 # plot the mesh
-plt.figure()
-plt.triplot(no2xy[:, 0], no2xy[:, 1], el2no, linewidth=1)
-plt.plot(no2xy[elPos, 0], no2xy[elPos, 1], 'ro')
-plt.axis('equal')
-plt.axis([-1.2, 1.2, -1.2, 1.2])
-# plt.xlabel('x')
-# plt.ylabel('y')
+fig, ax = plt.subplots(figsize=(6, 4))
+ax.triplot(no2xy[:, 0], no2xy[:, 1], el2no, linewidth=1)
+ax.plot(no2xy[el_pos, 0], no2xy[el_pos, 1], 'ro')
+ax.axis('equal')
+ax.axis([-1.2, 1.2, -1.2, 1.2])
+ax.set_xlabel('x')
+ax.set_ylabel('y')
 title_src = 'number of triangles = ' + str(np.size(el2no, 0)) + ', ' + \
             'number of nodes = ' + str(np.size(no2xy, 0))
-plt.title(title_src)
+ax.set_title(title_src)
 plt.show()
 
 """ 1. a simple function for adding anomaly regions """
 anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.2, 'alpha': 10},
            {'x': -0.2, 'y': -0.2, 'd': 0.4, 'alpha': 20}]
-ms0 = wrapper.set_alpha(ms, anom=anomaly, background=1.)
+ms0 = wrapper.set_alpha(ms, anomaly=anomaly, background=1.)
 
 anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.2, 'alpha': 20},
            {'x': -0.2, 'y': -0.2, 'd': 0.4, 'alpha': 10}]
-ms1 = wrapper.set_alpha(ms, anom=anomaly, background=1.)
+ms1 = wrapper.set_alpha(ms, anomaly=anomaly, background=1.)
 
 # show alpha on nodes (reverse interp)
 ele_ds = (ms1['alpha'] - ms0['alpha'])
 node_ds = pdeprtni(no2xy, el2no, ele_ds)
 
 # plot
-plt.figure()
+fig, ax = plt.subplots(figsize=(6, 4))
 # tripcolor shows element (shading='flat') or nodes (shading='gouraud')
-plt.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, np.real(node_ds),
-              shading='gouraud', alpha=0.8, cmap=plt.cm.viridis)
+ax.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, np.real(node_ds),
+             shading='gouraud', alpha=0.8, cmap=plt.cm.viridis)
 # tricontour only interpolates values on nodes
-plt.tricontour(no2xy[:, 0], no2xy[:, 1], el2no, np.real(node_ds),
-               shading='flat', alpha=1.0, linewidths=1,
-               cmap=plt.cm.viridis)
-plt.axis('equal')
-plt.axis([-1.2, 1.2, -1.2, 1.2])
+ax.tricontour(no2xy[:, 0], no2xy[:, 1], el2no, np.real(node_ds),
+              shading='flat', alpha=1.0, linewidths=1,
+              cmap=plt.cm.viridis)
+ax.axis('equal')
+ax.axis([-1.2, 1.2, -1.2, 1.2])
 plt.show()

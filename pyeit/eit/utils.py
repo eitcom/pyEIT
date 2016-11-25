@@ -19,7 +19,7 @@ def eit_scan_lines(ne=16, dist=1):
 
     Returns
     -------
-    exMtx : NDArray
+    ex_mat : NDArray
         excitation matrix
 
     Notes
@@ -37,9 +37,9 @@ def eit_scan_lines(ne=16, dist=1):
     Examples
     --------
     if excitation_mode=='neighbor':
-        exMtx = eit_scan_lines(ne)
+        ex_mat = eit_scan_lines(ne)
     elif excitation_mode=='apposition':
-        exMtx = eit_scan_lines(ne, ne/2)
+        ex_mat = eit_scan_lines(ne, ne/2)
     """
     # A: diagonal
     ex_pos = np.eye(ne)

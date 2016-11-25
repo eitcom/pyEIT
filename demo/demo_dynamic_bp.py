@@ -4,12 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import pyeit.mesh as mesh
-from pyeit.eit.fem import forward, pdeprtni
+from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.bp as bp
 
 """ 0. build mesh """
-ms, elPos = mesh.create(16, h0=0.1)
+ms, el_pos = mesh.create(16, h0=0.1)
 
 # extract node, element, alpha
 no2xy = ms['node']
@@ -17,7 +17,7 @@ el2no = ms['element']
 
 """ 1. problem setup """
 anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'alpha': 10.0}]
-ms1 = mesh.set_alpha(ms, anom=anomaly, background=1.0)
+ms1 = mesh.set_alpha(ms, anomaly=anomaly, background=1.0)
 
 # draw
 delta_alpha = np.real(ms1['alpha'] - ms['alpha'])
@@ -33,20 +33,20 @@ plt.show()
 
 """ 2. FEM forward simulations """
 # setup EIT scan conditions
-elDist, step = 1, 1
-exMtx = eit_scan_lines(16, elDist)
+el_dist, step = 1, 1
+ex_mat = eit_scan_lines(16, el_dist)
 
 # calculate simulated data
-fwd = forward(ms, elPos)
-f0 = fwd.solve(exMtx, step=step, perm=ms['alpha'])
-f1 = fwd.solve(exMtx, step=step, perm=ms1['alpha'])
+fwd = Forward(ms, el_pos)
+f0 = fwd.solve(ex_mat, step=step, perm=ms['alpha'])
+f1 = fwd.solve(ex_mat, step=step, perm=ms1['alpha'])
 
 """
 3. naive inverse solver using back-projection
 """
-eit = bp.BP(ms, elPos, exMtx, step=1, parser='std', weight='none')
-ds = eit.solve(f1.v, f0.v)
-ds = 10000. * pdeprtni(no2xy, el2no, ds)
+eit = bp.BP(ms, el_pos, ex_mat=ex_mat, step=1, parser='std')
+eit.setup(weight='none')
+ds = 192.0 * eit.solve(f1.v, f0.v)
 
 # plot
 fig = plt.figure()

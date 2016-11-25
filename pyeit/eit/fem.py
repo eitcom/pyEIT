@@ -39,22 +39,22 @@ class Forward(object):
         Parameters
         ----------
         ex_mat : NDArray
-            numLines x numEl array, excitation matrix
+            numLines x n_el array, excitation matrix
         step : int
             the configuration of the measurement electrodes (default: adjacent)
         perm : NDArray
             Mx1 array, initial x0
         parser : str
-            if parser is 'fmmu', diff_pairs are re-arranged
+            if parser is 'fmmu', diff_pairs are re-indexed
             if parser is 'std', diff always start from the 1st electrode
 
         Returns
         -------
-        Jac : NDArray
+        jac : NDArray
             number of measures x n_E complex array, the Jacobian
         v : NDArray
             number of measures x 1 array, simulated boundary measures
-        B : NDArray
+        b_matrix : NDArray
             back-projection mappings (smear matrix)
         """
         # initialize permittivity on elements
@@ -69,32 +69,35 @@ class Forward(object):
         num_lines = np.shape(ex_mat)[0]
 
         # calculate f and Jacobian loop over all excitation lines
-        Jac, vb, B = None, None, None
+        jac, v, b_matrix = [], [], []
         for i in range(num_lines):
             # FEM solver
-            ex_line = ex_mat[i, :].ravel()
-            f, J = self.solve_once(ex_line, tri_perm)
+            ex_line = ex_mat[i]
+            f, jac_i = self.solve_once(ex_line, tri_perm)
+
+            # diff on electrodes
             diff_array = diff_pairs(ex_line, step, parser)
-
-            # 1. concat vb. voltage at the electrodes is differenced
             v_diff = diff(f[self.el_pos], diff_array)
-            vb = v_diff if vb is None else np.hstack([vb, v_diff])
+            jac_diff = diff(jac_i, diff_array)
 
-            # 2. concat Jac. Jac or sensitivity matrix is formed vstack
-            Ji = diff(J, diff_array)
-            Jac = Ji if Jac is None else np.vstack([Jac, Ji])
+            # build bp projection matrix
+            # 1. we can either smear at the center of elements, using
+            #    >> fe = np.mean(f[self.el2no], axis=1)
+            # 2. or, simply smear at the nodes using f
+            f_el = f[self.el_pos]
+            b = smear(f, f_el, diff_array)
 
-            # 3. build bp map B
-            # 3.1 we can either smear at the center of elements, using
-            #     >> fe = np.mean(f[self.el2no], axis=1)
-            # 3.2 or, more simply, smear at the nodes using f.
-            fe = np.mean(f[self.el2no], axis=1)
-            Bi = smear(fe, f[self.el_pos], diff_array)
-            B = Bi if B is None else np.vstack([B, Bi])
+            # append
+            v.append(v_diff)
+            jac.append(jac_diff)
+            b_matrix.append(b)
 
         # update output
-        r = namedtuple("forward", ['Jac', 'v', 'B'])
-        return r(Jac=Jac, v=vb, B=B)
+        pde_result = namedtuple("pde_result", ['jac', 'v', 'b_matrix'])
+        p = pde_result(jac=np.vstack(jac),
+                       v=np.hstack(v),
+                       b_matrix=np.vstack(b_matrix))
+        return p
 
     def solve_once(self, ex_line, tri_perm=None):
         """
@@ -114,39 +117,42 @@ class Forward(object):
         J : NDArray
             Jacobian
         """
-        no_num = self.no_num
-        el_num = self.el_num
-
-        # boundary conditions (current to voltage)
-        b = np.zeros((no_num, 1))
-        Vpos = self.el_pos[np.where(ex_line == 1)]
-        Vneg = self.el_pos[np.where(ex_line == -1)]
-        b[Vpos] = 1.
-        b[Vneg] = -1.
+        # boundary conditions
+        b = self.natural_boundary(ex_line)
 
         # assemble
-        A, Ke = assemble(self.no2xy, self.el2no, perm=tri_perm)
-
-        # place reference node
         ref_el = self.el_pos[0]
-        A[ref_el, :] = 0.
-        A[:, ref_el] = 0.
-        A[ref_el, ref_el] = 1.
+        k_global, k_element = assemble(self.no2xy,
+                                       self.el2no,
+                                       perm=tri_perm,
+                                       ref=ref_el)
 
-        # electrodes impedance
-        R = la.inv(A)
+        # electrode impedance
+        r_matrix = la.inv(k_global)
         # nodes potential
-        f = np.dot(R, b).ravel()
+        f = np.dot(r_matrix, b).ravel()
 
-        # build pertubation on each element, Je = R*J*Ve
-        Ne = len(self.el_pos)
-        J = np.zeros((Ne, el_num), dtype='complex')
-        R_el = R[self.el_pos]
-        for i in range(el_num):
+        # build perturbation on each element, Je = R*J*Ve
+        ne = len(self.el_pos)
+        jac = np.zeros((ne, self.el_num), dtype='complex')
+        r_el = r_matrix[self.el_pos]
+
+        # build jacobian matrix column-by-column (element wise)
+        for i in range(self.el_num):
             ei = self.el2no[i, :]
-            J[:, i] = np.dot(np.dot(R_el[:, ei], Ke[i]), f[ei])
+            jac[:, i] = np.dot(np.dot(r_el[:, ei], k_element[i]), f[ei])
 
-        return f, J
+        return f, jac
+
+    def natural_boundary(self, ex_line):
+        """ generate Neumann boundary conditions """
+        b = np.zeros((self.no_num, 1))
+        a_pos = self.el_pos[np.where(ex_line == 1)]
+        b_pos = self.el_pos[np.where(ex_line == -1)]
+        b[a_pos] = 1.
+        b[b_pos] = -1.
+
+        return b
 
 
 def smear(f, fb, pairs):
@@ -167,17 +173,16 @@ def smear(f, fb, pairs):
     NDArray
         back-projection matrix
     """
-    Bi = []
-    L = len(f)
+    b_matrix = []
     for i, j in pairs:
-        fmin, fmax = min(fb[i], fb[j]), max(fb[i], fb[j])
-        Bi.append((fmin < f) & (f <= fmax))
-    return np.array(Bi) / float(L)
+        f_min, f_max = min(fb[i], fb[j]), max(fb[i], fb[j])
+        b_matrix.append((f_min < f) & (f <= f_max))
+    return np.array(b_matrix)
 
 
 def diff(v, pairs):
     """
-    vdiff[k] = v[i, :] - v[j, :]
+    v_diff[k] = v[i, :] - v[j, :]
 
     Parameters
     ----------
@@ -191,23 +196,29 @@ def diff(v, pairs):
     NDArray
         difference measurements
     """
-    vdiff = []
-    for i, j in pairs:
-        vdiff.append(v[i] - v[j])
+    i = pairs[:, 0]
+    j = pairs[:, 1]
+    # row-wise operation
+    v_diff = v[i] - v[j]
 
-    return vdiff
+    return v_diff
 
 
-def diff_pairs(exPat, step=1, parser=None):
+def diff_pairs(ex_line, m_step=1, parser=None):
     """
     extract diff-voltage measurements on boundary electrodes
-    support free-mode of diff pairs
+
+    Notes
+    -----
+    A : current driving electrode
+    B : current sink
+    M, N : boundary electrodes, where v_diff = v_n - v_m
 
     Parameters
     ----------
-    exPat : NDArray
+    ex_line : NDArray
         nEx1 array, 1 for positive, -1 for negative, 0 otherwise
-    step : int
+    m_step : int
         measurement method (which two electrodes are used for measuring)
     parser : str
         if parser is 'fmmu', data are trimmed, start index (i) is always 'A'.
@@ -215,28 +226,25 @@ def diff_pairs(exPat, step=1, parser=None):
     Returns
     -------
     v : NDArray
-        (N-1)*2 arrays of diff pairs, i - k, for neighbor mode
+        (N-1)*2 arrays of diff pairs
     """
-    A = np.where(exPat == 1)[0][0]
-    B = np.where(exPat == -1)[0][0]
-    L = len(exPat)
+    drv_a = np.where(ex_line == 1)[0][0]
+    drv_b = np.where(ex_line == -1)[0][0]
+    l = len(ex_line)
+    i0 = drv_a if parser is 'fmmu' else 0
+
+    # build
     v = []
-    if parser is 'fmmu':
-        for i in range(L):
-            j = (i + A) % L
-            k = (j + step) % L
-            if not(j == A or j == B or k == A or k == B):
-                # reverse the order, hardware is [k, j]
-                v.append([k, j])
-    else:
-        for i in range(L):
-            j = (i + step) % L
-            if not(i == A or i == B or j == A or j == B):
-                v.append([i, j])
-    return v
+    for a in range(i0, i0 + l):
+        m = a % l
+        n = (m + m_step) % l
+        if not(m == drv_a or m == drv_b or n == drv_a or n == drv_b):
+            v.append([n, m])
+
+    return np.array(v)
 
 
-def assemble(no2xy, el2no, perm=None):
+def assemble(no2xy, el2no, perm=None, ref=0):
     """
     assemble the stiffness matrix (do not build into class)
 
@@ -248,6 +256,8 @@ def assemble(no2xy, el2no, perm=None):
         Mx3 (triangle) or Mx4 (tetrahedron) connectivity of elements
     perm : NDArray
         conductivities on elements
+    ref : int
+        reference electrode
 
     Returns
     -------
@@ -293,21 +303,28 @@ def assemble(no2xy, el2no, perm=None):
         k_element[ei] = ke
 
         # add the contribution to the global matrix.
-        # warning, in python A[no, no] will return a 3x1 array,
+        # NOTE: in python A[no, no] returns a 3x1 array,
         # use np.ix_ to construct an open mesh from multiple sequences.
         ij = np.ix_(no, no)
 
-        # TODO: this can also be implemented using IJV indexed sparse matrix
+        # TODO: use IJV indexed sparse matrix
         # row[ei], col[ei] = np.meshgrid(no, no)
         k_global[ij] += (ke * pe)
 
-    # TODO: if you use sparse matrix (preferred), you may try
+    # TODO: use sparse matrix (preferred)
+    # sparse matrix automatically adds duplicated entries to global matrix.
     # >> import scipy.sparse as sparse
     # >> K = np.array([k_element[i]*perm[i] for i in range(elNum)])
     # >> A = sparse.coo_matrix((K.ravel(), (row.ravel(), col.ravel())),
     #                          shape=(noNum, noNum),
     #                          dtype='complex')
-    # sparse matrix automatically adds to the global matrix.
+
+    # place reference electrode
+    if 0 <= ref < no_num:
+        k_global[ref, :] = 0.
+        k_global[:, ref] = 0.
+        k_global[ref, ref] = 1.
+
     return k_global, k_element
 
 
@@ -370,7 +387,7 @@ def _k_tetrahedron(xy):
     # re-weighted using alternative (+,-) signs
     ij_pairs = [[0, 1], [1, 2], [2, 3], [3, 0]]
     signs = [1, -1, 1, -1]
-    a = [s*np.cross(s[i], s[j]) for (i, j), s in zip(ij_pairs, signs)]
+    a = [p*np.cross(s[i], s[j]) for (i, j), p in zip(ij_pairs, signs)]
     a = np.array(a)
 
     # vectorized

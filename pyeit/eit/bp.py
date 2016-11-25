@@ -4,15 +4,18 @@
 from __future__ import absolute_import
 
 import numpy as np
-from .fem import Forward
 from .base import EitBase
-from .utils import eit_scan_lines
 
 
 class BP(EitBase):
     """ implement a naive inversion of (Euclidean) back projection. """
 
     def setup(self, weight='none'):
+        """ setup BP """
+        self.params = {
+            "weight": weight
+        }
+
         # build the weighting matrix
         if weight is 'simple':
             weights = self.simple_weight(self.B.shape[0])
@@ -67,9 +70,9 @@ class BP(EitBase):
         Note
         ----
         as in fem.py, we could either smear at
-        (1) elements using the center co-ordinates (x,y) of each element
+        (1) elements, using the center co-ordinates (x,y) of each element
             >> center_e = np.mean(self.no2xy[self.el2no], axis=1)
-        (2) smearing at the nodes.
+        (2) nodes.
 
         Parameters
         ----------
@@ -81,13 +84,9 @@ class BP(EitBase):
         NDArray
             weighting matrix
         """
-        # center co-ordinates of elements
-        center_e = np.mean(self.no2xy[self.el2no], axis=1)
-        dis_e = np.sqrt(np.sum(center_e**2, axis=1))
-        # infer r
-        dis_node = np.sqrt(np.sum(self.no2xy**2, axis=1))
-        r = np.max(dis_node)
-        w = (1.01*r - dis_e) / (1.01*r)
+        d = np.sqrt(np.sum(self.no2xy**2, axis=1))
+        r = np.max(d)
+        w = (1.01*r - d) / (1.01*r)
         # weighting by element-wise multiplication W with B
-        W = np.dot(np.ones((num_voltages, 1)), w.reshape(1, -1))
-        return W
+        weights = np.dot(np.ones((num_voltages, 1)), w.reshape(1, -1))
+        return weights
