@@ -239,6 +239,7 @@ def diff_pairs(ex_line, m_step=1, parser=None):
         m = a % l
         n = (m + m_step) % l
         if not(m == drv_a or m == drv_b or n == drv_a or n == drv_b):
+            # the order of m, n matters
             v.append([n, m])
 
     return np.array(v)
