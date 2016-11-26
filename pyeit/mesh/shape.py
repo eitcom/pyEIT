@@ -116,7 +116,7 @@ def rectangle(pts, p1=None, p2=None):
     return np.maximum(pd_left, pd_right)
 
 
-def pfix_fd(fd, numEl=16, pc=None):
+def fix_points_fd(fd, n_el=16, pc=None):
     """
     return fixed and uniformly distributed points on
     fd with equally distributed angles
@@ -126,7 +126,7 @@ def pfix_fd(fd, numEl=16, pc=None):
     fd : distance function
     pc : array_like, optional
         center of points
-    numEl : number of electrodes, optional
+    n_el : number of electrodes, optional
 
     Returns
     -------
@@ -138,16 +138,16 @@ def pfix_fd(fd, numEl=16, pc=None):
 
     # initialize points
     r = 10.0
-    theta = 2. * np.pi * np.arange(numEl)/float(numEl)
+    theta = 2. * np.pi * np.arange(n_el) / float(n_el)
     theta += theta[1] / 2.0
-    pfix = [[r*np.sin(th), r*np.cos(th)] for th in theta]
-    pts = np.array(pfix) + pc
+    p_fix = [[r*np.sin(th), r*np.cos(th)] for th in theta]
+    pts = np.array(p_fix) + pc
 
     # project back on edges
     pts_new = np.inf * np.ones_like(pts)
     c = False
-    deps = 0.1
-    max_iters = 10
+    d_eps = 0.1
+    max_iter = 10
     niter = 0
     while not c:
         # project on fd
@@ -157,14 +157,13 @@ def pfix_fd(fd, numEl=16, pc=None):
         pts_new = [[ri*np.sin(ti), ri*np.cos(ti)] for ri, ti in zip(r, theta)]
         pts_new = np.array(pts_new)
         # check convergence
-        c = np.sum(dist(pts_new - pts)) < deps or niter > max_iters
+        c = np.sum(dist(pts_new - pts)) < d_eps or niter > max_iter
         pts = pts_new
-        #
         niter += 1
     return pts_new
 
 
-def pfix_circle(pc=None, r=1., numEl=16):
+def fix_points_circle(pc=None, r=1., n_el=16):
     """
     return fixed and uniformly distributed points on
     a circle with radius r
@@ -175,7 +174,7 @@ def pfix_circle(pc=None, r=1., numEl=16):
         center of points
     r : float, optional
         radius
-    numEl : number of electrodes, optional
+    n_el : number of electrodes, optional
 
     Returns
     -------
@@ -185,23 +184,25 @@ def pfix_circle(pc=None, r=1., numEl=16):
     if pc is None:
         pc = [0, 0]
 
-    theta = 2. * np.pi * np.arange(numEl)/float(numEl)
-    pfix = [[r*np.sin(th), r*np.cos(th)] for th in theta]
-    return np.array(pfix) + pc
+    theta = 2. * np.pi * np.arange(n_el) / float(n_el)
+    p_fix = [[r*np.sin(th), r*np.cos(th)] for th in theta]
+    return np.array(p_fix) + pc
 
 
-def pfix_ball(pc=None, r=1., z=0., numEl=16):
+def fix_points_ball(pc=None, r=1., z=0., n_el=16):
     """
     return fixed and uniformly distributed points on
     a circle with radius r
 
     Parameters
     ----------
-    pc : array_like, optional
+    pc : array_like,
         center of points
-    r : float, optional
+    r : float,
         radius
-    numEl : number of electrodes, optional
+    z : float,
+        z level of points
+    n_el : number of electrodes, optional
 
     Returns
     -------
@@ -211,14 +212,13 @@ def pfix_ball(pc=None, r=1., z=0., numEl=16):
     if pc is None:
         pc = [0, 0, 0]
 
-    theta = 2. * np.pi * np.arange(numEl)/float(numEl)
-    #
     ry = np.sqrt(r**2 - z**2)
-    pfix = [[ry*np.sin(th), ry*np.cos(th), z] for th in theta]
-    return np.array(pfix) + pc
+    theta = 2. * np.pi * np.arange(n_el) / float(n_el)
+    p_fix = [[ry*np.sin(th), ry*np.cos(th), z] for th in theta]
+    return np.array(p_fix) + pc
 
 
-def ddiff(d1, d2):
+def dist_diff(d1, d2):
     """ Distance function for the difference of two sets.
 
     Parameters
@@ -240,7 +240,7 @@ def ddiff(d1, d2):
     return np.maximum(d1, -d2)
 
 
-def dintersect(d1, d2):
+def dist_intersect(d1, d2):
     """ Distance function for the intersection of two sets.
 
     Parameters
@@ -261,7 +261,7 @@ def dintersect(d1, d2):
     return np.maximum(d1, d2)
 
 
-def dunion(d1, d2):
+def dist_union(d1, d2):
     """ Distance function for the union of two sets.
 
     Parameters
@@ -282,7 +282,7 @@ def dunion(d1, d2):
     return np.minimum(d1, d2)
 
 
-def huniform(p):
+def area_uniform(p):
     """ uniform mesh distribution
 
     Parameters

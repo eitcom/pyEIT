@@ -58,9 +58,9 @@ def edge_grad(pts, fd, h0=1.0):
     ----
     you should specify h0 according to your actual mesh size
     """
-    deps = np.sqrt(np.finfo(float).eps)*h0
+    d_eps = np.sqrt(np.finfo(float).eps)*h0
     # get dimensions
-    Ndim = np.shape(pts)[1]
+    n_dim = np.shape(pts)[1]
 
     def grad(p):
         """ calculate numerical gradient on a single point
@@ -80,18 +80,18 @@ def edge_grad(pts, fd, h0=1.0):
         numerical gradient, f'_x = (f(p+delta_x) - f(x)) / delta
         """
         d = fd(p)
-        ugrad = (fd(p + deps*np.eye(Ndim)) - d) / deps
-        # normalize, avoid devide by zero
-        ugrad2 = np.sqrt(np.sum(ugrad**2)) + deps
-        return d * ugrad/ugrad2
+        g = (fd(p + d_eps*np.eye(n_dim)) - d) / d_eps
+        # normalize, avoid divide by zero
+        g2 = np.sqrt(np.sum(g**2)) + d_eps
+        return d * g/g2
 
     # calculate gradients
     if len(np.shape(pts)) == 1:
-        pgrad = grad(pts)
+        g_num = grad(pts)
     else:
         # apply on slices taken along the axis (=1)
-        pgrad = np.apply_along_axis(grad, 1, pts)
-    return pgrad
+        g_num = np.apply_along_axis(grad, 1, pts)
+    return g_num
 
 
 def edge_list(tri):
@@ -147,14 +147,14 @@ def check_order(no2xy, el2no):
     -----
     tetrahedron should be parsed that the sign of volume is [1, -1, 1, -1]
     """
-    elNum, nshape = np.shape(el2no)
+    el_num, n_vertices = np.shape(el2no)
     # select ae function
-    if nshape == 3:
+    if n_vertices == 3:
         _fn = tri_area
-    elif nshape == 4:
+    elif n_vertices == 4:
         _fn = tet_volume
     # calculate ae and re-order el2no if necessary
-    for ei in range(elNum):
+    for ei in range(el_num):
         no = el2no[ei, :]
         xy = no2xy[no, :]
         v = _fn(xy)
@@ -180,16 +180,16 @@ def tri_area(xy):
         area of this element
     """
     s = xy[[2, 0]] - xy[[1, 2]]
-    Atot = 0.50 * la.det(s)
-    # (should be possitive if tri-points are counter-clockwise)
-    return Atot
+    a_tot = 0.50 * la.det(s)
+    # (should be positive if tri-points are counter-clockwise)
+    return a_tot
 
 
 def tet_volume(xyz):
     """ calculate the volume of tetrahedron """
     s = xyz[[2, 3, 0]] - xyz[[1, 2, 3]]
-    Vtot = (1./6.) * la.det(s)
-    return Vtot
+    v_tot = (1./6.) * la.det(s)
+    return v_tot
 
 
 if __name__ == "__main__":

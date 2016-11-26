@@ -11,32 +11,33 @@ import numpy as np
 from ..utils import edge_project, edge_list
 
 
-def circumcircle(P1, P2, P3):
+def circumcircle(p1, p2, p3):
     """
-    calculate circumcircle of a triangle, returns (x, y, r) of circum-center
+    The circumcircle is a triangle's circumscribed circle,
+    returns (x, y, r) of circumcenter
 
     Parameters
     ----------
-    P1, P2, P3 : array_like
+    p1, p2, p3 : array_like
         points
 
     Note
     ----
     http://www.labri.fr/perso/nrougier/coding/gallery/
     """
-    dp1 = P1 - P2
-    dp2 = P3 - P1
+    dp1 = p1 - p2
+    dp2 = p3 - p1
 
-    mid1 = (P1 + P2)/2.
-    mid2 = (P3 + P1)/2.
+    mid1 = (p1 + p2) / 2.
+    mid2 = (p3 + p1) / 2.
 
-    A = np.array([[-dp1[1], dp2[1]],
+    a = np.array([[-dp1[1], dp2[1]],
                   [dp1[0], -dp2[0]]])
     b = -mid1 + mid2
-    s = np.linalg.solve(A, b)
-    # extract circum pc and radius
+    s = np.linalg.solve(a, b)
+    # extract circumscribed center and radius
     cpc = mid1 + s[0]*np.array([-dp1[1], dp1[0]])
-    cr = np.linalg.norm(P1 - cpc)
+    cr = np.linalg.norm(p1 - cpc)
 
     return cpc[0], cpc[1], cr
 
@@ -61,7 +62,7 @@ def voronoi(pts, tri, fd=None):
 
     Note
     ----
-    byliu adds 'edge-list using signed distance function'
+    adds 'edge-list using signed distance function'
     http://www.labri.fr/perso/nrougier/coding/gallery/
     """
     n = tri.shape[0]
@@ -71,15 +72,16 @@ def voronoi(pts, tri, fd=None):
     for i in range(pts.shape[0]):
         cells.append(list())
 
-    def extract_xy(i):
+    def extract_xy(e):
         """ append center (x,y) of triangle-circumcircle to the cell list """
-        x, y, _ = circumcircle(pts[tri[i, 0]], pts[tri[i, 1]], pts[tri[i, 2]])
-        return [x, y]
+        p1, p2, p3 = pts[tri[e]]
+        xc, yc, _ = circumcircle(p1, p2, p3)
+        return [xc, yc]
 
     # list(map(extract_xy, range(n)))
     pc = np.array([extract_xy(i) for i in range(n)])
 
-    # peoject point on the boundary if it is outside, where fd(p) > 0
+    # project point on the boundary if it is outside, where fd(p) > 0
     # this happens when low-quality mesh is generated.
     if fd is not None:
         d = fd(pc)
@@ -95,23 +97,23 @@ def voronoi(pts, tri, fd=None):
 
     # append middle (x, y) of edge-bars to the cells,
     # make a closed patch of the voronoi tessellation.
-    # note : it may be better if you peoject this point on fd
+    # note : it may be better if you project this point on fd
     edge_bars = edge_list(tri)
-    hbars = np.mean(pts[edge_bars], axis=1)
+    h_bars = np.mean(pts[edge_bars], axis=1)
     if fd is not None:
-        hbars -= edge_project(hbars, fd)
+        h_bars -= edge_project(h_bars, fd)
     for i, bars in enumerate(edge_bars):
-        cells[bars[0]].append(tuple(hbars[i]))
-        cells[bars[1]].append(tuple(hbars[i]))
+        cells[bars[0]].append(tuple(h_bars[i]))
+        cells[bars[1]].append(tuple(h_bars[i]))
 
-    X = pts[:, 0]
-    Y = pts[:, 1]
+    x = pts[:, 0]
+    y = pts[:, 1]
     # Reordering cell points in trigonometric way
     for i, cell in enumerate(cells):
         xy = np.array(cell)
-        angles = np.arctan2(xy[:, 1]-Y[i], xy[:, 0]-X[i])
-        I = np.argsort(angles)
-        cell = xy[I].tolist()
+        angles = np.arctan2(xy[:, 1]-y[i], xy[:, 0]-x[i])
+        s = np.argsort(angles)
+        cell = xy[s].tolist()
         cell.append(cell[0])
         cells[i] = cell
 
@@ -133,6 +135,7 @@ def voronoi_plot(pts, tri, val=None, fd=None):
         function handler
 
     Returns
+    -------
     fig : str
         figure handler
     ax : str
@@ -140,7 +143,7 @@ def voronoi_plot(pts, tri, val=None, fd=None):
 
     Note
     ----
-    byliu adds 'maps value to colormap', see
+    adds 'maps value to colormap', see
     http://www.labri.fr/perso/nrougier/coding/gallery/
     """
     cells = voronoi(pts, tri, fd)

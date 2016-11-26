@@ -7,88 +7,31 @@ from __future__ import absolute_import
 import numpy as np
 import scipy.linalg as la
 
-from .fem import forward
-from .utils import eit_scan_lines
+from .base import EitBase
 
 
-class JAC(object):
+class JAC(EitBase):
     """ implementing a JAC class """
 
-    def __init__(self, mesh, elPos,
-                 exMtx=None, step=1, perm=1., parser='et3',
-                 p=0.20, lamb=0.001, method='kotre'):
+    def setup(self, p=0.20, lamb=0.001, method='kotre'):
         """
         JAC, default file parser is 'std'
 
         Parameters
         ----------
-        mesh : dict
-            mesh structure
-        elPos : array_like
-            position (numbering) of electrodes
-        exMtx : array_like, optional
-            2D array, each row is one excitation pattern
-        step : int, optional
-            measurement method
-        perm : array_like, optional
-            initial permitivities in generating Jacobian
-        parser : str, optional
-            parsing file format
-        p,lamb : float
+        p, lamb : float
             JAC parameters
         method : str
             regularization methods
         """
-        # store configuration values
-        self.no2xy = mesh['node']
-        self.el2no = mesh['element']
-        self.elPos = elPos
-
-        # generate excitation patterns
-        if exMtx is None:
-            self.exMtx = eit_scan_lines(16, 8)
-        else:
-            self.exMtx = exMtx
-        self.step = step
-
-        # background (init, x0) perm
-        n_e = np.size(self.el2no, 0)
-        if np.size(perm) == n_e:
-            perm_init = perm
-        else:
-            perm_init = perm * np.ones(n_e)
-
-        # generate Jacobian
-        self.fwd = forward(mesh, elPos)
-        fs = self.fwd.solve(exMtx=self.exMtx, step=self.step,
-                            perm=perm_init, parser=parser)
-        self.Jac = fs.Jac
-        self.v = fs.v
-        self.normv = la.norm(self.v)
-        self.x0 = perm_init
-        self.parser = parser
-
         # pre-compute H0 for dynamical imaging
         # H = (J.T*J + R)^(-1) * J.T
-        self.H = h_matrix(self.Jac, p, lamb, method)
-        self.p = p
-        self.lamb = lamb
-        self.method = method
-
-    def proj(self, ds):
-        """ project ds using spatial difference filter (deprecated)
-
-        Parameters
-        ----------
-        ds : NDArray
-            delta sigma (conductivities)
-
-        Returns
-        -------
-        NDArray
-        """
-        L = sar(self.el2no)
-        return np.dot(L, ds)
+        self.H = h_matrix(self.J, p, lamb, method)
+        self.params = {
+            'p': p,
+            'lamb': lamb,
+            'method': method
+        }
 
     def solve(self, v1, v0, normalize=False):
         """ dynamic solve
@@ -116,17 +59,17 @@ class JAC(object):
         # return average epsilon on element
         return ds
 
-    def solve_wf(self, v1, v0):
+    def map(self, v):
+        """ return Hv """
+        return -np.dot(self.H, v)
+
+    def solve_gs(self, v1, v0):
         """ solving by weighted frequency """
         a = np.dot(v1, v0) / np.dot(v0, v0)
         dv = (v1 - a*v0)
         ds = -np.dot(self.H, dv)
         # return average epsilon on element
         return ds
-
-    def map_h(self, X):
-        """ return HX """
-        return -np.dot(self.H, X)
 
     def bp_solve(self, v1, v0, normalize=False):
         """ solve via a 'naive' back projection. """
@@ -136,14 +79,14 @@ class JAC(object):
         else:
             dv = (v1 - v0)
         # s_r = J^Tv_r
-        ds = - np.dot(self.Jac.T.conjugate(), dv)
+        ds = - np.dot(self.J.T.conjugate(), dv)
         # return average epsilon on element
         return ds
 
-    def gn_solve(self, v,
-                 x0=None, maxiter=1,
-                 p=None, lamb=None, method='kotre',
-                 verbose=False):
+    def gn(self, v,
+           x0=None, maxiter=1,
+           p=None, lamb=None, method='kotre',
+           verbose=False):
         """
         Gaussian Newton Static Solver
         You can use a different lamb, p other than the default ones in JAC
@@ -172,50 +115,65 @@ class JAC(object):
             r0 (residual) = real_measure - forward_v
         """
         if x0 is None:
-            x0 = self.x0
+            x0 = self.perm
         if p is None:
-            p = self.p
+            p = self.params['p']
         if lamb is None:
-            lamb = self.lamb
+            lamb = self.params['lamb']
         if method is None:
-            method = self.method
+            method = self.params['method']
 
         for i in range(maxiter):
             if verbose:
                 print('iter = ', i)
             # forward solver
-            fs = self.fwd.solve(self.exMtx, step=self.step,
+            fs = self.fwd.solve(self.ex_mat, step=self.step,
                                 perm=x0, parser=self.parser)
             # Residual
             r0 = v - fs.v
-            Jac = fs.Jac
-            Jr = np.dot(Jac.T.conjugate(), r0)
+            jac = fs.jac
+            j_r = np.dot(jac.T.conjugate(), r0)
 
             # Gaussian-Newton
-            JWJ = np.dot(Jac.T.conjugate(), Jac)
+            j_w_j = np.dot(jac.T.conjugate(), jac)
 
             # pseudo inverse
             if method is 'kotre':
-                R = np.diag(np.diag(JWJ) ** p)
+                r_mat = np.diag(np.diag(j_w_j) ** p)
             else:
-                R = np.eye(Jac.shape[1])
-            H = (JWJ + lamb*R)
+                r_mat = np.eye(jac.shape[1])
+            h_mat = (j_w_j + lamb*r_mat)
 
             # update
-            d_k = la.solve(H, Jr)
+            d_k = la.solve(h_mat, j_r)
             x0 = x0 - d_k
 
         return x0
 
+    def project(self, ds):
+        """ project ds using spatial difference filter (deprecated)
 
-def h_matrix(Jac, p, lamb, method='kotre'):
+        Parameters
+        ----------
+        ds : NDArray
+            delta sigma (conductivities)
+
+        Returns
+        -------
+        NDArray
+        """
+        d_mat = sar(self.el2no)
+        return np.dot(d_mat, ds)
+
+
+def h_matrix(jac, p, lamb, method='kotre'):
     """
     JAC method of dynamic EIT solver:
         H = (J.T*J + lamb*R)^(-1) * J.T
 
     Parameters
     ----------
-    Jac : NDArray
+    jac : NDArray
         Jacobian
     p, lamb : float
         regularization parameters
@@ -227,25 +185,25 @@ def h_matrix(Jac, p, lamb, method='kotre'):
     NDArray
         pseudo-inverse matrix of JAC
     """
-    JWJ = np.dot(Jac.transpose(), Jac)
+    j_w_j = np.dot(jac.transpose(), jac)
     if method is 'kotre':
         # see adler-dai-lionheart-2007, when
         # p=0   : noise distribute on the boundary
         # p=0.5 : noise distribute on the middle
         # p=1   : noise distribute on the center
-        R = np.diag(np.diag(JWJ) ** p)
+        r_mat = np.diag(np.diag(j_w_j) ** p)
     else:
-        # Marquardt–Levenberg, 'lm'
-        R = np.eye(Jac.shape[1])
+        # Marquardt–Levenberg, 'lm' for short
+        r_mat = np.eye(jac.shape[1])
 
     # build H
-    H = np.dot(la.inv(JWJ + lamb*R), Jac.transpose())
-    return H
+    h_mat = np.dot(la.inv(j_w_j + lamb*r_mat), jac.transpose())
+    return h_mat
 
 
 def sar(el2no):
     """
-    extract spatial difference matrix on the neighbores of each element
+    extract spatial difference matrix on the neighbors of each element
     in 2D fem using triangular mesh.
 
     Parameters
@@ -259,7 +217,7 @@ def sar(el2no):
         SAR matrix
     """
     ne = el2no.shape[0]
-    L = np.eye(ne)
+    d_mat = np.eye(ne)
     for i in range(ne):
         ei = el2no[i, :]
         #
@@ -269,7 +227,7 @@ def sar(el2no):
         idx = np.unique(np.hstack([i0, i1, i2]))
         # build row-i
         for j in idx:
-            L[i, j] = -1
+            d_mat[i, j] = -1
         nn = idx.size - 1
-        L[i, i] = nn
-    return L
+        d_mat[i, i] = nn
+    return d_mat

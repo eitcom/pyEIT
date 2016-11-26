@@ -18,8 +18,8 @@ class DISTMESH(object):
     """ class for distmesh """
 
     def __init__(self, fd, fh, h0=0.1,
-                 pfix=None, bbox=None,
-                 densityctrlfreq=30,
+                 p_fix=None, bbox=None,
+                 density_ctrl_freq=30,
                  dptol=0.01, ttol=0.1, Fscale=1.2, deltat=0.2,
                  verbose=False):
         """ initial distmesh class
@@ -35,12 +35,12 @@ class DISTMESH(object):
             For uniform meshes, h(x,y) = constant,
             the element size in the final mesh will usually be
             a little larger than this input.
-        pfix : array_like, optional
+        p_fix : array_like, optional
             fixed points, default=[]
         bbox : array_like, optional
             bounding box for region, bbox=[xmin, ymin, xmax, ymax].
             default=[-1, -1, 1, 1]
-        densityctrlfreq : int, optional
+        density_ctrl_freq : int, optional
             cycles of iterations of density control, default=20
         deltat : float, optional
             mapping forces to distances, default=0.2
@@ -64,7 +64,7 @@ class DISTMESH(object):
         self.geps = 0.001 * h0
 
         # control the distmesh computation flow
-        self.densityctrlfreq = densityctrlfreq
+        self.densityctrlfreq = density_ctrl_freq
         self.dptol = dptol
         self.ttol = ttol
         self.Fscale = Fscale
@@ -96,16 +96,16 @@ class DISTMESH(object):
         p = p[selection]
 
         # specify fixed points
-        if pfix is None:
-            pfix = []
-        self.pfix = pfix
-        self.nfix = len(pfix)
+        if p_fix is None:
+            p_fix = []
+        self.pfix = p_fix
+        self.nfix = len(p_fix)
 
-        # remove duplicated points of p and pfix
+        # remove duplicated points of p and p_fix
         # avoid overlapping of mesh points
-        if len(pfix) > 0:
-            p = remove_duplicate_nodes(p, pfix, self.geps)
-            p = np.vstack([pfix, p])
+        if len(p_fix) > 0:
+            p = remove_duplicate_nodes(p, p_fix, self.geps)
+            p = np.vstack([p_fix, p])
 
         # store p and N
         self.N = p.shape[0]
@@ -397,8 +397,8 @@ def build(fd, fh, pfix=None, bbox=None, h0=0.1,
 
     # initialize distmesh
     dm = DISTMESH(fd, fh,
-                  h0=h0, pfix=pfix, bbox=bbox,
-                  densityctrlfreq=densityctrlfreq, deltat=deltat,
+                  h0=h0, p_fix=pfix, bbox=bbox,
+                  density_ctrl_freq=densityctrlfreq, deltat=deltat,
                   dptol=g_dptol, ttol=g_ttol, Fscale=g_Fscale,
                   verbose=verbose)
 

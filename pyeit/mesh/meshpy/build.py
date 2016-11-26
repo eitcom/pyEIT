@@ -140,7 +140,7 @@ if __name__ == "__main__":
     # simple
     ms, epos = create(16)
 
-    # show elPos
+    # show el_pos
     print(ms)
 
     # extract 'node' and 'element'
