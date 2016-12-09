@@ -1,7 +1,8 @@
-# test
-# pylint: disable=no-member
+# coding: utf-8
+# pylint: disable=invalid-name
+# author: benyuan liu
 """ demo for distmesh """
-from __future__ import absolute_import
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 

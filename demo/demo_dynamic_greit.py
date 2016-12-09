@@ -1,4 +1,7 @@
-""" demo on GREIT """
+# coding: utf-8
+# author: benyuan liu
+""" demo using GREIT """
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,6 +36,8 @@ im = ax.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, alpha,
                   shading='flat', cmap=plt.cm.viridis)
 fig.colorbar(im)
 ax.axis('equal')
+ax.set_xlim([-1.2, 1.2])
+ax.set_ylim([-1.2, 1.2])
 ax.set_title(r'$\Delta$ Conductivity')
 # fig.set_size_inches(6, 4)
 

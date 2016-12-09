@@ -1,8 +1,10 @@
 # coding: utf-8
 # pylint: disable=invalid-name, no-member, too-many-arguments
 # pylint: disable=too-many-instance-attributes, too-many-locals
+# pylint: disable=arguments-differ
 """ dynamic EIT solver using JAC """
-from __future__ import absolute_import
+# author: benyuan liu
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import scipy.linalg as la
@@ -83,23 +85,29 @@ class JAC(EitBase):
         # return average epsilon on element
         return ds
 
-    def gn(self, v,
-           x0=None, maxiter=1,
-           p=None, lamb=None, method='kotre',
-           verbose=False):
+    def gn(self, v, x0=None, maxiter=1, p=None, lamb=None,
+           lamb_decay=1.0, lamb_min=0, method='kotre', verbose=False):
         """
         Gaussian Newton Static Solver
-        You can use a different lamb, p other than the default ones in JAC
+        You can use a different p, lamb other than the default ones in setup
 
         Parameters
         ----------
         v : NDArray
+            boundary measurement
         x0 : NDArray, optional
             initial guess
         maxiter : int, optional
-        p, lamb : float, optional
+        p, lamb : float
+            JAC parameters (can be overridden)
+        lamb_decay : float
+            decay of lamb0, i.e., lamb0 = lamb0 * lamb_delay of each iteration
+        lamb_min : float
+            minimal value of lamb
         method : str, optional
+            'kotre' or 'lm'
         verbose : bool, optional
+            print debug information
 
         Returns
         -------
@@ -125,7 +133,7 @@ class JAC(EitBase):
 
         for i in range(maxiter):
             if verbose:
-                print('iter = ', i)
+                print('iter = %d, lamb = %f' % (i, lamb))
             # forward solver
             fs = self.fwd.solve(self.ex_mat, step=self.step,
                                 perm=x0, parser=self.parser)
@@ -143,6 +151,11 @@ class JAC(EitBase):
             else:
                 r_mat = np.eye(jac.shape[1])
             h_mat = (j_w_j + lamb*r_mat)
+
+            # update regularization parameter
+            # TODO: support user defined decreasing order of lambda values
+            if lamb > lamb_min:
+                lamb *= lamb_decay
 
             # update
             d_k = la.solve(h_mat, j_r)

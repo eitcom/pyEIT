@@ -1,7 +1,7 @@
 # coding: utf-8
 # pylint: disable=invalid-name, no-member, no-name-in-module
 """ post process for distmesh 2d and 3d """
-from __future__ import absolute_import
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import scipy.linalg as la

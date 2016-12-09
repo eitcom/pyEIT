@@ -1,4 +1,7 @@
-""" demo on using mesh2d in EIT """
+# coding: utf-8
+# author: benyuan liu
+""" demo on creating triangle meshes using mesh2d in EIT """
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import matplotlib.pyplot as plt

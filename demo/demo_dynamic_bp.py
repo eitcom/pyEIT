@@ -1,4 +1,7 @@
-""" demo on bp """
+# coding: utf-8
+# author: benyuan liu
+""" demo code for back-projection """
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import matplotlib.pyplot as plt

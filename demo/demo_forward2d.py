@@ -1,4 +1,7 @@
+# coding: utf-8
+# author: benyuan liu
 """ demo on forward 2D """
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import matplotlib.pyplot as plt
