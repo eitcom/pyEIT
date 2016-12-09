@@ -1,6 +1,6 @@
 # coding: utf-8
 # pylint: disable=invalid-name, no-member, too-many-instance-attributes
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments, arguments-differ
 """
 GREIT (using distribution method)
 
@@ -11,7 +11,7 @@ Note, that, the advantages of greit is NOT on simulated data, but
 
 liubenyuan <liubenyuan@gmail.com>, 2016-01-27, 2016-11-24
 """
-from __future__ import absolute_import
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import scipy.linalg as la
@@ -84,9 +84,9 @@ class GREIT(EitBase):
                            parser=self.parser)
         jac = f.jac
         # build D on grids
-        self.xg, self.yg, self.mask = self._build_grid()
-        r_max = self._r_max()
-        d_mat = self._psf_grid(r_max)
+        xg, yg, mask = self._mask_grid()
+        r_max = self._r_max(xg, yg, mask)
+        d_mat = self._psf_grid(xg, yg, r_max=r_max)
         # E[yy^T]
         j_j_w = np.dot(jac, jac.transpose())
         r_mat = np.diag(np.diag(j_j_w) ** p)
@@ -105,18 +105,32 @@ class GREIT(EitBase):
         yv = np.linspace(y_min, y_max, num=n, endpoint=True)
         xg, yg = np.meshgrid(xv, yv, sparse=False, indexing='xy')
 
+        return xg, yg
+
+    def _build_mask(self, xg, yg):
+        """ build boolean matrix mark interior points """
+
         # 1. create mask based on meshes
-        x, y = xg.flatten(), yg.flatten()
-        points = np.vstack((x, y)).T
+        points = np.vstack((xg.flatten(), yg.flatten())).T
 
         # 2. extract edge points using el_pos
         edge_points = self.no2xy[self.elPos]
         path = Path(edge_points, closed=False)
         mask = path.contains_points(points)
 
+        return mask
+
+    def _mask_grid(self):
+        """
+        generate xy grids and mask
+        """
+        xg, yg = self._build_grid()
+        mask = self._build_mask(xg, yg)
+        mask = mask.reshape(xg.shape)
+
         return xg, yg, mask
 
-    def _r_max(self):
+    def _r_max(self, xg, yg, mask):
         """
         calculate max radius using mask and xy
 
@@ -125,37 +139,38 @@ class GREIT(EitBase):
         mask is a 1d boolean array, xg and yg are 2D meshgrid,
         so mask should be reshaped before indexing (numpy 1.10)
         """
-        mask = self.mask.reshape(self.xg.shape)
-        r = self._distance2d(self.xg[mask], self.yg[mask])
+        xg_mask, yg_mask = xg[mask], yg[mask]
+        r = self._distance2d(xg_mask, yg_mask)
         return np.max(r)
 
-    def _psf_grid(self, r_max=1.):
+    def _psf_grid(self, xg, yg, r_max=1.):
         """
         point spread function (psf) mapping (convolve)
         values of elements on grid.
         """
-        n = self.params['n']
         ratio = self.params['ratio']
         s = self.params['s']
 
+        ng = xg.size
         ne = self.el2no.shape[0]
-        d_mat = np.zeros((n**2, ne))
+        d_mat = np.zeros((ng, ne))
         r_mat = r_max * ratio
         # loop over all elements
         for i in range(ne):
             ei = self.el2no[i, :]
             xy = np.mean(self.no2xy[ei], axis=0)
             # there may be bias between grid and center of a element
-            r = self._distance2d(self.xg, self.yg, center=xy)
+            r = self._distance2d(xg, yg, center=xy)
             f = 1./(1.+np.exp(s*np.abs(r))/np.exp(s*r_mat))
             d_mat[:, i] = f
         return d_mat
 
     def mask_value(self, ds, mask_value=0):
         """ (plot only) mask values on nodes outside 2D mesh. """
-        ds[self.mask == 0] = mask_value
-        ds = ds.reshape(self.xg.shape)
-        return self.xg, self.yg, ds
+        xg, yg, mask = self._mask_grid()
+        ds = ds.reshape(xg.shape)
+        ds[mask == 0] = mask_value
+        return xg, yg, ds
 
     @staticmethod
     def _distance2d(x, y, center=None):

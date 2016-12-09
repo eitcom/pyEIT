@@ -1,4 +1,8 @@
+# coding: utf-8
+# author: benyuan liu
 """ reproducible code for EIT2016 """
+from __future__ import division, absolute_import, print_function
+
 import numpy as np
 import matplotlib.pyplot as plt
 # import matplotlib
@@ -95,6 +99,7 @@ ax4.set_title(r'(d) GREIT')
 ax4.axis('off')
 
 # save
+plt.show()
 # fig.tight_layout()
 # fig.subplots_adjust(top=0.875, bottom=0.01)
 # fig.set_size_inches(1, 1)

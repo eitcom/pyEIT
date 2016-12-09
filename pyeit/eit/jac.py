@@ -1,8 +1,10 @@
 # coding: utf-8
 # pylint: disable=invalid-name, no-member, too-many-arguments
 # pylint: disable=too-many-instance-attributes, too-many-locals
+# pylint: disable=arguments-differ
 """ dynamic EIT solver using JAC """
-from __future__ import absolute_import
+# author: benyuan liu
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import scipy.linalg as la

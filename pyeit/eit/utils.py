@@ -1,7 +1,8 @@
 # coding: utf-8
 # pylint: disable=invalid-name
 """ util functions for 2D EIT """
-from __future__ import absolute_import
+# author: benyuan liu
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 
@@ -51,6 +52,5 @@ def eit_scan_lines(ne=16, dist=1):
 
 
 if __name__ == "__main__":
-    """ demo """
     m = eit_scan_lines()
     print(m)

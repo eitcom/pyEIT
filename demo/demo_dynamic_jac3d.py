@@ -1,4 +1,7 @@
+# coding: utf-8
+# author: benyuan liu
 """ demo on JAC 3D, extremely slow """
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 

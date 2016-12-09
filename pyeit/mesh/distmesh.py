@@ -3,7 +3,8 @@
 # pylint: disable=too-many-arguments, too-many-locals
 # pylint: disable=too-many-instance-attributes
 """ implement 2D/3D distmesh """
-from __future__ import absolute_import
+# author: benyuan liu
+from __future__ import division, absolute_import, print_function
 
 from itertools import combinations
 import numpy as np

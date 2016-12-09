@@ -1,5 +1,9 @@
-#
+# coding: utf-8
+# pylint: disable=invalid-name, no-member, too-many-locals
+# author: benyuan liu
 """ create multi-layered mesh on a unit circle """
+from __future__ import division, absolute_import, print_function
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -40,6 +44,12 @@ class MeshCircle(object):
         e = self._spawn_elements()
         el_pos = self._get_electrodes()
         return p, e, el_pos
+
+    def update(self, n_fan=8, n_layer=6, n_el=16):
+        """ update parameters """
+        self.n_fan = n_fan
+        self.n_layer = n_layer
+        self.n_el = n_el
 
     def _get_electrodes(self):
         """ return the numbering of electrodes """
@@ -139,7 +149,7 @@ def demo():
     model = MeshCircle()
     p, e, el_pos = model.create()
 
-    fig, ax = plt.subplots(figsize=(6, 6))
+    _, ax = plt.subplots(figsize=(6, 6))
     ax.plot(p[:, 0], p[:, 1], 'ro', markersize=5)
     for i in range(p.shape[0]):
         ax.text(p[i, 0], p[i, 1], str(i))
@@ -147,7 +157,7 @@ def demo():
     ax.set_ylim([-1.2, 1.2])
     ax.grid('on')
 
-    fig, ax = plt.subplots(figsize=(6, 6))
+    _, ax = plt.subplots(figsize=(6, 6))
     ax.triplot(p[:, 0], p[:, 1], e)
     ax.plot(p[el_pos, 0], p[el_pos, 1], 'ro')
     for i, el in enumerate(el_pos):
@@ -159,5 +169,4 @@ def demo():
     plt.show()
 
 if __name__ == "__main__":
-    """ demo """
     demo()

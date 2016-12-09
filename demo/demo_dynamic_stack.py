@@ -1,6 +1,8 @@
-# demo using stacked exMtx (the devil is in the details)
-# liubenyuan@gmail.com
-# 2015-07-23
+# coding: utf-8
+# author: benyuan liu <liubenyuan@gmail.com>
+# date: 2015-07-23
+""" demo using stacked exMtx (the devil is in the details) """
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import matplotlib.pyplot as plt

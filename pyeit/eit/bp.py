@@ -1,7 +1,8 @@
 # coding: utf-8
-# pylint: disable=invalid-name, no-member
+# pylint: disable=invalid-name, no-member, arguments-differ
 """ bp (back-projection) and f(filtered)-bp module """
-from __future__ import absolute_import
+# author: benyuan liu
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 from .base import EitBase
