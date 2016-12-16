@@ -85,7 +85,7 @@ class JAC(EitBase):
         # return average epsilon on element
         return ds
 
-    def gn(self, v, x0=None, maxiter=1, p=None, lamb=None,
+    def gn(self, v, x0=None, maxiter=1, gtol=1e-4, p=None, lamb=None,
            lamb_decay=1.0, lamb_min=0, method='kotre', verbose=False):
         """
         Gaussian Newton Static Solver
@@ -131,35 +131,38 @@ class JAC(EitBase):
         if method is None:
             method = self.params['method']
 
+        # convergence test
+        x0_norm = np.linalg.norm(x0)
+
         for i in range(maxiter):
-            if verbose:
-                print('iter = %d, lamb = %f' % (i, lamb))
+
             # forward solver
             fs = self.fwd.solve(self.ex_mat, step=self.step,
                                 perm=x0, parser=self.parser)
             # Residual
             r0 = v - fs.v
             jac = fs.jac
-            j_r = np.dot(jac.T.conjugate(), r0)
 
-            # Gaussian-Newton
-            j_w_j = np.dot(jac.T.conjugate(), jac)
+            # Damped Gaussian-Newton
+            h_mat = h_matrix(jac, p, lamb, method)
 
-            # pseudo inverse
-            if method is 'kotre':
-                r_mat = np.diag(np.diag(j_w_j) ** p)
-            else:
-                r_mat = np.eye(jac.shape[1])
-            h_mat = (j_w_j + lamb*r_mat)
+            # update
+            d_k = np.dot(h_mat, r0)
+            x0 = x0 - d_k
+
+            # convergence test
+            c = np.linalg.norm(d_k) / x0_norm
 
             # update regularization parameter
             # TODO: support user defined decreasing order of lambda values
             if lamb > lamb_min:
                 lamb *= lamb_decay
 
-            # update
-            d_k = la.solve(h_mat, j_r)
-            x0 = x0 - d_k
+            if c < gtol:
+                break
+
+            if verbose:
+                print('iter = %d, lamb = %f, gtol = %f' % (i, lamb, c))
 
         return x0
 
@@ -200,13 +203,16 @@ def h_matrix(jac, p, lamb, method='kotre'):
     """
     j_w_j = np.dot(jac.transpose(), jac)
     if method is 'kotre':
-        # see adler-dai-lionheart-2007, when
-        # p=0   : noise distribute on the boundary
+        # see adler-dai-lionheart-2007, 'kotr' for short
+        # p=0   : noise distribute on the boundary ('lm')
         # p=0.5 : noise distribute on the middle
         # p=1   : noise distribute on the center
         r_mat = np.diag(np.diag(j_w_j) ** p)
-    else:
+    elif method is 'lm':
         # Marquardt–Levenberg, 'lm' for short
+        r_mat = np.diag(np.diag(j_w_j))
+    else:
+        # Damped Gauss Newton, 'dgn' for short
         r_mat = np.eye(jac.shape[1])
 
     # build H
