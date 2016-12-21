@@ -45,7 +45,7 @@ class EitBase(object):
         if ex_mat is None:
             ex_mat = eit_scan_lines(len(el_pos), 8)
         if perm is None:
-            perm = np.ones_like(mesh['alpha'])
+            perm = mesh['alpha']
 
         # build forward solver
         fwd = Forward(mesh, el_pos)

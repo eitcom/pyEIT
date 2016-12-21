@@ -4,6 +4,7 @@
 """ provides MATLAB compatible pde functions """
 from __future__ import division, absolute_import, print_function
 import numpy as np
+import scipy.linalg as la
 
 
 def pdeintrp(no2xy, el2no, node_value):
@@ -151,3 +152,33 @@ def pdeprtni(no2xy, el2no, el_value):
     # and average all the values on these triangles
     node_value = np.dot(n2e, el_value) / np.sum(n2e, axis=1)
     return node_value
+
+
+def pde_area(no2xy, el2no):
+    """
+    calculate the area of each triangle
+
+    Parameters
+    ----------
+    no2xy : NDArray
+        Nx2 array, (x,y) locations for points
+    el2no : NDArray
+        Mx3 array, elements (triangles) connectivity
+
+    Returns
+    -------
+    NDArray
+        a, areas of triangles
+    """
+    a = np.zeros(np.shape(el2no)[0])
+    for i, e in enumerate(el2no):
+        xy = no2xy[e]
+        # s1 = xy[2, :] - xy[1, :]
+        # s2 = xy[0, :] - xy[2, :]
+        # s3 = xy[1, :] - xy[0, :]
+        s = xy[[2, 0, 1]] - xy[[1, 2, 0]]
+
+        #
+        a[i] = 0.5 * la.det(s[[0, 1]])
+
+    return a

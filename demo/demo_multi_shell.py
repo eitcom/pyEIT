@@ -21,7 +21,7 @@ ms, el_pos = multi_shell(n_fan=n_fan, n_layer=n_layer,
                          r_layer=r_layers, alpha_layer=alpha_layers)
 
 # (b) using multi-circle (slow, high-quality)
-r_layers = [[0.8, 0.9]]
+r_layers = [[0.85, 0.925]]
 alpha_layers = [0.01]
 ms, el_pos = multi_circle(r=1., background=1., n_el=16, h0=0.006,
                           r_layer=r_layers, alpha_layer=alpha_layers, ppl=64)
