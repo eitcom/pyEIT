@@ -20,7 +20,7 @@ class EitBase(object):
     """
 
     def __init__(self, mesh, el_pos,
-                 ex_mat=None, step=1, perm=1., parser='std'):
+                 ex_mat=None, step=1, perm=None, parser='std'):
         """
         Parameters
         ----------
