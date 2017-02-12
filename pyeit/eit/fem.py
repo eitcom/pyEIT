@@ -41,7 +41,7 @@ class Forward(object):
         Parameters
         ----------
         ex_mat : NDArray
-            numLines x n_el array, excitation matrix
+            numLines x n_el array, stimulation matrix
         step : int
             the configuration of the measurement electrodes (default: adjacent)
         perm : NDArray
@@ -70,7 +70,7 @@ class Forward(object):
             ex_mat = eit_scan_lines(16, 8)
         num_lines = np.shape(ex_mat)[0]
 
-        # calculate f and Jacobian loop over all excitation lines
+        # calculate f and Jacobian iteratively over all stimulation lines
         jac, v, b_matrix = [], [], []
         for i in range(num_lines):
             # FEM solver
@@ -108,7 +108,7 @@ class Forward(object):
 
         Parameters
         ex_line : NDArray
-            excitation pattern/scan line
+            stimulation (scan) patterns/lines
         tri_perm : NDArray
             permittivity on elements (initial)
 

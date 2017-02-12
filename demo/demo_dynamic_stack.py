@@ -46,7 +46,7 @@ f0 = fwd.solve(ex_mat, step, perm=ms['alpha'])
 f1 = fwd.solve(ex_mat, step, perm=ms1['alpha'])
 
 """ 3. solving using dynamic EIT """
-# number of excitation lines & excitation patterns
+# number of stimulation lines/patterns
 eit = jac.JAC(ms, el_pos, ex_mat=ex_mat, step=step, parser='std')
 eit.setup(p=0.40, lamb=1e-3, method='kotre')
 ds = eit.solve(f1.v, f0.v)

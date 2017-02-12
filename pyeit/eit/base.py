@@ -29,7 +29,7 @@ class EitBase(object):
         el_pos : array_like
             position (numbering) of electrodes
         ex_mat : array_like, optional
-            2D array, each row is one excitation pattern
+            2D array, each row is one stimulation pattern/line
         step : int, optional
             measurement method
         perm : array_like, optional
