@@ -139,7 +139,8 @@ def fix_points_fd(fd, n_el=16, pc=None):
     # initialize points
     r = 10.0
     theta = 2. * np.pi * np.arange(n_el) / float(n_el)
-    theta += theta[1] / 2.0
+    # add offset of theta
+    # theta += theta[1] / 2.0
     p_fix = [[-r*np.cos(th), r*np.sin(th)] for th in theta]
     pts = np.array(p_fix) + pc
 
