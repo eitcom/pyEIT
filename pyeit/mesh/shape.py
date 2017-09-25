@@ -139,8 +139,9 @@ def fix_points_fd(fd, n_el=16, pc=None):
     # initialize points
     r = 10.0
     theta = 2. * np.pi * np.arange(n_el) / float(n_el)
-    theta += theta[1] / 2.0
-    p_fix = [[r*np.sin(th), r*np.cos(th)] for th in theta]
+    # add offset of theta
+    # theta += theta[1] / 2.0
+    p_fix = [[-r*np.cos(th), r*np.sin(th)] for th in theta]
     pts = np.array(p_fix) + pc
 
     # project back on edges
@@ -154,7 +155,7 @@ def fix_points_fd(fd, n_el=16, pc=None):
         pts_new = edge_project(pts, fd)
         # project on rays
         r = dist(pts_new)
-        pts_new = [[ri*np.sin(ti), ri*np.cos(ti)] for ri, ti in zip(r, theta)]
+        pts_new = [[-ri*np.cos(ti), ri*np.sin(ti)] for ri, ti in zip(r, theta)]
         pts_new = np.array(pts_new)
         # check convergence
         c = np.sum(dist(pts_new - pts)) < d_eps or niter > max_iter
@@ -185,7 +186,7 @@ def fix_points_circle(pc=None, r=1., n_el=16):
         pc = [0, 0]
 
     theta = 2. * np.pi * np.arange(n_el) / float(n_el)
-    p_fix = [[r*np.sin(th), r*np.cos(th)] for th in theta]
+    p_fix = [[-r*np.cos(th), r*np.sin(th)] for th in theta]
     return np.array(p_fix) + pc
 
 

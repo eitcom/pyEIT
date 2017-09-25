@@ -43,7 +43,7 @@ fwd = Forward(ms, el_pos)
 f1 = fwd.solve(ex_mat, step, perm=ms1['alpha'], parser='std')
 
 """ 3. solve using gaussian-newton """
-# number of excitation lines & excitation patterns
+# number of stimulation lines/patterns
 eit = jac.JAC(ms, el_pos, ex_mat, step, perm=1.0, parser='std')
 eit.setup(p=0.25, lamb=1.0, method='lm')
 ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-4, maxiter=20, verbose=True)

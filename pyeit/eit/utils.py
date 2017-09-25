@@ -1,6 +1,9 @@
 # coding: utf-8
 # pylint: disable=invalid-name
-""" util functions for 2D EIT """
+"""
+util functions for 2D EIT
+1. generate stimulation lines/patterns
+"""
 # author: benyuan liu
 from __future__ import division, absolute_import, print_function
 
@@ -21,12 +24,12 @@ def eit_scan_lines(ne=16, dist=1):
     Returns
     -------
     ex_mat : NDArray
-        excitation matrix
+        stimulation matrix
 
     Notes
     -----
-    in the scan of EIT (or excitation matrix), we use 4-electrodes
-    mode, where A, B are used as positive and negative excitation
+    in the scan of EIT (or stimulation matrix), we use 4-electrodes
+    mode, where A, B are used as positive and negative stimulation
     electrodes and M, N are used as voltage measurements
 
          1 (A) for positive current injection,
@@ -37,9 +40,9 @@ def eit_scan_lines(ne=16, dist=1):
 
     Examples
     --------
-    if excitation_mode=='neighbor':
+    if mode=='neighbor':
         ex_mat = eit_scan_lines(ne)
-    elif excitation_mode=='apposition':
+    elif mode=='apposition':
         ex_mat = eit_scan_lines(ne, ne/2)
     """
     # A: diagonal

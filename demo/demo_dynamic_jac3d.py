@@ -51,7 +51,7 @@ f0 = fwd.solve(ex_mat, step=step, perm=ms['alpha'])
 f1 = fwd.solve(ex_mat, step=step, perm=ms_test['alpha'])
 
 """ 3. JAC solver """
-# number of excitation lines & excitation patterns
+# number of stimulation lines/patterns
 eit = jac.JAC(ms, el_pos, ex_mat=ex_mat, step=step, perm=1., parser='std')
 eit.setup(p=0.50, lamb=1e-4, method='kotre')
 ds = eit.solve(f1.v, f0.v)
