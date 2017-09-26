@@ -4,9 +4,9 @@
 *.so
 *.dll
 test*.*
+data/
 
 .directory
-
 __pycache__/
 .idea/
 .spyproject/
