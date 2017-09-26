@@ -5,6 +5,7 @@
 *.dll
 test*.*
 data/
+tests/
 
 .directory
 __pycache__/
