@@ -3,7 +3,6 @@
 *.jpeg
 *.so
 *.dll
-test*.*
 data/
 tests/
 
