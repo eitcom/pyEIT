@@ -3,8 +3,8 @@
 *.jpeg
 *.so
 *.dll
-test*.*
-data/
+datasets/
+sandbox/
 
 .directory
 __pycache__/
