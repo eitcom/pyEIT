@@ -1,4 +1,4 @@
-# ![pyeit](figs/logo.png)
+# ![pyeit](doc/images/logo.png)
 
 *A python-based, open-source package for Electrical Impedance Tomography (EIT)*
 
@@ -8,16 +8,16 @@
 
 ### 1.1 Dependencies
 
-| Packages |  Optional | Note |
-| ---- | ---- | ---- |
-| **numpy** | | tested with `numpy-1.10.4`, `numpy-1.11.rc1` |
-| **scipy** | | tested with `scipy-0.17.0` |
-| **matplotlib** | | tested with `matplotlib-1.5.1` |
-| **vispy** |  *Optional* | tested with `vispy-git` |
-| **pandas** | *Optional* | tested with `pandas-0.17.1` |
-| **xarray** | *Optional* | for long term data analysis |
-| **distmesh** | *Optional* | it currently has a build-in distmesh module (supports 2D and 3D!) |
-| **tetgen** | *Optional* | generate 3D meshes |
+| Packages       | Optional   | Note                                     |
+| -------------- | ---------- | ---------------------------------------- |
+| **numpy**      |            | tested with `numpy-1.10.4`, `numpy-1.11.rc1` |
+| **scipy**      |            | tested with `scipy-0.17.0`               |
+| **matplotlib** |            | tested with `matplotlib-1.5.1`           |
+| **vispy**      | *Optional* | tested with `vispy-git`                  |
+| **pandas**     | *Optional* | tested with `pandas-0.17.1`              |
+| **xarray**     | *Optional* | for long term data analysis              |
+| **distmesh**   | *Optional* | it currently has a build-in distmesh module (supports 2D and 3D!) |
+| **tetgen**     | *Optional* | generate 3D meshes                       |
 
 **Note 1, Why vispy ?** `pyEIT` uses `vispy` for visualizing (optional) 3D meshes (tetrahedron). `vispy` has minimal system dependencies, all you need is a decent graphical card with `OpenGL` support. It supports fast rendering, which I think is more superior to `vtk` or `mayavi` especially for python 3 support. Please go to the website [vispy.org](http://vispy.org/) or github repository [vispy.github](https://github.com/vispy/vispy) for more details.
 
@@ -63,19 +63,19 @@ Enter the demo folder, pick one demo, and run !
 
 **Using** `demo/demo_dynamic_bp.py`
 
-![demo_bp](figs/demo_bp.png)
+![demo_bp](doc/images/demo_bp.png)
 
 **Using** `demo/demo_dynamic_greit.py`
 
-![demo_greit](figs/demo_greit.png)
+![demo_greit](doc/images/demo_greit.png)
 
 **Using** `demo/demo_dynamic_jac.py`
 
-![demo_greit](figs/demo_jac.png)
+![demo_greit](doc/images/demo_jac.png)
 
 **Using** `demo/demo_static_jac.py`
 
-![demo_static](figs/demo_static.png)
+![demo_static](doc/images/demo_static.png)
 
 ### 3.2 (3D) forward and inverse computing
 
