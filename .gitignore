@@ -3,7 +3,7 @@
 *.jpeg
 *.so
 *.dll
-data/
+datasets/
 sandbox/
 
 .directory
