@@ -184,7 +184,7 @@ def zero_rearrange_index(ex_mtx):
 if __name__ == "__main__":
 
     # .et4 file
-    et_file = "../../data/s00-02.et4"
+    et_file = "../../datasets/s00-02.et4"
 
     # load data
     et4_data = load(fstr=et_file,

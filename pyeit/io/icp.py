@@ -111,8 +111,9 @@ def demo_read_csv(filestr):
     ts = load_csv(filestr, resample='600s')
     return ts
 
+
 if __name__ == "__main__":
-    ts_data = demo_read_csv('../../data/all.csv')
+    ts_data = demo_read_csv('../../datasets/all.csv')
 
     # plot and see
     fig = plt.figure()

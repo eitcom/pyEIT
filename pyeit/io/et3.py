@@ -219,7 +219,7 @@ def trim_pattern():
 
 if __name__ == "__main__":
     """ demo shows how-to use et3 """
-    fstr = '../../data/DATA.et3'
+    fstr = '../../datasets/DATA.et3'
 
     # 1. using raw interface
     et3_data = load(fstr, verbose=True)

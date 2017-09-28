@@ -10,6 +10,9 @@ import struct
 import numpy as np
 import matplotlib.pyplot as plt
 
+# import pkg_resources
+# mstr = pkg_resources.resource_filename('pyeit', 'data/model/DLS2.mes')
+
 
 def load(fstr, mirror=False):
     """
@@ -151,11 +154,12 @@ def extract_el(fh):
 
     return el_pos
 
+
 # demo
 if __name__ == "__main__":
     # a demo on howto load a .mes file
-    mes_fstr = '../../model/DLS2.mes'
-    mesh_obj, el_pos = load(fstr=mes_fstr)
+    mstr = '../data/model/DLS2.mes'
+    mesh_obj, el_pos = load(fstr=mstr)
 
     # print the size
     e, pts = mesh_obj['element'], mesh_obj['node']
@@ -170,7 +174,7 @@ if __name__ == "__main__":
 
     # bmp and mesh overlay
     plt.figure(2, figsize=(6, 6))
-    image_name = mes_fstr.replace('mes', 'bmp')
+    image_name = mstr.replace('mes', 'bmp')
     im = plt.imread(image_name)
     implot = plt.imshow(im)
     plt.axis('tight')
