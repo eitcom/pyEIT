@@ -136,7 +136,7 @@ def extract_node(fh):
         # offset to overlay on .bmp file
         # xnew = x+8, ynew = -y-8 (yang bin)
         # xnew = x-8, ynew = -y-8 (lby)
-        no2xy[gn_num, :] = [d[0]-8., -d[1]-8.]
+        no2xy[gn_num, :] = [d[0]-4., -d[1]-4.]
 
     return no2xy
 
