@@ -157,30 +157,35 @@ def extract_el(fh):
 
 # demo
 if __name__ == "__main__":
-    # a demo on howto load a .mes file
-    mstr = '../data/model/DLS2.mes'
-    mesh_obj, el_pos = load(fstr=mstr)
+    # a demo on how to load a .mes file
+    mesh_file = '../data/model/DLS2.mes'
+    mesh_obj, el_pos = load(fstr=mesh_file)
 
     # print the size
     e, pts = mesh_obj['element'], mesh_obj['node']
     # print('el2no size = (%d, %d)' % e.shape)
     # print('no2xy size = (%d, %d)' % pts.shape)
 
-    # show trimesh
-    plt.figure(1, figsize=(6, 6))
-    plt.triplot(pts[:, 0], pts[:, 1], e)
-    plt.plot(pts[el_pos, 0], pts[el_pos, 1], 'ro')
-    plt.axis('equal')
+    # show mesh
+    fig, ax = plt.subplots(1, figsize=(6, 6))
+    ax.triplot(pts[:, 0], pts[:, 1], e)
+    ax.plot(pts[el_pos, 0], pts[el_pos, 1], 'ro')
+    for i, el in enumerate(el_pos):
+        ax.text(pts[el, 0], pts[el, 1], str(i+1), color='r')
+    ax.set_aspect('equal')
+    ax.invert_yaxis()
 
     # bmp and mesh overlay
-    plt.figure(2, figsize=(6, 6))
-    image_name = mstr.replace('mes', 'bmp')
+    fig, ax = plt.subplots(figsize=(6, 6))
+    image_name = mesh_file.replace('mes', 'bmp')
     im = plt.imread(image_name)
-    implot = plt.imshow(im)
-    plt.axis('tight')
+    ax.imshow(im)
+    ax.set_aspect('equal')
 
     # the plot will automatically align with an overlay image
-    plt.triplot(pts[:, 0], pts[:, 1], e)
-    plt.plot(pts[el_pos, 0], pts[el_pos, 1], 'ro')
-    plt.axis('off')
+    ax.triplot(pts[:, 0], pts[:, 1], e)
+    ax.plot(pts[el_pos, 0], pts[el_pos, 1], 'ro')
+    for i, el in enumerate(el_pos):
+        ax.text(pts[el, 0], pts[el, 1], str(i+1), color='r')
+    ax.axis('off')
     plt.show()
