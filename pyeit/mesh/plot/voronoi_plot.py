@@ -177,4 +177,3 @@ def voronoi_plot(pts, tri, val=None, fd=None):
     plt.show()
 
     return fig, ax
-
