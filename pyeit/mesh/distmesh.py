@@ -3,7 +3,8 @@
 # pylint: disable=too-many-arguments, too-many-locals
 # pylint: disable=too-many-instance-attributes
 """ implement 2D/3D distmesh """
-# author: benyuan liu
+# author: benyuan liu <liubenyuan@gmail.com>
+# 2015, 2016, 2017
 from __future__ import division, absolute_import, print_function
 
 from itertools import combinations
@@ -104,7 +105,7 @@ class DISTMESH(object):
 
         # remove duplicated points of p and p_fix
         # avoid overlapping of mesh points
-        if len(p_fix) > 0:
+        if self.nfix > 0:
             p = remove_duplicate_nodes(p, p_fix, self.geps)
             p = np.vstack([p_fix, p])
 

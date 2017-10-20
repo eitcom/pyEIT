@@ -49,11 +49,13 @@ def refinement_func_anomaly(tri_points, area):
     polygon = Path(refinement_func_anomaly.polygon)
     center_tri = np.sum(np.array(tri_points), axis=0)/3.
     if area > 0.005:
-        return True
+        refine_needed = True
     elif (area > 0.002) and polygon.contains_point(center_tri):
-        return True
+        refine_needed = True
     else:
-        return False
+        refine_needed = False
+
+    return refine_needed
 
 
 def create(num_el, max_area=0.01, curve=disc, refine=False):
@@ -70,7 +72,7 @@ def create(num_el, max_area=0.01, curve=disc, refine=False):
         mesh : mesh object, including
             ['elements'] -> Mx3 ndarray
             ['node']     -> Nx2 ndarray
-            ['alpha']    -> Mx1 ndarray
+            ['perm']     -> Mx1 ndarray
         el_pos : the location of electrodes nodes
     """
     # number of interpolate boundary nodes, 4x
@@ -128,29 +130,30 @@ def create(num_el, max_area=0.01, curve=disc, refine=False):
     #     elements, Mx3 ndarray
     #     element_attributes (if refine==True), Mx1 ndarray, triangle markers
     # build output dictionary, initialize with uniform element sigma
-    alpha = 1. * np.ones(np.shape(mesh_struct.elements)[0])
+    perm = 1. * np.ones(np.shape(mesh_struct.elements)[0])
     mesh = {'element': np.array(mesh_struct.elements),
             'node': np.array(mesh_struct.points),
-            'alpha': alpha}
+            'perm': perm}
+
     return mesh, el_pos
 
 
 # demo
 if __name__ == "__main__":
     # simple
-    ms, epos = create(16)
+    mesh_obj, e_pos = create(16)
 
     # show el_pos
-    print(ms)
+    print(mesh_obj)
 
     # extract 'node' and 'element'
-    p = ms['node']
-    t = ms['element']
+    p = mesh_obj['node']
+    t = mesh_obj['element']
 
     # show the meshes
     plt.plot()
     plt.triplot(p[:, 0], p[:, 1], t)
-    plt.plot(p[epos, 0], p[epos, 1], 'ro')
+    plt.plot(p[e_pos, 0], p[e_pos, 1], 'ro')
     plt.axis('equal')
     plt.xlabel('x')
     plt.ylabel('y')
