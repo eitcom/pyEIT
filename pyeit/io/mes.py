@@ -34,14 +34,14 @@ def load(fstr, mirror=False):
         save_bmp(fstr, bmp)
 
         # 1. extract mesh [104 Bytes / structure]
-        # ne = el2no.shape[0]
-        # (offset=4 + ne*104)
-        el2no, alpha = extract_element(fh)
+        # ne = tri.shape[0]
+        # (offset = 4 + ne*104)
+        tri, perm = extract_element(fh)
 
         # 2. extract nodes [20 Bytes / structure]
-        # nn = no2xy.shape[0]
+        # nn = pts.shape[0]
         # (offset=4 + nn*20)
-        no2xy = extract_node(fh)
+        pts = extract_node(fh)
 
         # 3. extract electrodes
         el_pos = extract_el(fh)
@@ -52,7 +52,7 @@ def load(fstr, mirror=False):
         el_index = np.mod(np.arange(ne_start, -ne_start, -1), ne)
         el_pos = el_pos[el_index]
 
-    mesh = {'element': el2no, 'node': no2xy, 'alpha': alpha}
+    mesh = {'node': pts, 'element': tri, 'perm': perm}
     return mesh, el_pos
 
 
@@ -100,17 +100,17 @@ def extract_element(fh):
     # number of element
     nff = ctypes.sizeof(ctypes.c_int)
     ne = struct.unpack('i', fh.read(nff))[0]
-    el2no = np.zeros((ne, 3), dtype='int')
-    alpha = np.zeros(ne, dtype='double')
+    tri = np.zeros((ne, 3), dtype='int')
+    perm = np.zeros(ne, dtype='double')
 
     for _ in range(ne):
         d = np.array(struct.unpack('4i10dd', fh.read(104)))
         # global element number
         ge_num = int(d[3])
-        el2no[ge_num, :] = d[:3]
-        alpha[ge_num] = d[4]
+        tri[ge_num, :] = d[:3]
+        perm[ge_num] = d[4]
 
-    return el2no, alpha
+    return tri, perm
 
 
 def extract_node(fh):
@@ -130,18 +130,18 @@ def extract_node(fh):
     # number of nodes
     nff = ctypes.sizeof(ctypes.c_int)
     nn = struct.unpack('i', fh.read(nff))[0]
-    no2xy = np.zeros((nn, 2), dtype='double')
+    pts = np.zeros((nn, 2), dtype='double')
 
     for _ in range(nn):
         d = np.array(struct.unpack('2di', fh.read(20)))
         # global node number
         gn_num = int(d[2])
         # offset to overlay on .bmp file
-        # xnew = x+8, ynew = -y-8 (yang bin)
-        # xnew = x-8, ynew = -y-8 (lby)
-        no2xy[gn_num, :] = [d[0]-4., -d[1]-4.]
+        # x_new = x+8, y_new = -y-8 (yang bin)
+        # x_new = x-8, y_new = -y-8 (lby)
+        pts[gn_num, :] = [d[0]-4., -d[1]-4.]
 
-    return no2xy
+    return pts
 
 
 def extract_el(fh):
@@ -163,8 +163,8 @@ if __name__ == "__main__":
 
     # print the size
     e, pts = mesh_obj['element'], mesh_obj['node']
-    # print('el2no size = (%d, %d)' % e.shape)
-    # print('no2xy size = (%d, %d)' % pts.shape)
+    # print('tri size = (%d, %d)' % e.shape)
+    # print('pts size = (%d, %d)' % pts.shape)
 
     # show mesh
     fig, ax = plt.subplots(1, figsize=(6, 6))

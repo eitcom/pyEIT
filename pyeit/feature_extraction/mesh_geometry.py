@@ -34,7 +34,7 @@ class SimpleMeshGeometry(object):
         Parameters
         ----------
         mesh : dictionary
-            'element', 'node', 'alpha'
+            'element', 'node', 'perm'
         el_pos : array
             indices of electrode nodes
         method : string
@@ -334,18 +334,19 @@ if __name__ == "__main__":
 
     # 2. demo using simple fit
     mg = SimpleMeshGeometry(mesh, el_pos)
-    alpha = np.zeros(tri.shape[0])
+    perm = np.zeros(tri.shape[0])
     fig, ax = plt.subplots(figsize=(9, 6))
     mesh_image = mstr.replace('mes', 'bmp')
     im = plt.imread(mesh_image)
     ax.imshow(im)
     # plot regions
-    alpha[mg.left()] = 1.0
-    alpha[mg.down_right()] = 2.0
-    img = ax.tripcolor(pts[:, 0], pts[:, 1], tri, alpha,
+    perm[mg.left()] = 1.0
+    perm[mg.down_right()] = 2.0
+    img = ax.tripcolor(pts[:, 0], pts[:, 1], tri, perm,
                        shading='flat', alpha=0.50)
     # plot electrodes and its numbering
     ax.plot(pts[el_pos, 0], pts[el_pos, 1], 'bo')
+    ax.set_title('left = 1.0, down right = 2.0')
     for i, e in enumerate(el_pos):
         ax.text(pts[e, 0], pts[e, 1], np.str(i+1), color='r', size=12)
     plt.colorbar(img)
