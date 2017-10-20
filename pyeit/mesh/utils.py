@@ -24,10 +24,12 @@ def dist(p):
     array_like
         distances of points to origin
     """
-    if len(p.shape) == 1:
-        return np.sqrt(np.sum(p**2))
+    if p.ndim == 1:
+        d = np.sqrt(np.sum(p**2))
     else:
-        return np.sqrt(np.sum(p**2, axis=1))
+        d = np.sqrt(np.sum(p**2, axis=1))
+
+    return d
 
 
 def edge_project(pts, fd, h0=1.0):
@@ -153,7 +155,7 @@ def check_order(no2xy, el2no):
         _fn = tri_area
     elif n_vertices == 4:
         _fn = tet_volume
-    # calculate ae and re-order el2no if necessary
+    # calculate ae and re-order tri if necessary
     for ei in range(el_num):
         no = el2no[ei, :]
         xy = no2xy[no, :]
@@ -197,9 +199,11 @@ if __name__ == "__main__":
     def fd_test(p):
         """ unit circle/ball """
         if len(p.shape) == 1:
-            return np.sqrt(np.sum(p**2)) - 1.
+            d = np.sqrt(np.sum(p**2)) - 1.
         else:
-            return np.sqrt(np.sum(p**2, axis=1)) - 1.
+            d = np.sqrt(np.sum(p**2, axis=1)) - 1.
+
+        return d
 
     p_test = [[1, 2, 3], [2, 2, 2], [1, 3, 3], [1, 1, 1]]
     a = edge_project(p_test, fd_test)
