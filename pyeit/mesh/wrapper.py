@@ -34,7 +34,7 @@ def create(n_el=16, fd=None, fh=None, p_fix=None, bbox=None, h0=0.1):
     Returns
     -------
     dict
-        {'element', 'node', 'alpha'}
+        {'element', 'node', 'perm'}
     """
     if bbox is None:
         bbox = [[-1, -1], [1, 1]]
@@ -42,7 +42,7 @@ def create(n_el=16, fd=None, fh=None, p_fix=None, bbox=None, h0=0.1):
     bbox = np.array(bbox)
     n_dim = bbox.shape[1]
     if n_dim not in [2, 3]:
-        raise TypeError('distmesh only support 2D or 3D')
+        raise TypeError('distmesh only supports 2D or 3D')
     if bbox.shape[0] != 2:
         raise TypeError('please specify lower and upper bound of bbox')
 
@@ -66,21 +66,21 @@ def create(n_el=16, fd=None, fh=None, p_fix=None, bbox=None, h0=0.1):
     t = check_order(p, t)
     # 3. generate electrodes, the same as p_fix (top n_el)
     el_pos = np.arange(n_el)
-    # 4. init uniform element sigma
-    alpha = np.ones(t.shape[0], dtype=np.float)
+    # 4. init uniform element permittivity (sigma)
+    perm = np.ones(t.shape[0], dtype=np.float)
     # 5. build output structure
     mesh = {'element': t,
             'node': p,
-            'alpha': alpha}
+            'perm': perm}
     return mesh, el_pos
 
 
-def set_alpha(mesh, anomaly=None, background=None):
+def set_perm(mesh, anomaly=None, background=None):
     """ wrapper for pyEIT interface
 
     Note
     ----
-    update alphas of mesh structure, if specified,
+    update permittivity of mesh, if specified.
 
     Parameters
     ----------
@@ -88,9 +88,9 @@ def set_alpha(mesh, anomaly=None, background=None):
         mesh structure
     anomaly : dict, optional
         anomaly is a dictionary (or arrays of dictionary) contains,
-        {'x': val, 'y': val, 'd': val, 'alpha': val}
-        all alphas on triangles whose distance to (x,y) are less than (d)
-        will be replaced with a new alpha, alpha can have a complex dtype
+        {'x': val, 'y': val, 'd': val, 'perm': val}
+        all permittivity on triangles whose distance to (x,y) are less than (d)
+        will be replaced with a new value, 'perm' may be a complex value.
     background : float, optional
         set background permittivity
 
@@ -99,21 +99,21 @@ def set_alpha(mesh, anomaly=None, background=None):
     dict
         updated mesh structure
     """
-    el2no = mesh['element']
-    no2xy = mesh['node']
-    alpha = mesh['alpha']
-    tri_centers = np.mean(no2xy[el2no], axis=1)
+    pts = mesh['element']
+    tri = mesh['node']
+    perm = mesh['perm'].copy()
+    tri_centers = np.mean(tri[pts], axis=1)
 
     # this code is equivalent to:
-    # >>> N = np.shape(el2no)[0]
+    # >>> N = np.shape(tri)[0]
     # >>> for i in range(N):
-    # >>>     tri_centers[i] = np.mean(no2xy[el2no[i]], axis=0)
+    # >>>     tri_centers[i] = np.mean(pts[tri[i]], axis=0)
     # >>> plt.plot(tri_centers[:,0], tri_centers[:,1], 'kx')
-    n = np.size(mesh['alpha'])
+    n = np.size(mesh['perm'])
 
     # reset background if needed
     if background is not None:
-        alpha = background * np.ones(n, dtype='complex')
+        perm = background * np.ones(n)
 
     if anomaly is not None:
         for _, attr in enumerate(anomaly):
@@ -126,22 +126,22 @@ def set_alpha(mesh, anomaly=None, background=None):
             else:
                 index = np.sqrt((tri_centers[:, 0] - attr['x'])**2 +
                                 (tri_centers[:, 1] - attr['y'])**2) < d
-            # update alpha within indices
-            alpha[index] = attr['alpha']
+            # update permittivity within indices
+            perm[index] = attr['perm']
 
-    mesh_new = {'node': no2xy,
-                'element': el2no,
-                'alpha': alpha}
+    mesh_new = {'node': tri,
+                'element': pts,
+                'perm': perm}
     return mesh_new
 
 
-def circle(n_el=16, n_fan=8, n_layer=6):
+def layer_circle(n_el=16, n_fan=8, n_layer=8):
     """ generate mesh on unit-circle """
     model = MeshCircle(n_fan=n_fan, n_layer=n_layer, n_el=n_el)
     p, e, el_pos = model.create()
-    alpha = np.ones(e.shape[0])
+    perm = np.ones(e.shape[0])
 
     mesh = {'element': e,
             'node': p,
-            'alpha': alpha}
+            'perm': perm}
     return mesh, el_pos
