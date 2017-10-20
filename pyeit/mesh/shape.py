@@ -164,7 +164,7 @@ def fix_points_fd(fd, n_el=16, pc=None):
     return pts_new
 
 
-def fix_points_circle(pc=None, r=1., n_el=16):
+def fix_points_circle(pc=None, offset=0, r=1., ppl=16):
     """
     return fixed and uniformly distributed points on
     a circle with radius r
@@ -175,7 +175,7 @@ def fix_points_circle(pc=None, r=1., n_el=16):
         center of points
     r : float, optional
         radius
-    n_el : number of electrodes, optional
+    ppl : number of points, optional
 
     Returns
     -------
@@ -185,7 +185,8 @@ def fix_points_circle(pc=None, r=1., n_el=16):
     if pc is None:
         pc = [0, 0]
 
-    theta = 2. * np.pi * np.arange(n_el) / float(n_el)
+    delta_theta = 2. * np.pi / float(ppl)
+    theta = np.arange(ppl) * delta_theta + delta_theta * offset
     p_fix = [[-r*np.cos(th), r*np.sin(th)] for th in theta]
     return np.array(p_fix) + pc
 
