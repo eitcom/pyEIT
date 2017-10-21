@@ -1,7 +1,8 @@
 # coding: utf-8
 # pylint: disable=invalid-name
-# author: benyuan liu
-""" demo for distmesh """
+""" demo for distmesh 3D """
+# author: benyuan liu <byliu@fmmu.edu.cn>
+# 2015-01-07, 2017-10-20
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
@@ -14,7 +15,7 @@ import pyeit.mesh.plot as mplot
 bbox = [[-1, -1, -1], [1, 1, 1]]
 
 # save calling convention as distmesh 2D
-ms, elPos = mesh.create(h0=0.2, bbox=bbox)
+ms, el_pos = mesh.create(h0=0.2, bbox=bbox)
 p = ms['node']
 t = ms['element']
 

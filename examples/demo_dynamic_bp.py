@@ -1,6 +1,7 @@
 # coding: utf-8
-# author: benyuan liu
 """ demo code for back-projection """
+# author: benyuan liu <byliu@fmmu.edu.cn>
+# 2014-12-20, 2017-10-20
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
@@ -12,20 +13,20 @@ from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.bp as bp
 
 """ 0. build mesh """
-ms, el_pos = mesh.create(16, h0=0.1)
+mesh_obj, el_pos = mesh.create(16, h0=0.1)
 
 # extract node, element, alpha
-no2xy = ms['node']
-el2no = ms['element']
+pts = mesh_obj['node']
+tri = mesh_obj['element']
 
 """ 1. problem setup """
-anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'alpha': 10.0}]
-ms1 = mesh.set_alpha(ms, anomaly=anomaly, background=1.0)
+anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'perm': 10.0}]
+mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 
 # draw
-delta_alpha = np.real(ms1['alpha'] - ms['alpha'])
+delta_perm = np.real(mesh_new['perm'] - mesh_obj['perm'])
 fig, ax = plt.subplots()
-im = ax.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, delta_alpha,
+im = ax.tripcolor(pts[:, 0], pts[:, 1], tri, delta_perm,
                   shading='flat', cmap=plt.cm.viridis)
 ax.set_title(r'$\Delta$ Conductivities')
 fig.colorbar(im)
@@ -40,21 +41,21 @@ el_dist, step = 1, 1
 ex_mat = eit_scan_lines(16, el_dist)
 
 # calculate simulated data
-fwd = Forward(ms, el_pos)
-f0 = fwd.solve(ex_mat, step=step, perm=ms['alpha'])
-f1 = fwd.solve(ex_mat, step=step, perm=ms1['alpha'])
+fwd = Forward(mesh_obj, el_pos)
+f0 = fwd.solve_eit(ex_mat, step=step, perm=mesh_obj['perm'])
+f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new['perm'])
 
 """
 3. naive inverse solver using back-projection
 """
-eit = bp.BP(ms, el_pos, ex_mat=ex_mat, step=1, parser='std')
+eit = bp.BP(mesh_obj, el_pos, ex_mat=ex_mat, step=1, parser='std')
 eit.setup(weight='none')
 ds = 192.0 * eit.solve(f1.v, f0.v)
 
 # plot
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
-im = ax1.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, ds, cmap=plt.cm.viridis)
+im = ax1.tripcolor(pts[:, 0], pts[:, 1], tri, ds, cmap=plt.cm.viridis)
 ax1.set_title(r'$\Delta$ Conductivities')
 ax1.axis('equal')
 fig.colorbar(im)

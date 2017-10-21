@@ -4,7 +4,8 @@
 util functions for 2D EIT
 1. generate stimulation lines/patterns
 """
-# author: benyuan liu
+# author: benyuan liu (liubenyuan@gmail.com)
+# 2015/10/11, 2017/09/30
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
@@ -38,22 +39,25 @@ def eit_scan_lines(ne=16, dist=1):
     dist is the distance (number of electrodes) of A to B
     in 'adjacent' mode, dist=1, in 'apposition' mode, dist=ne/2
 
+    WARNING
+    -------
+    ex_mat is local index, where it is ranged from 0...15.
+    In FEM applications, you should convert ex_mat to
+    global index using el_pos information.
+
     Examples
     --------
+    # let ne=16
     if mode=='neighbor':
-        ex_mat = eit_scan_lines(ne)
+        ex_mat = eit_scan_lines()
     elif mode=='apposition':
-        ex_mat = eit_scan_lines(ne, ne/2)
+        ex_mat = eit_scan_lines(dist=8)
     """
-    # A: diagonal
-    ex_pos = np.eye(ne)
-    # B: rotate right by dist
-    ex_neg = -1 * np.roll(ex_pos, dist, axis=1)
-    ex = ex_pos + ex_neg
+    ex = np.array([[i, np.mod(i+dist, ne)] for i in range(ne)])
 
     return ex
 
 
 if __name__ == "__main__":
-    m = eit_scan_lines()
+    m = eit_scan_lines(dist=8)
     print(m)

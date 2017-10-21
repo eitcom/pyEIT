@@ -1,8 +1,8 @@
 # ![pyeit](doc/images/logo.png)
 
-*A python-based, open-source package for Electrical Impedance Tomography (EIT)*
+*A python-based, open-source framework of Electrical Impedance Tomography (EIT)*
 
-**Principles: modularity, minimalism, easy extensibility!**
+**Principles: modularity, minimalism, extensibility and OOP!**
 
 ## 1. Introduction
 
@@ -10,20 +10,26 @@
 
 | Packages       | Optional   | Note                                     |
 | -------------- | ---------- | ---------------------------------------- |
-| **numpy**      |            | tested with `numpy-1.10.4`, `numpy-1.11.rc1` |
-| **scipy**      |            | tested with `scipy-0.17.0`               |
-| **matplotlib** |            | tested with `matplotlib-1.5.1`           |
+| **numpy**      |            | tested with `numpy-1.13.3`               |
+| **scipy**      |            | tested with `scipy-0.19.1`               |
+| **matplotlib** |            | tested with `matplotlib-2.1.0`           |
 | **vispy**      | *Optional* | tested with `vispy-git`                  |
-| **pandas**     | *Optional* | tested with `pandas-0.17.1`              |
-| **xarray**     | *Optional* | for long term data analysis              |
-| **distmesh**   | *Optional* | it currently has a build-in distmesh module (supports 2D and 3D!) |
+| **pandas**     | *Optional* | tested with `pandas-0.20.3`              |
+| **xarray**     | *Optional* | for large data analysis                  |
+| **distmesh**   | *Optional* | we provide a build-in distmesh module (supports 2D and 3D) |
 | **tetgen**     | *Optional* | generate 3D meshes                       |
 
-**Note 1, Why vispy ?** `pyEIT` uses `vispy` for visualizing (optional) 3D meshes (tetrahedron). `vispy` has minimal system dependencies, all you need is a decent graphical card with `OpenGL` support. It supports fast rendering, which I think is more superior to `vtk` or `mayavi` especially for python 3 support. Please go to the website [vispy.org](http://vispy.org/) or github repository [vispy.github](https://github.com/vispy/vispy) for more details.
+**Q1, Why you choose vispy for 3D visualization?**
 
-**Note 2, How to contribute ?** The interested user can contribute **(create a PR! any type of improvement is welcome)** forward simulation, inverse solving algorithms as well as their models at current stage. We will setup a wiki page dedicated to this topic.
+`pyEIT` uses `vispy` for visualizing 3D meshes (tetrahedron), and this module is not required if you are using 2D EIT only. `vispy` has minimal system dependencies and it is purely python. All you need is a decent graphical card with `OpenGL` support. It supports fast rendering, which I think is more superior to `vtk` or `mayavi` and it also has decent support for python 3. Please go to the website [vispy.org](http://vispy.org/) or github repository [vispy.github](https://github.com/vispy/vispy) for more details. Installation of vispy is simple by typing `python setup.py install`. We are also considering `mayavi` for a future version of `pyEIT`.
 
-**Note 3, Fast setup.** [Anaconda from continuum](https://www.continuum.io/downloads) is highly recommended for this package. PyEIT is purely python and has minimal dependencies. It can be run directly on an existing anaconda environment (`python-2.7` and `python-3.5`).
+**Q2, How to contribute ?** 
+
+Interested users can contribute **(create a PR! any type of improvement is welcome)** FEM forward simulations, inverse solving (EIT imaging) algorithms as well as their models. We will setup a wiki page dedicated to this topic.
+
+**Q3, Fast setup.**
+
+[Anaconda from continuum](https://www.continuum.io/downloads) is highly recommended for this package. PyEIT is purely python and has minimal dependencies.
 
 ### 1.2 Features
 
@@ -33,12 +39,12 @@
  - [x] Add support for 3D forward and inverse computing
  - [x] 3D mesh generation and visualization
  - [ ] Generate complex shape using distmesh
- - [ ] More algorithms and data pre-processing modules
- - [ ] Complete electrode model
+ - [ ] Generate 3D phantoms
+ - [ ] Complete electrode model (CEM) support
 
 ## 2. Installation
 
-`pyEIT` is purely python based (in current version), so it can be installed and run without any difficulty.
+`pyEIT` is purely python based, it can be installed and run without any difficulty.
 
 ### 2.1 Install global
 
@@ -47,17 +53,21 @@ $ python setup.py build
 $ python setup.py install
 ```
 
-### 2.2 set PYTHONPATH (recommended)
+### 2.2 Install locally
+
+User can track the git version of `pyEIT`, and using it locally by setting the `PYTHONPATH` variable. This method is recommended.
 
 ```
 export PYTHONPATH=/path/to/pyEIT
 ```
 
-In windows, you may set `PYTHONPATH` as a system wide environment. If you are using `spyder-IDE`, or `pyCharm`, you may also set `PYTHONPATH` in the IDE, which is more convenient. Please refer to a specific tool for detailed information.
+Under windows, you may set `PYTHONPATH` as a system wide environment. If you are using `spyder`, or `pyCharm`, you may also set `PYTHONPATH` locally per project in the IDE, which is more convenient. Please refer to a specific tool for detailed information.
 
 ## 3. Run the demo
 
-Enter the demo folder, pick one demo, and run !
+Enter the demo folder, pick one demo and run!
+
+**Note:** the following images may be outdated due to that the parameters of a EIT algorithm may be changed in different versions of `pyEIT`. And it is there in the code, so just run the demo.
 
 ### 3.1 (2D) forward and inverse computing
 
@@ -85,18 +95,16 @@ Enter the demo folder, pick one demo, and run !
 
 **Notes:**
 
- - The 3D visualization can be adjusted using mouse wheels interactively. Seeking a perfect visualization mode, transparency or opaque, is in fact an individual taste. User can also use `mayavi` and `vtk` for visualization purpose.
- - Solving the inverse problem of 3D EIT, requires the electrodes to be placed at multiple altitude (z-axis) in order to have (better) z-resolution. This should be done carefully, as adding extra z-belt introduces more stimulation patterns, which in turn adds to the computational loads.
+ - 3D visualization plotted using `vispy` can be adjusted using mouse wheels interactively. Seeking a perfect visualization mode, transparency or opaque, is in fact an individual taste. User can also try `mayavi` and `vtk` for the visualization purpose using the unified 3D meshing structure.
+ - Solving the inverse problem of 3D EIT, requires the electrodes to be placed at multiple altitude (z-axis) in order to have a (better) z-resolution. This should be done carefully, as adding extra z-belt introduces more stimulation patterns, which in turn adds to the computational loads.
 
 ## 4. Contribute to pyEIT.
 
-Please give `pyEIT` a **star** !!
-
-How to contribute: **fork** and commit a pull request **(PR)** !!
+Give `pyEIT` a **star**, **fork** this project and commit a pull request **(PR)** !
 
 ## 5. Cite our work.
 
-If you find `pyEIT` useful, please cite our work !
+If you find `pyEIT` useful, please cite our work!
 
 ```bibtex
 @inproceedings{liu2016pyeit,

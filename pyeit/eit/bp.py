@@ -1,7 +1,8 @@
 # coding: utf-8
 # pylint: disable=invalid-name, no-member, arguments-differ
 """ bp (back-projection) and f(filtered)-bp module """
-# author: benyuan liu
+# author: benyuan liu <byliu@fmmu.edu.cn>
+# 2015, 2016, 2017
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
@@ -18,7 +19,7 @@ class BP(EitBase):
         }
 
         # build the weighting matrix
-        if weight is 'simple':
+        if weight == 'simple':
             weights = self.simple_weight(self.B.shape[0])
             self.H = weights * self.B
 
@@ -72,7 +73,7 @@ class BP(EitBase):
         ----
         as in fem.py, we could either smear at
         (1) elements, using the center co-ordinates (x,y) of each element
-            >> center_e = np.mean(self.no2xy[self.el2no], axis=1)
+            >> center_e = np.mean(self.pts[self.tri], axis=1)
         (2) nodes.
 
         Parameters
@@ -85,7 +86,7 @@ class BP(EitBase):
         NDArray
             weighting matrix
         """
-        d = np.sqrt(np.sum(self.no2xy**2, axis=1))
+        d = np.sqrt(np.sum(self.pts ** 2, axis=1))
         r = np.max(d)
         w = (1.01*r - d) / (1.01*r)
         # weighting by element-wise multiplication W with B

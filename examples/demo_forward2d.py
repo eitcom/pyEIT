@@ -1,6 +1,7 @@
 # coding: utf-8
-# author: benyuan liu
 """ demo on forward 2D """
+# author: benyuan liu <liubenyuan@gmail.com>
+# 2015, 2017
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
@@ -12,47 +13,50 @@ from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
 
 """ 0. build mesh """
-ms, el_pos = mesh.create(16, h0=0.06)
+mesh_obj, el_pos = mesh.create(16, h0=0.08)
 
 # extract node, element, alpha
-no2xy = ms['node']
-el2no = ms['element']
+pts = mesh_obj['node']
+tri = mesh_obj['element']
+x, y = pts[:, 0], pts[:, 1]
+quality.stats(pts, tri)
 
-# report the status of the 2D mesh
-quality.stats(no2xy, el2no)
+# change permittivity
+anomaly = [{'x': 0.40, 'y': 0.50, 'd': 0.20, 'perm': 100.0}]
+mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
+perm = mesh_new['perm']
 
 """ 1. FEM forward simulations """
 # setup EIT scan conditions
 ex_dist, step = 7, 1
 ex_mat = eit_scan_lines(16, ex_dist)
-
-# calculate simulated data
-fwd = Forward(ms, el_pos)
-
-# in python, index start from 0
 ex_line = ex_mat[0].ravel()
 
-# change alpha
-anomaly = [{'x': 0.50, 'y': 0.50, 'd': 0.20, 'alpha': 10.0}]
-ms_test = mesh.set_alpha(ms, anomaly=anomaly, background=1.0)
-tri_perm = ms_test['alpha']
-
-# solving once using fem
-f, _ = fwd.solve_once(ex_line, tri_perm)
+# calculate simulated data using FEM
+fwd = Forward(mesh_obj, el_pos)
+f, _ = fwd.solve(ex_line, perm=perm)
 f = np.real(f)
-vf = np.linspace(min(f), max(f), 32)
 
-# plot
+""" 2. plot """
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
-ax1.tricontour(no2xy[:, 0], no2xy[:, 1], el2no, f, vf,
+# draw equi-potential lines
+vf = np.linspace(min(f), max(f), 32)
+ax1.tricontour(x, y, tri, f, vf,
                linewidth=0.5, cmap=plt.cm.viridis)
-ax1.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, np.real(tri_perm),
+# draw mesh structure
+ax1.tripcolor(x, y, tri, np.real(perm),
               edgecolors='k', shading='flat', alpha=0.5,
               cmap=plt.cm.Greys)
-ax1.plot(no2xy[el_pos, 0], no2xy[el_pos, 1], 'ro')
+# draw electrodes
+ax1.plot(x[el_pos], y[el_pos], 'ro')
+for i, e in enumerate(el_pos):
+    ax1.text(x[e], y[e], str(i+1), size=12)
 ax1.set_title('equi-potential lines')
-ax1.axis('equal')
-fig.set_size_inches(6, 4)
+# clean up
+ax1.set_aspect('equal')
+ax1.set_ylim([-1.2, 1.2])
+ax1.set_xlim([-1.2, 1.2])
+fig.set_size_inches(6, 6)
 # fig.savefig('demo_bp.png', dpi=96)
 plt.show()

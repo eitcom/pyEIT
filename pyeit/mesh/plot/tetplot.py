@@ -14,7 +14,7 @@ from vispy import app, gloo, scene
 from vispy.visuals import Visual
 
 #
-from .simconv import sim2edge, sim2tri
+from pyeit.mesh.plot.simconv import sim2edge, sim2tri
 
 # build vertex shader for tetplot
 vert = """
@@ -84,9 +84,9 @@ class TetPlotVisual(Visual):
         self.shared_program['u_color'] = mask_color
 
         # build buffer
-        if mode is 'triangles':
+        if mode == 'triangles':
             vbo = sim2tri(simplices)
-        elif mode is 'lines':
+        elif mode == 'lines':
             vbo = sim2edge(simplices)
         else:
             raise ValueError('Drawing mode = ' + mode + ' not supported')
@@ -187,6 +187,7 @@ def blue_red_colormap(f):
     mapper = cm.ScalarMappable(norm=norm, cmap=brcmap)
     v = mapper.to_rgba(f)
     return v.astype(np.float32)
+
 
 # demo
 if __name__ == '__main__':
