@@ -53,21 +53,21 @@ $ python setup.py build
 $ python setup.py install
 ```
 
-### 2.2 Install local
+### 2.2 Install locally
 
-User can track the git version of `pyEIT`, and using it locally via setting the `PYTHONPATH` variable in the environment. This method is recommended.
+User can track the git version of `pyEIT`, and using it locally by setting the `PYTHONPATH` variable. This method is recommended.
 
 ```
 export PYTHONPATH=/path/to/pyEIT
 ```
 
-Under windows, you may set `PYTHONPATH` as a system wide environment. If you are using `spyder-IDE`, or `pyCharm`, you may also set `PYTHONPATH` locally per project in the IDE, which is more convenient. Please refer to a specific tool for detailed information.
+Under windows, you may set `PYTHONPATH` as a system wide environment. If you are using `spyder`, or `pyCharm`, you may also set `PYTHONPATH` locally per project in the IDE, which is more convenient. Please refer to a specific tool for detailed information.
 
 ## 3. Run the demo
 
-Enter the demo folder, pick one demo, and run !
+Enter the demo folder, pick one demo and run!
 
-**Note:** the following images may be outdated due to that the parameters of a EIT algorithm may change in different version of `pyEIT`. And it is there in the code, so just run the demo.
+**Note:** the following images may be outdated due to that the parameters of a EIT algorithm may be changed in different versions of `pyEIT`. And it is there in the code, so just run the demo.
 
 ### 3.1 (2D) forward and inverse computing
 
@@ -95,7 +95,7 @@ Enter the demo folder, pick one demo, and run !
 
 **Notes:**
 
- - 3D visualization plotted using `vispy` can be adjusted using mouse wheels interactively. Seeking a perfect visualization mode, transparency or opaque, is in fact an individual taste. User can also use `mayavi` and `vtk` for the visualization purpose using the meshing structure.
+ - 3D visualization plotted using `vispy` can be adjusted using mouse wheels interactively. Seeking a perfect visualization mode, transparency or opaque, is in fact an individual taste. User can also try `mayavi` and `vtk` for the visualization purpose using the unified 3D meshing structure.
  - Solving the inverse problem of 3D EIT, requires the electrodes to be placed at multiple altitude (z-axis) in order to have a (better) z-resolution. This should be done carefully, as adding extra z-belt introduces more stimulation patterns, which in turn adds to the computational loads.
 
 ## 4. Contribute to pyEIT.
@@ -104,7 +104,7 @@ Give `pyEIT` a **star**, **fork** this project and commit a pull request **(PR)*
 
 ## 5. Cite our work.
 
-If you find `pyEIT` useful, please cite our work !
+If you find `pyEIT` useful, please cite our work!
 
 ```bibtex
 @inproceedings{liu2016pyeit,
