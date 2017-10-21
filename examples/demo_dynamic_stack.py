@@ -1,7 +1,7 @@
 # coding: utf-8
+""" demo using stacked exMtx (the devil is in the details) """
 # author: benyuan liu <liubenyuan@gmail.com>
 # date: 2015-07-23
-""" demo using stacked exMtx (the devil is in the details) """
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
@@ -14,24 +14,24 @@ from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.jac as jac
 
 """ 1. setup """
-ms, el_pos = mesh.create(16)
+mesh_obj, el_pos = mesh.create(16)
 
-# test function for altering the 'alpha' in mesh dictionary
-anomaly = [{'x': 0.4, 'y': 0.4, 'd': 0.2, 'alpha': 100}]
-ms1 = mesh.set_alpha(ms, anomaly=anomaly, background=1.)
+# test function for altering the permittivity in mesh
+anomaly = [{'x': 0.4, 'y': 0.4, 'd': 0.2, 'perm': 100}]
+mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.)
 
 # extract node, element, alpha
-no2xy = ms['node']
-el2no = ms['element']
-alpha = ms1['alpha'] - ms['alpha']
+pts = mesh_obj['node']
+tri = mesh_obj['element']
+delta_perm = mesh_new['perm'] - mesh_obj['perm']
 
 # show alpha
 fig, ax = plt.subplots(figsize=(6, 4))
-im = ax.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no,
-                  np.real(alpha), shading='flat')
+im = ax.tripcolor(pts[:, 0], pts[:, 1], tri,
+                  np.real(delta_perm), shading='flat')
 fig.colorbar(im)
-ax.axis('tight')
-ax.set_title(r'$\Delta$ Permitivity')
+ax.set_aspect('equal')
+ax.set_title(r'$\Delta$ Permittivity')
 
 """ 2. calculate simulated data using stack ex_mat """
 el_dist, step = 7, 1
@@ -41,21 +41,21 @@ ex_mat2 = eit_scan_lines(n_el, 1)
 ex_mat = np.vstack([ex_mat1, ex_mat2])
 
 # forward solver
-fwd = Forward(ms, el_pos)
-f0 = fwd.solve(ex_mat, step, perm=ms['alpha'])
-f1 = fwd.solve(ex_mat, step, perm=ms1['alpha'])
+fwd = Forward(mesh_obj, el_pos)
+f0 = fwd.solve_eit(ex_mat, step, perm=mesh_obj['perm'])
+f1 = fwd.solve_eit(ex_mat, step, perm=mesh_new['perm'])
 
 """ 3. solving using dynamic EIT """
 # number of stimulation lines/patterns
-eit = jac.JAC(ms, el_pos, ex_mat=ex_mat, step=step, parser='std')
+eit = jac.JAC(mesh_obj, el_pos, ex_mat=ex_mat, step=step, parser='std')
 eit.setup(p=0.40, lamb=1e-3, method='kotre')
-ds = eit.solve(f1.v, f0.v)
+ds = eit.solve(f1.v, f0.v, normalize=False)
 
 """ 4. plot """
 fig, ax = plt.subplots(figsize=(6, 4))
-im = ax.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, np.real(ds),
+im = ax.tripcolor(pts[:, 0], pts[:, 1], tri, np.real(ds),
                   shading='flat', alpha=0.90, cmap=plt.cm.viridis)
 fig.colorbar(im)
-ax.axis('tight')
-ax.set_title(r'$\Delta$ Permitivity Reconstructed')
+ax.set_aspect('equal')
+ax.set_title(r'$\Delta$ Permittivity Reconstructed')
 # plt.savefig('quasi-demo-eit.pdf')

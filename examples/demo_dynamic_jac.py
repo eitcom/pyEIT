@@ -1,6 +1,7 @@
 # coding: utf-8
-# author: benyuan liu
 """ demo on dynamic eit using JAC method """
+# author: benyuan liu <byliu@fmmu.edu.cn>
+# 2014-12-07, 2017-10-20
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
@@ -9,41 +10,59 @@ import matplotlib.pyplot as plt
 import pyeit.mesh as mesh
 from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
+
 import pyeit.eit.jac as jac
+from pyeit.eit.interp2d import sim2pts
 
 """ 0. construct mesh """
-ms, el_pos = mesh.create(16, h0=0.1)
+mesh_obj, el_pos = mesh.create(16, h0=0.1)
+# mesh_obj, el_pos = mesh.layer_circle()
 
 # extract node, element, alpha
-no2xy = ms['node']
-el2no = ms['element']
+pts = mesh_obj['node']
+tri = mesh_obj['element']
+x, y = pts[:, 0], pts[:, 1]
 
 """ 1. problem setup """
-anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'alpha': 10.0}]
-ms1 = mesh.set_alpha(ms, anomaly=anomaly, background=1.0)
+mesh_obj['alpha'] = np.random.rand(tri.shape[0]) * 200 + 100
+anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'perm': 1000.0}]
+mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly)
 
 """ 2. FEM simulation """
-el_dist, step = 1, 1
+el_dist, step = 8, 1
 ex_mat = eit_scan_lines(16, el_dist)
 
 # calculate simulated data
-fwd = Forward(ms, el_pos)
-f0 = fwd.solve(ex_mat, step=step, perm=ms['alpha'])
-f1 = fwd.solve(ex_mat, step=step, perm=ms1['alpha'])
+fwd = Forward(mesh_obj, el_pos)
+f0 = fwd.solve_eit(ex_mat, step=step, perm=mesh_obj['perm'])
+f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new['perm'])
 
 """ 3. JAC solver """
-# number of stimulation lines/patterns
-eit = jac.JAC(ms, el_pos, ex_mat=ex_mat, step=step,
+# Note: if the jac and the real-problem are generated using the same mesh,
+# then, jac_normalized in JAC and data normalization in solve are not needed.
+# However, when you generate jac from a known mesh, but in real-problem
+# (mostly) the shape and the electrode positions are not exactly the same
+# as in mesh generating the jac, then JAC and data must be normalized.
+eit = jac.JAC(mesh_obj, el_pos, ex_mat=ex_mat, step=step,
               perm=1., parser='std')
-eit.setup(p=0.30, lamb=1e-4, method='kotre')
-ds = eit.solve(f1.v, f0.v)
+eit.setup(p=0.5, lamb=0.01, method='kotre')
+ds = eit.solve(f1.v, f0.v, normalize=False)
+ds_n = sim2pts(pts, tri, np.real(ds))
 
-# plot
+# plot ground truth
 fig, ax = plt.subplots(figsize=(6, 4))
-im = ax.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, np.real(ds),
-                  shading='flat', cmap=plt.cm.viridis)
+delta_perm = mesh_new['perm'] - mesh_obj['perm']
+im = ax.tripcolor(x, y, tri, np.real(delta_perm), shading='flat')
 fig.colorbar(im)
-ax.axis('equal')
+ax.set_aspect('equal')
+
+# plot EIT reconstruction
+fig, ax = plt.subplots(figsize=(6, 4))
+im = ax.tripcolor(x, y, tri, ds_n, shading='flat')
+for i, e in enumerate(el_pos):
+    ax.annotate(str(i+1), xy=(x[e], y[e]), color='r')
+fig.colorbar(im)
+ax.set_aspect('equal')
 # fig.set_size_inches(6, 4)
 # plt.savefig('../figs/demo_jac.png', dpi=96)
 plt.show()

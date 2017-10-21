@@ -1,6 +1,7 @@
 # coding: utf-8
-# author: benyuan liu
 """ reproducible code for EIT2016 """
+# author: benyuan liu <liubenyuan@gmail.com>
+# 2016, 2017
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
@@ -12,30 +13,28 @@ import matplotlib.gridspec as gridspec
 # pyEIT 2D algorithm modules
 import pyeit.mesh as mesh
 from pyeit.eit.fem import Forward
-from pyeit.eit.pde import pdeprtni
+from pyeit.eit.interp2d import sim2pts
 from pyeit.eit.utils import eit_scan_lines
+
 import pyeit.eit.greit as greit
 import pyeit.eit.bp as bp
 import pyeit.eit.jac as jac
 
 """ 0. construct mesh structure """
-ms, el_pos = mesh.create(16, h0=0.1)
+mesh_obj, el_pos = mesh.create(16, h0=0.08)
 
-# extract node, element, alpha
-no2xy = ms['node']
-el2no = ms['element']
+# extract node, element, permittivity
+pts = mesh_obj['node']
+tri = mesh_obj['element']
 
 """ 1. problem setup """
-# this step is not needed, actually
-ms0 = mesh.set_alpha(ms, background=1.0)
-
-# test function for altering the 'alpha' in mesh dictionary
-anomaly = [{'x': 0.4,  'y': 0,    'd': 0.1, 'alpha': 10},
-           {'x': -0.4, 'y': 0,    'd': 0.1, 'alpha': 10},
-           {'x': 0,    'y': 0.5,  'd': 0.1, 'alpha': 0.1},
-           {'x': 0,    'y': -0.5, 'd': 0.1, 'alpha': 0.1}]
-ms1 = mesh.set_alpha(ms, anomaly=anomaly, background=1.0)
-alpha = np.real(ms1['alpha'] - ms0['alpha'])
+# test function for altering the permittivity in mesh
+anomaly = [{'x': 0.4,  'y': 0,    'd': 0.1, 'perm': 10},
+           {'x': -0.4, 'y': 0,    'd': 0.1, 'perm': 10},
+           {'x': 0,    'y': 0.5,  'd': 0.1, 'perm': 0.1},
+           {'x': 0,    'y': -0.5, 'd': 0.1, 'perm': 0.1}]
+mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
+delta_perm = np.real(mesh_new['perm'] - mesh_obj['perm'])
 
 """ ax1. FEM forward simulations """
 # setup EIT scan conditions
@@ -43,59 +42,76 @@ el_dist, step = 1, 1
 ex_mat = eit_scan_lines(16, el_dist)
 
 # calculate simulated data
-fwd = Forward(ms, el_pos)
-f0 = fwd.solve(ex_mat, step=step, perm=ms0['alpha'])
-f1 = fwd.solve(ex_mat, step=step, perm=ms1['alpha'])
+fwd = Forward(mesh_obj, el_pos)
+f0 = fwd.solve_eit(ex_mat, step=step, perm=mesh_obj['perm'])
+f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new['perm'])
 
 """ ax2. BP """
-eit = bp.BP(ms, el_pos, ex_mat=ex_mat, step=1, parser='std')
+eit = bp.BP(mesh_obj, el_pos, ex_mat=ex_mat, step=1, parser='std')
 ds = eit.solve(f1.v, f0.v, normalize=True)
 ds_bp = ds
 
 """ ax3. JAC """
-eit = jac.JAC(ms, el_pos, ex_mat=ex_mat, step=step,
+eit = jac.JAC(mesh_obj, el_pos, ex_mat=ex_mat, step=step,
               perm=1., parser='std')
-eit.setup(p=0.2, lamb=0.001, method='kotre')
-# parameter tuning is needed for better display
-ds = eit.solve(f1.v, f0.v)
-ds_jac = pdeprtni(no2xy, el2no, ds)
+# parameter tuning is needed for better EIT images
+eit.setup(p=0.5, lamb=0.1, method='kotre')
+# if the jacobian is not normalized, data may not to be normalized too.
+ds = eit.solve(f1.v, f0.v, normalize=False)
+ds_jac = sim2pts(pts, tri, ds)
 
 """ ax4. GREIT """
-eit = greit.GREIT(ms, el_pos, ex_mat=ex_mat, step=step, parser='std')
-ds = eit.solve(f1.v, f0.v)
+eit = greit.GREIT(mesh_obj, el_pos, ex_mat=ex_mat, step=step, parser='std')
+# parameter tuning is needed for better EIT images
+eit.setup(p=0.5, lamb=0.01)
+ds = eit.solve(f1.v, f0.v, normalize=False)
 x, y, ds_greit = eit.mask_value(ds, mask_value=np.NAN)
 
 """ build for EIT2016b (orig: 300p x 300p, 150dpi) """
-size = (6, 6)
+size = (8, 6)
 axis_size = [-1.2, 1.2, -1.2, 1.2]
+im_size = [-2, 34, -2, 34]
 fig = plt.figure(figsize=size)
 gs = gridspec.GridSpec(2, 2)
 
 # simulation
 ax1 = fig.add_subplot(gs[0, 0])
-ax1.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, alpha, shading='flat')
+im1 = ax1.tripcolor(pts[:, 0], pts[:, 1], tri, delta_perm,
+                    shading='flat', cmap=plt.cm.RdBu)
 ax1.set_title(r'(a) $\Delta$ Conductivity')
 ax1.axis(axis_size)
+ax1.set_aspect('equal')
+fig.colorbar(im1)
 ax1.axis('off')
 
 # Filtered BP
 ax2 = fig.add_subplot(gs[0, 1])
-ax2.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, np.real(ds_bp))
+im2 = ax2.tripcolor(pts[:, 0], pts[:, 1], tri, np.real(ds_bp),
+                    cmap=plt.cm.RdBu)
 ax2.set_title(r'(b) BP')
 ax2.axis(axis_size)
+ax2.set_aspect('equal')
+fig.colorbar(im2)
 ax2.axis('off')
 
 # JAC
 ax3 = fig.add_subplot(gs[1, 0])
-ax3.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, np.real(ds_jac))
+im3 = ax3.tripcolor(pts[:, 0], pts[:, 1], tri, np.real(ds_jac),
+                    cmap=plt.cm.RdBu)
 ax3.set_title(r'(c) JAC')
 ax3.axis(axis_size)
+ax3.set_aspect('equal')
+fig.colorbar(im3)
 ax3.axis('off')
 
 # GREIT
 ax4 = fig.add_subplot(gs[1, 1])
-ax4.imshow(np.real(ds_greit), interpolation='nearest')
+im4 = ax4.imshow(np.real(ds_greit), interpolation='nearest',
+                 cmap=plt.cm.RdBu)
 ax4.set_title(r'(d) GREIT')
+ax4.axis(im_size)
+ax4.set_aspect('equal')
+fig.colorbar(im4)
 ax4.axis('off')
 
 # save

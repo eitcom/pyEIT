@@ -1,6 +1,7 @@
 # coding: utf-8
-# author: benyuan liu
 """ demo using GREIT """
+# author: benyuan liu <byliu@fmmu.edu.cn>
+# 2016-09-10, 2017-10-20
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
@@ -12,27 +13,27 @@ from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.greit as greit
 
 """ 0. construct mesh """
-ms, el_pos = mesh.create(16, h0=0.1)
+mesh_obj, el_pos = mesh.create(16, h0=0.1)
 
 # extract node, element, alpha
-no2xy = ms['node']
-el2no = ms['element']
+pts = mesh_obj['node']
+tri = mesh_obj['element']
 
 """ 1. problem setup """
 # this step is not needed, actually
-ms0 = mesh.set_alpha(ms, background=1.0)
+# mesh_0 = mesh.set_perm(mesh_obj, background=1.0)
 
-# test function for altering the 'alpha' in mesh dictionary
-anomaly = [{'x': 0.4,  'y': 0,    'd': 0.1, 'alpha': 10},
-           {'x': -0.4, 'y': 0,    'd': 0.1, 'alpha': 10},
-           {'x': 0,    'y': 0.5,  'd': 0.1, 'alpha': 0.1},
-           {'x': 0,    'y': -0.5, 'd': 0.1, 'alpha': 0.1}]
-ms1 = mesh.set_alpha(ms, anomaly=anomaly, background=1.0)
-alpha = np.real(ms1['alpha'] - ms0['alpha'])
+# test function for altering the 'permittivity' in mesh
+anomaly = [{'x': 0.4,  'y': 0,    'd': 0.1, 'perm': 10},
+           {'x': -0.4, 'y': 0,    'd': 0.1, 'perm': 10},
+           {'x': 0,    'y': 0.5,  'd': 0.1, 'perm': 0.1},
+           {'x': 0,    'y': -0.5, 'd': 0.1, 'perm': 0.1}]
+mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
+delta_perm = np.real(mesh_new['perm'] - mesh_obj['perm'])
 
 # show alpha
 fig, ax = plt.subplots(figsize=(6, 4))
-im = ax.tripcolor(no2xy[:, 0], no2xy[:, 1], el2no, alpha,
+im = ax.tripcolor(pts[:, 0], pts[:, 1], tri, delta_perm,
                   shading='flat', cmap=plt.cm.viridis)
 fig.colorbar(im)
 ax.axis('equal')
@@ -47,14 +48,13 @@ el_dist, step = 1, 1
 ex_mat = eit_scan_lines(16, el_dist)
 
 # calculate simulated data
-fwd = Forward(ms, el_pos)
-f0 = fwd.solve(ex_mat, step=step, perm=ms0['alpha'])
-f1 = fwd.solve(ex_mat, step=step, perm=ms1['alpha'])
+fwd = Forward(mesh_obj, el_pos)
+f0 = fwd.solve_eit(ex_mat, step=step, perm=mesh_obj['perm'])
+f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new['perm'])
 
-""" 3. Construct using GREIT
-"""
-eit = greit.GREIT(ms, el_pos, ex_mat=ex_mat, step=step, parser='std')
-eit.setup(p=0.50, lamb=1e-4)
+""" 3. Construct using GREIT """
+eit = greit.GREIT(mesh_obj, el_pos, ex_mat=ex_mat, step=step, parser='std')
+eit.setup(p=0.50, lamb=0.001)
 ds = eit.solve(f1.v, f0.v)
 x, y, ds = eit.mask_value(ds, mask_value=np.NAN)
 

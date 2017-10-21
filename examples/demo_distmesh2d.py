@@ -1,7 +1,8 @@
 # coding: utf-8
 # pylint: disable=invalid-name
-# author: benyuan liu
-""" demo for distmesh """
+""" demo for distmesh 2D """
+# author: benyuan liu <byliu@fmmu.edu.cn>
+# 2014-12-07, 2017-10-20
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
@@ -26,7 +27,7 @@ def example1():
 
     # build fix points, may be used as the position for electrodes
     num = 16
-    p_fix = shape.fix_points_circle(n_el=num)
+    p_fix = shape.fix_points_circle(ppl=num)
 
     # firs num nodes are the positions for electrodes
     el_pos = np.arange(num)
@@ -38,8 +39,9 @@ def example1():
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
     ax.plot(p[el_pos, 0], p[el_pos, 1], 'ro')
-    plt.axis('equal')
-    plt.axis([-1.5, 1.5, -1.1, 1.1])
+    ax.set_aspect('equal')
+    ax.set_xlim([-1.5, 1.5])
+    ax.set_ylim([-1.1, 1.1])
     plt.show()
 
 
@@ -56,7 +58,7 @@ def example2():
     # plot
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
-    plt.axis('equal')
+    ax.set_aspect('equal')
     plt.show()
 
 
@@ -79,6 +81,7 @@ def example3():
     # plot
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
+    ax.set_aspect('equal')
     ax.set_xlim([-1.2, 1.2])
     ax.set_ylim([-1, 1])
     plt.show()
@@ -100,7 +103,7 @@ def example4():
     # plot
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
-    plt.axis('equal')
+    ax.set_aspect('equal')
     plt.show()
 
 
@@ -129,6 +132,7 @@ def example5():
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
     ax.plot(p_fix[:, 0], p_fix[:, 1], 'ro')
+    ax.set_aspect('equal')
     ax.set_xlim([-1.2, 1.2])
     ax.set_ylim([-1.2, 1.2])
     plt.show()
@@ -169,7 +173,10 @@ def example_intersect():
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
     ax.plot(p_fix[:, 0], p_fix[:, 1], 'ro')
-    ax.axis('equal')
+    ax.set_aspect('equal')
+    ax.set_xlim([-1.5, 1.5])
+    ax.set_ylim([-1.2, 1.2])
+    plt.show()
 
 
 if __name__ == "__main__":
