@@ -3,7 +3,8 @@
 # pylint: disable=too-many-instance-attributes, too-many-locals
 # pylint: disable=arguments-differ
 """ dynamic EIT solver using JAC """
-# author: benyuan liu
+# author: benyuan liu <liubenyuan@gmail.com>
+# 2015, 2017
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
@@ -26,17 +27,18 @@ class JAC(EitBase):
         method : str
             regularization methods
         """
-        # pre-compute H0 for dynamical imaging
-        # H = (J.T*J + R)^(-1) * J.T
-        self.H = h_matrix(self.J, p, lamb, method)
+        # passing imaging parameters
         self.params = {
             'p': p,
             'lamb': lamb,
             'method': method
         }
+        # pre-compute H0 for dynamical imaging
+        # H = (J.T*J + R)^(-1) * J.T
+        self.H = h_matrix(self.J, p, lamb, method)
 
     def solve(self, v1, v0, normalize=False):
-        """ dynamic solve
+        """ dynamic solve_eit
 
         Parameters
         ----------
@@ -53,12 +55,11 @@ class JAC(EitBase):
         """
         # normalize usually is not required for JAC
         if normalize:
-            dv = - (v1 - v0) / v0
+            dv = self.normalize(v1, v0)
         else:
             dv = (v1 - v0)
         # s = -Hv
-        ds = - np.dot(self.H, dv)
-        # return average epsilon on element
+        ds = -np.dot(self.H, dv)
         return ds
 
     def map(self, v):
@@ -74,15 +75,14 @@ class JAC(EitBase):
         return ds
 
     def bp_solve(self, v1, v0, normalize=False):
-        """ solve via a 'naive' back projection. """
+        """ solve_eit via a 'naive' back projection. """
         # normalize usually is not required for JAC
         if normalize:
-            dv = - (v1 - v0)/v0
+            dv = self.normalize(v1, v0)
         else:
             dv = (v1 - v0)
         # s_r = J^Tv_r
-        ds = - np.dot(self.J.T.conjugate(), dv)
-        # return average epsilon on element
+        ds = -np.dot(self.J.conj().T, dv)
         return ds
 
     def gn(self, v, x0=None, maxiter=1, gtol=1e-4, p=None, lamb=None,
@@ -137,8 +137,8 @@ class JAC(EitBase):
         for i in range(maxiter):
 
             # forward solver
-            fs = self.fwd.solve(self.ex_mat, step=self.step,
-                                perm=x0, parser=self.parser)
+            fs = self.fwd.solve_eit(self.ex_mat, step=self.step,
+                                    perm=x0, parser=self.parser)
             # Residual
             r0 = v - fs.v
             jac = fs.jac
@@ -154,7 +154,7 @@ class JAC(EitBase):
             c = np.linalg.norm(d_k) / x0_norm
 
             # update regularization parameter
-            # TODO: support user defined decreasing order of lambda values
+            # TODO: support user defined decreasing order of lambda series
             if lamb > lamb_min:
                 lamb *= lamb_decay
 
@@ -178,7 +178,7 @@ class JAC(EitBase):
         -------
         NDArray
         """
-        d_mat = sar(self.el2no)
+        d_mat = sar(self.tri)
         return np.dot(d_mat, ds)
 
 
@@ -202,14 +202,15 @@ def h_matrix(jac, p, lamb, method='kotre'):
         pseudo-inverse matrix of JAC
     """
     j_w_j = np.dot(jac.transpose(), jac)
-    if method is 'kotre':
-        # see adler-dai-lionheart-2007, 'kotr' for short
-        # p=0   : noise distribute on the boundary ('lm')
+    if method == 'kotre':
+        # see adler-dai-lionheart-2007
+        # p=0   : noise distribute on the boundary ('dgn')
         # p=0.5 : noise distribute on the middle
-        # p=1   : noise distribute on the center
-        r_mat = np.diag(np.diag(j_w_j) ** p)
-    elif method is 'lm':
+        # p=1   : noise distribute on the center ('lm')
+        r_mat = np.diag(np.diag(j_w_j))**p
+    elif method == 'lm':
         # Marquardt–Levenberg, 'lm' for short
+        # or can be called NOSER, DLS
         r_mat = np.diag(np.diag(j_w_j))
     else:
         # Damped Gauss Newton, 'dgn' for short
