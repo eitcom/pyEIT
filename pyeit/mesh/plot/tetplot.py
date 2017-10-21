@@ -1,6 +1,8 @@
 # coding: utf-8
 # pylint: disable=no-member, invalid-name, too-many-arguments
 """ plot function based on vispy for tetrahedral plots """
+# liubenyuan <liubenyuan@gmail.com>
+# 2015, 2016, 2017
 from __future__ import absolute_import
 
 import sys
@@ -192,15 +194,17 @@ def blue_red_colormap(f):
 # demo
 if __name__ == '__main__':
     if sys.flags.interactive != 1:
-        # data
+        # location of points
         pts = np.array([(0.0, 0.0, 0.0),
                         (1.0, 0.0, 0.0),
                         (0.0, 1.0, 0.0),
                         (0.0, 0.0, 1.0),
                         (1.0, 1.0, 1.0)], dtype=np.float32)
 
+        # connectivity of two tetrahedrons
         sim = np.array([(0, 1, 2, 3),
                         (1, 3, 2, 4)], dtype=np.uint32)
 
+        # plot
         tetplot(pts, sim, edge_color=[0.2, 0.2, 1.0, 0.2],
                 alpha=0.1, axis=False)

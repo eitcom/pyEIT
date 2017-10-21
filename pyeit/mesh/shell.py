@@ -1,7 +1,8 @@
 # coding: utf-8
 # pylint: disable=invalid-name, no-member, too-many-locals, too-many-arguments
-# author: benyuan liu
 """ create multi-shell mesh """
+# Copyright (c) Benyuan Liu. All rights reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 import numpy as np

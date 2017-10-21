@@ -2,8 +2,8 @@
 # pylint: disable=invalid-name, no-member, too-many-locals
 # pylint: disable=too-many-instance-attributes
 """ 2D/3D FEM routines """
-# author: benyuan liu  (byliu@fmmu.edu.cn)
-# 2015/12/31, 2017/09/30
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 from collections import namedtuple

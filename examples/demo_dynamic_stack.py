@@ -1,7 +1,7 @@
 # coding: utf-8
-""" demo using stacked exMtx (the devil is in the details) """
-# author: benyuan liu <liubenyuan@gmail.com>
-# date: 2015-07-23
+""" demo using stacked ex_mat (the devil is in the details) """
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 import numpy as np

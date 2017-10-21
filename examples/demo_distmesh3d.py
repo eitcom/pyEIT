@@ -1,8 +1,8 @@
 # coding: utf-8
 # pylint: disable=invalid-name
 """ demo for distmesh 3D """
-# author: benyuan liu <byliu@fmmu.edu.cn>
-# 2015-01-07, 2017-10-20
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 import numpy as np

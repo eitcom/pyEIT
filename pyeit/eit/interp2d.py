@@ -1,8 +1,8 @@
 # coding: utf-8
 # pylint: disable=invalid-name, no-member, too-many-locals, no-name-in-module
 """ interpolation on 2D/3D irregular/regular grids """
-# author: benyuan liu (liubenyuan@gmail.com)
-# 2017/10/09
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 import numpy as np

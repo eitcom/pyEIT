@@ -16,8 +16,8 @@
 | **vispy**      | *Optional* | tested with `vispy-git`                  |
 | **pandas**     | *Optional* | tested with `pandas-0.20.3`              |
 | **xarray**     | *Optional* | for large data analysis                  |
-| **distmesh**   | *Optional* | we provide a build-in distmesh module (supports 2D and 3D) |
-| **tetgen**     | *Optional* | generate 3D meshes                       |
+| **distmesh**   | *Optional* | A build-in module is provided in `pyEIT` |
+| **meshpy**     | *Optional* | An alternate way for creating 2D/3D meshes |
 
 **Q1, Why you choose vispy for 3D visualization?**
 

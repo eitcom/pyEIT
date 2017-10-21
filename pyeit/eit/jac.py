@@ -3,8 +3,8 @@
 # pylint: disable=too-many-instance-attributes, too-many-locals
 # pylint: disable=arguments-differ
 """ dynamic EIT solver using JAC """
-# author: benyuan liu <liubenyuan@gmail.com>
-# 2015, 2017
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
