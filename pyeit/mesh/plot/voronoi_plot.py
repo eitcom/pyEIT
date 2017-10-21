@@ -169,11 +169,12 @@ def voronoi_plot(pts, tri, val=None, fd=None):
         # map values on nodes to colormap
         # e.g., color = np.random.uniform(.4, .9, 3)
         color = mapper.to_rgba(val[i])
+        # using patches to plot the voronoi of a node
         patch = matplotlib.patches.PathPatch(path, facecolor=color,
                                              edgecolor='w', zorder=-1,
                                              lw=0.4)
         ax.add_patch(patch)
-    plt.axis('equal')
+    ax.set_aspect('equal')
     plt.show()
 
     return fig, ax

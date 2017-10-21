@@ -1,7 +1,7 @@
 # coding: utf-8
 """ demo code for back-projection """
-# author: benyuan liu <byliu@fmmu.edu.cn>
-# 2014-12-20, 2017-10-20
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 import numpy as np

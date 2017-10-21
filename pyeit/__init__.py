@@ -1,9 +1,8 @@
 """
-Py-EIT : Python based Electrical Impedance Tomography
+pyEIT : Python based Electrical Impedance Tomography
 
-eit :
+eit:
     reconstruction algorithms
-
-mesh :
+mesh:
     create triangle(2D) / tetrahedron(3D) meshes
 """

@@ -4,8 +4,8 @@
 util functions for 2D EIT
 1. generate stimulation lines/patterns
 """
-# author: benyuan liu (liubenyuan@gmail.com)
-# 2015/10/11, 2017/09/30
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 import numpy as np

@@ -8,9 +8,9 @@ Note, that, the advantages of greit is NOT on simulated data, but
 1. construct RM using real-life data with a stick move in the cylinder
 2. construct RM on finer mesh, and use coarse-to-fine map for visualization
 3. more robust to noise by adding noise via (JJ^T + lamb*Sigma_N)^{-1}
-
-liubenyuan <liubenyuan@gmail.com>, 2016-01-27, 2016-11-24, 2017
 """
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 import numpy as np

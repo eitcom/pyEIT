@@ -1,6 +1,8 @@
 # coding: utf-8
 # pylint: disable=invalid-name, no-member
 """ implement quality assessment functions for distmesh """
+# Copyright (c) Benyuan Liu. All rights reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 

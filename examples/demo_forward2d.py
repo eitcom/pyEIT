@@ -1,7 +1,7 @@
 # coding: utf-8
 """ demo on forward 2D """
-# author: benyuan liu <liubenyuan@gmail.com>
-# 2015, 2017
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 import numpy as np

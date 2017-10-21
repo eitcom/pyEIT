@@ -5,7 +5,8 @@
 This is a python code template that guide you through
 writing your own reconstruction algorithms.
 """
-# author: benyuan liu
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
 import numpy as np

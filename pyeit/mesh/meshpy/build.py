@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument, no-member, too-many-locals, invalid-name
 """ create mesh using meshpy """
-# liubenyuan@gmail.com
-# 2015-08-02
+# Copyright (c) Benyuan Liu. All rights reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
 import scipy.linalg as lp
