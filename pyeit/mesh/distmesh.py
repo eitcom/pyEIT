@@ -381,8 +381,9 @@ def build(fd, fh, pfix=None, bbox=None, h0=0.1,
 
     """
     # parsing arguments
+    # make sure : g_Fscale < 1.5
     if bbox is None:
-        g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.2
+        g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.275
     else:
         # perform error check on bbox
         bbox = np.array(bbox)
@@ -392,7 +393,7 @@ def build(fd, fh, pfix=None, bbox=None, h0=0.1,
             raise TypeError('please specify lower and upper bound of bbox')
         if bbox.shape[1] == 2:
             # default parameters for 2D
-            g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.2
+            g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.275
         else:
             # default parameters for 3D
             g_dptol, g_ttol, g_Fscale = 0.045, 0.150, 1.125

@@ -120,7 +120,7 @@ def voronoi(pts, tri, fd=None):
     return cells
 
 
-def voronoi_plot(pts, tri, val=None, fd=None):
+def voronoi_plot(pts, tri, figsize=(6, 4), val=None, fd=None):
     """ plot voronoi diagrams on bounded shape
 
     Parameters
@@ -155,7 +155,7 @@ def voronoi_plot(pts, tri, val=None, fd=None):
                                        vmax=max(val), clip=True)
     mapper = cm.ScalarMappable(norm=norm, cmap=cm.Greens)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=figsize)
     # draw mesh (optional)
     # ax.triplot(pts[:, 0], pts[:, 1], tri, color='b', alpha=0.50, lw=0.5)
     # ax.scatter(pts[:, 0], pts[:, 1], s=3, color='r', zorder=1)
@@ -174,7 +174,6 @@ def voronoi_plot(pts, tri, val=None, fd=None):
                                              edgecolor='w', zorder=-1,
                                              lw=0.4)
         ax.add_patch(patch)
-    ax.set_aspect('equal')
-    plt.show()
 
+    ax.set_aspect('equal')
     return fig, ax
