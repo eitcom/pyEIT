@@ -1,138 +1,128 @@
-# pylint: disable=no-member, invalid-name, unused-argument
-# pylint: disable=duplicate-code
+# pylint: disable=no-member, invalid-name
+# pylint: disable=too-many-arguments, too-many-instance-attributes
 """
 Load .et4 file into mem (experimental).
 This file structure may be modified in near future.
-
-liubenyuan@gmail.com
-2015-07-23, 2017-09-26
 """
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+from struct import unpack
 
-# stdlib
-import struct
-
-# numerical
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def to_df(fstr, ex_mtx=None, step=1, et3_compatible=False,
-          output_resistor=False):
-    """ convert data to df """
-    pass
+class ET4(object):
+    """.et4 file parser"""
 
+    def __init__(self, file_name, ex_mtx=None, step=1, compatible=False,
+                 output_resistor=False):
+        """
+        initialize .et4 parser.
+        .et4 is an experimental file format for XEIT-ng system
 
-def to_csv(fstr_from, fstr_to, ex_mtx=None, step=1, et3_compatible=False,
-           output_resistor=False):
-    """ convert data to csv """
-    data = load(fstr_from,
-                ex_mtx=ex_mtx,
-                step=step,
-                et3_compatible=et3_compatible,
-                output_resistor=output_resistor)
+        try to read data and parse FILE HEADER
+            [-- 128 uint parameters + (256 float RE) + (256 float IM) --]
 
-    fstr_re_to = fstr_to.replace('csv', 're.csv')
-    df = pd.DataFrame(data.real, index=None, columns=None)
-    df.to_csv(fstr_re_to, columns=None, header=False, index=False)
+        Parameters
+        ----------
+        file_name : basestring
+        ex_mtx : NDArray
+            num_lines x 2 array
+        step : int
+            architecture of voltage meter
+        compatible : bool
+            if data output needs to be .et3 compatible
+        output_resistor : bool
+            convert voltage to current
 
-    fstr_im_to = fstr_to.replace('csv', 'im.csv')
-    df = pd.DataFrame(data.imag, index=None, columns=None)
-    df.to_csv(fstr_im_to, columns=None, header=False, index=False)
+        Returns
+        -------
+        NDArray
+            return data (complex valued)
 
+        Notes
+        -----
+        in .et4, a frame consists (16) excitations, and in each excitation
+        ADC samples are arranged as AD1, AD2, ..., AD16, consecutively. so
+        (AD1, AD2, ..., AD16) (AD1, AD2, ..., AD16) ... (AD1, AD2, ..., AD16)
 
-def load(fstr, ex_mtx=None, step=1, et3_compatible=False,
-         output_resistor=False):
-    # pylint: disable=too-many-locals
-    """
-    .et4 is my private file format for XEIT-ng system
+        "see hardware section in eit.pdf, benyuan liu."
 
-    try to read data and parse FILE HEADER
-        [-- 128uint parameters + (256 float RE) + (256 float IM) --]
+        when the excitation electrodes are marked as A, B,
+        in order to be compatible with .et3, you should
+        1. automatically zero-out 4 measures where A, A-1, B, B-1
+        2. rearrange all the measures so that in each excitation,
+           the first measurement always start from (include) 'A'
+        3. divide 'diff Voltage' / Current = Resistor (optional)
+        """
+        self.file_name = file_name
+        self.ex_mtx = ex_mtx
+        self.step = step
+        self.compatible = compatible
+        self.output_resistor = output_resistor
 
-    Returns
-    -------
-    NDArray
-        return data (complex valued)
+        # 1. get .et4 file length
+        nbytes = et4_tell(self.file_name)
 
-    Notes
-    -----
-    in .et4, a frame consists many (16) excitations, and in each excitation
-    ADC samples are arranged as AD1, AD2, ..., AD16, consecuetively. so
-    (AD1, AD2, ..., AD16) (AD1, AD2, ..., AD16) ... (AD1, AD2, ..., AD16)
+        # 2. get nframes (a frame = (128 + 256 + 256) = 640 Bytes)
+        self.info_num = 128
+        self.data_num = 512
+        self.header_size = self.info_num * 4
+        self.frame_size = (self.info_num + self.data_num) * 4
+        self.nframe = int((nbytes) / (self.frame_size))
 
-    "see hardware section in deit.pdf"
+        # 3. load data
+        self.data = self.load()
 
-    when the excitation electrodes are marked as A, B,
-    in order to be compatible with .et3, you should
-    1. automatically zero-out 4 measures where A, A-1, B, B-1
-    2. rearrange all the measures so that in each excitation,
-       the first measurement always start from (include) 'A'
-    3. divide 'diff Voltage' / Current = Resistor (optional)
-    """
-    # 1. get .et4 file length
-    nbytes = et4_tell(fstr)
+    def load(self):
+        """load RAW data"""
+        # 1. prepare storage
+        x = np.zeros((self.nframe, self.data_num), dtype=np.float)
 
-    # 2. get nframes (a frame = (128 + 256 + 256) 640)
-    frame_size = 640*4
-    header_size = 128*4
-    nframe = int((nbytes) / (frame_size))
+        # 3. unpack data and extract parameters
+        with open(self.file_name, 'rb') as fh:
+            for i in range(self.nframe):
+                d = fh.read(self.frame_size)
+                x[i] = np.array(unpack('512f', d[self.header_size:]))
 
-    # 1. prepare storage
-    x = np.zeros((nframe, 512), dtype=np.float)
+        data = x[:, :256] + 1j * x[:, 256:]
+        # electrode re-arranged the same as .et3 file
+        if self.compatible:
+            v_index, c_index = zero_rearrange_index(self.ex_mtx)
+            dout = data[:, v_index]
+            if self.output_resistor:
+                # number of diff_V per stimulation
+                M = int(len(v_index) / len(c_index))
+                # current index is the same in each M measurements
+                cm_index = np.repeat(c_index, M)
+                # R = diff_V / I
+                dout = dout / data[:, cm_index]
+        else:
+            dout = data
 
-    # 3. unpack data and extract parameters
-    with open(fstr, 'rb') as fh:
-        for i in range(nframe):
-            d = fh.read(frame_size)
-            x[i] = np.array(struct.unpack('512f', d[header_size:]))
+        return dout
 
-    data = x[:, :256] + 1j*x[:, 256:]
+    def load_info(self):
+        """load info headers from xEIT"""
+        # 1. prepare storage
+        info = np.zeros((self.nframe, 128))
 
-    # electrode re-arranged the same as .et3 file
-    if et3_compatible:
-        vindex, cindex = zero_rearrange_index(ex_mtx)
-        dout = data[:, vindex]
-        # R = diff_V / I
-        if output_resistor:
-            numLines = len(cindex)
-            M = int(len(vindex) / numLines)
-            for i in range(numLines):
-                current = data[:, cindex[i]]
-                for j in range(M):
-                    voltage = i*M + j
-                    dout[:, voltage] = dout[:, voltage] / current
-    else:
-        dout = data
+        # 3. unpack data and extract parameters
+        with open(self.file_name, 'rb') as fh:
+            for i in range(self.nframe):
+                d = fh.read(self.frame_size)
+                info[i, :] = np.array(unpack('33if94i', d[:512]))
 
-    return dout
+        return info
 
+    def to_df(self):
+        """save file to pandas.DataFrame"""
+        pass
 
-def load_info(fstr):
-    """load info headers from XEIT"""
-    # 1. get .et4 file length
-    et4_len = et4_tell(fstr)
-
-    # 2. get nframes (a frame = (128 + 256 + 256) 640)
-    frame_size = 640*4
-    nframe = int((et4_len) / (frame_size))
-
-    # 1. prepare storage
-    info = np.zeros((nframe, 128))
-
-    # 3. unpack data and extract parameters
-    with open(fstr, 'rb') as fh:
-        for i in range(nframe):
-            d = fh.read(frame_size)
-            info[i, :] = np.array(struct.unpack('33if94i', d[:512]))
-
-    return info
-
-
-def load_raw(fstr, ex_mtx=None, et3_compatible=False,
-             output_resistor=False):
-    """ return raw data (complex valued) [256 x Nsamples] """
-    pass
+    def to_csv(self):
+        """save file to csv"""
+        pass
 
 
 def et4_tell(fstr):
@@ -159,7 +149,7 @@ def zero_rearrange_index(ex_mtx):
         num_lines, num_el = ex_mtx.shape
         ab_scan = True
 
-    v, c = [], []  # non-zero diff-pairs and current values
+    v_index, c_index = [], []  # non-zero diff-pairs and current values
     for k in range(num_lines):
         if ab_scan:
             ex_pat = ex_mtx[k, :].ravel()
@@ -171,14 +161,14 @@ def zero_rearrange_index(ex_mtx):
         ap = (a - 1) % num_el  # positive adjacent
         bp = (b - 1) % num_el  # negative adjacent
         # print(A, B, Ap, Bp)
-        c.append(k*num_el + b)
+        c_index.append(k*num_el + b)
         for i in range(num_el):
             # re-order data start after A
             j = (i + a) % num_el
             if not(j == a or j == b or j == ap or j == bp):
-                v.append(k*num_el + j)
+                v_index.append(k*num_el + j)
 
-    return v, c
+    return v_index, c_index
 
 
 if __name__ == "__main__":
@@ -187,20 +177,20 @@ if __name__ == "__main__":
     et_file = "../../datasets/s00-02.et4"
 
     # load data
-    et4_data = load(fstr=et_file,
-                    et3_compatible=True,
-                    output_resistor=False)
+    et4 = ET4(et_file, compatible=True, output_resistor=False)
+    et4_data = et4.data
     print(et4_data.shape)
 
-    ti_real = np.real(et4_data).sum(axis=1)/192.0
-    ti_imag = np.imag(et4_data).sum(axis=1)/192.0
-    ti = np.sqrt(ti_real**2 + ti_imag**2)
-    print("max = ", np.max(ti))
-    print("min = ", np.min(ti))
+    ti = et4_data.sum(axis=1) / 192.0
+    ti_real = np.real(ti)
+    ti_imag = np.imag(ti)
+    ti_abs = np.sqrt(ti_real**2 + ti_imag**2)
+    print("max = ", np.max(ti_abs))
+    print("min = ", np.min(ti_abs))
 
     xlim = 1000
-    if ti.shape[0] < 1000:
-        xlim = ti.shape[0]
+    if ti_abs.shape[0] < 1000:
+        xlim = ti_abs.shape[0]
 
     # plot
     fig = plt.figure(figsize=(6, 4))
@@ -212,7 +202,7 @@ if __name__ == "__main__":
     ax.grid('on')
 
     ax2 = fig.add_subplot(212)
-    ax2.plot(ti, 'r-')
+    ax2.plot(ti_abs, 'r-')
     ax2.grid('on')
     ax2.set_xlim([0, xlim])
     plt.show()

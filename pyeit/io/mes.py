@@ -1,10 +1,7 @@
 # pylint: disable=no-member, invalid-name
-"""
-open/view .mes file
-liubenyuan@gmail.com
-2015-07-23, 2017-09-26
-"""
-
+""" open/view .mes file """
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import ctypes
 import struct
 import numpy as np
@@ -155,8 +152,8 @@ def extract_el(fh):
     return el_pos
 
 
-# demo
-if __name__ == "__main__":
+def demo():
+    """demo for mes"""
     # a demo on how to load a .mes file
     mesh_file = '../data/model/DLS2.mes'
     mesh_obj, el_pos = load(fstr=mesh_file)
@@ -189,3 +186,10 @@ if __name__ == "__main__":
         ax.text(pts[el, 0], pts[el, 1], str(i+1), color='r')
     ax.axis('off')
     plt.show()
+
+    return fig, ax
+
+
+# demo
+if __name__ == "__main__":
+    demo()

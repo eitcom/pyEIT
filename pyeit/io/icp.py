@@ -1,10 +1,7 @@
 # pylint: disable=no-member, invalid-name
-"""
-Read ICP data (xlsx)
-liubenyuan@gmail.com
-2015-08-13, 2017-09-26
-"""
-
+""" Read ICP data (xlsx) """
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import re
 import matplotlib.pyplot as plt
 import pandas as pd

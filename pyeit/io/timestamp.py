@@ -1,6 +1,7 @@
 # pylint: disable=no-member, invalid-name
 """ extract timestamp from file or path """
-
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import re
 
 
