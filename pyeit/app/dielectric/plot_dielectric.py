@@ -1,7 +1,7 @@
-# load permitivity and conductivity from ITIS
-# liubenyuan@gmail.com
-# 2015-08-05
-
+# pylint: disable=no-member, invalid-name
+"""load permitivity and conductivity from ITIS"""
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -29,6 +29,8 @@ ax1.set_ylabel('Permitivity', color='b')
 ax2.set_ylabel('Electrical. Cond. (S/m)', color='r')
 
 # export to pdf
-fig.set_size_inches(4.8, 3.2)
+fig.set_size_inches(6, 4)
 fig.subplots_adjust(left=0.20, bottom=0.15, top=0.90, right=0.80)
+
+plt.show()
 # plt.savefig(file_save + '.pdf')
