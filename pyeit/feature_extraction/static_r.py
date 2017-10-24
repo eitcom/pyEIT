@@ -1,4 +1,7 @@
-# static features of R values measured using EIT system
+# pylint: disable=invalid-name
+"""static features of R values measured using EIT system"""
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
 
@@ -21,4 +24,3 @@ def rchannel(x, offset=0):
     c = np.mod(offset, N)
     x = x[:, c:N:]
     return np.abs(x).sum(axis=1) / float(N)
-

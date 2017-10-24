@@ -1,11 +1,8 @@
-# pylint: disable=no-member, invalid-name
+# pylint: disable=no-member, invalid-name, no-name-in-module
 # pylint: disable=too-many-arguments, too-many-locals
-"""
-using the geometry of mesh to segment the EIT images
-
-liubenyuan <liubenyuan@gmail.com>
-2017-09-28
-"""
+"""using the geometry of mesh to segment the EIT images"""
+# Copyright (c) Benyuan Liu. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
 from numpy.linalg import eig, inv
@@ -42,7 +39,7 @@ class SimpleMeshGeometry(object):
         """
         if method not in ['element', 'node']:
             raise TypeError('method do not recognized.')
-        if method is 'element':
+        if method == 'element':
             # find the center of elements
             self.ts = self._tri_centers(mesh)
         else:
@@ -92,15 +89,19 @@ class SimpleMeshGeometry(object):
         return np.logical_not(self.upper())
 
     def upper_left(self):
+        """upper left coordinates"""
         return np.logical_and(self.left(), self.upper())
 
     def upper_right(self):
+        """upper right coordinates"""
         return np.logical_and(self.right(), self.upper())
 
     def down_left(self):
+        """down left coordinates"""
         return np.logical_and(self.left(), self.down())
 
     def down_right(self):
+        """down right coordinates"""
         return np.logical_and(self.right(), self.down())
 
     @staticmethod
@@ -234,14 +235,16 @@ class FitEllipse(object):
         b, c, a = a[1]/2, a[2], a[0]
         if b == 0:
             if a > c:
-                return 0
+                phi = 0
             else:
-                return np.pi/2
+                phi = np.pi/2
         else:
             if a > c:
-                return np.arctan(2*b/(a-c))/2
+                phi = np.arctan(2*b/(a-c))/2
             else:
-                return np.pi/2 + np.arctan(2*b/(a-c))/2
+                phi = np.pi/2 + np.arctan(2*b/(a-c))/2
+
+        return phi
 
 
 def ellipse_points(x_cent=0, y_cent=0, semimaj=1, semimin=1, phi=0,
@@ -294,8 +297,9 @@ def ellipse_points(x_cent=0, y_cent=0, semimaj=1, semimin=1, phi=0,
     return data.transpose()
 
 
-if __name__ == "__main__":
-    # load mesh data
+def demo():
+    """demos"""
+    # load package mesh data from pyEIT (data/model/*.mes)
     mstr = pkg_resources.resource_filename('pyeit', 'data/model/DLS2.mes')
     print(mstr)
 
@@ -349,4 +353,10 @@ if __name__ == "__main__":
     ax.set_title('left = 1.0, down right = 2.0')
     for i, e in enumerate(el_pos):
         ax.text(pts[e, 0], pts[e, 1], np.str(i+1), color='r', size=12)
-    plt.colorbar(img)
+    fig.colorbar(img)
+
+    plt.show()
+
+
+if __name__ == "__main__":
+    demo()
