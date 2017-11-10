@@ -152,17 +152,17 @@ class JAC(EitBase):
 
             # convergence test
             c = np.linalg.norm(d_k) / x0_norm
-
-            # update regularization parameter
-            # TODO: support user defined decreasing order of lambda series
-            if lamb > lamb_min:
-                lamb *= lamb_decay
-
             if c < gtol:
                 break
 
             if verbose:
                 print('iter = %d, lamb = %f, gtol = %f' % (i, lamb, c))
+
+            # update regularization parameter
+            # TODO: support user defined decreasing order of lambda series
+            lamb *= lamb_decay
+            if lamb < lamb_min:
+                lamb = lamb_min
 
         return x0
 
