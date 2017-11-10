@@ -117,6 +117,14 @@ def set_perm(mesh, anomaly=None, background=None):
     if background is not None:
         perm = background * np.ones(n)
 
+    # change dtype to 'complex' for complex-valued permittivity
+    if anomaly is not None:
+        for attr in anomaly:
+            if np.iscomplex(attr['perm']):
+                perm = perm.astype('complex')
+                break
+
+    # assign anomaly values (for elements in regions)
     if anomaly is not None:
         for _, attr in enumerate(anomaly):
             d = attr['d']
