@@ -5,12 +5,16 @@ using pack and unpack together with regular expression to filter out data.
 """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+from os.path import splitext
 from struct import unpack
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import dates
+# pandas-0.21.0:
+# from pandas.tseries import converter
+# converter.register()
 
 
 class ET3(object):
@@ -42,6 +46,9 @@ class ET3(object):
 
         # tell et3 file information
         self.offset, self.nframe, self.params = et3_tell(self.file_name)
+        self.verbose = verbose
+        if verbose:
+            print('offset=%d, nf=%d\n' % (self.offset, self.nframe))
 
         # load et3 files (RAW data are complex-valued)
         self.data = self.load()
@@ -67,8 +74,10 @@ class ET3(object):
         with open(self.file_name, 'rb') as fh:
             # skip offset
             fh.read(self.offset)
+
             # read data frame by frame
             for i in range(self.nframe):
+
                 # get frame data
                 d = fh.read(self.frame_size)
 
@@ -91,25 +100,48 @@ class ET3(object):
 
         return data
 
-    def load_time(self):
-        """ load timestamp from et file """
+    def load_time(self, rel_date=None):
+        """
+        load timestamp from et file
+
+        rel_date : relative date time, i.e., 1970/1/1 10:0:0
+            if rel_date is provided, we do NOT read day from ET file.
+
+        Notes
+        -----
+        Many files ending with .et0 are actual .et3 files, be warned.
+        """
         # time-array storage
         ta = np.zeros(self.nframe, dtype=np.double)
+        ext = splitext(self.file_name)[1][1:]
 
-        with open(self.file_name, 'rb') as fh:
-            fh.read(self.offset)
-            for i in range(self.nframe):
-                # read frame data
-                d = fh.read(self.frame_size)
-                # refer to et3_header for more information
-                t = unpack('d', d[8:16])[0]
-                ta[i] = t
+        # '.et0'
+        if ext == 'et0':
+            if rel_date is None:
+                # the day when FMMU EIT starts
+                rel_date = '1994/1/1'
+            # frame rate = 1 fps
+            ta = np.arange(self.nframe)
+            ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 's')
 
-        # convert days to seconds (multiply number of seconds in a day)
-        ta = np.round(ta * 86400)
+        # '.et3'
+        if ext == 'et3':
+            if rel_date is None:
+                # read days from frame header
+                # December 30, 1899 is the base date. (EXCEL format)
+                rel_date = '1899/12/30'
+                with open(self.file_name, 'rb') as fh:
+                    fh.read(self.offset)
+                    for i in range(self.nframe):
+                        # read frame data
+                        d = fh.read(self.frame_size)
+                        t = et3_date(d)
+                        ta[i] = t
+            else:
+                ta = np.arange(self.nframe) / 86400.0
 
-        # December 30, 1899 is the base date. (Excel)
-        ts = pd.to_datetime('1899-12-30 00:00:00') + pd.to_timedelta(ta, 's')
+            # convert to pandas datetime
+            ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 'D')
 
         return ts
 
@@ -117,9 +149,9 @@ class ET3(object):
         """reload data using different options"""
         pass
 
-    def to_df(self, resample=None):
+    def to_df(self, resample=None, rel_date=None):
         """convert raw data to pandas.DataFrame"""
-        ts = self.load_time()
+        ts = self.load_time(rel_date=rel_date)
 
         df = pd.DataFrame(self.data, index=ts)
         if resample is not None:
@@ -135,6 +167,36 @@ class ET3(object):
         $ df.to_csv(file_to, columns=None, header=False, index=False)
         """
         pass
+
+
+def et0_date():
+    """
+    extract date from .et0 file.
+    for .et0 file date is stored in string (bytes) format (utf-16, CJK)
+    i.e., '2016Y01M01D 11H08M30S', offset=4, length=42 (21*2) Bytes
+    """
+    raise NotImplementedError
+
+
+def et3_date(d, verbose=False):
+    """
+    extract date from .et3 file.
+    for .et3, date is stored at
+
+    nVersion : int (4 Bytes)
+    frame index : int (4 Bytes)
+    time : double (8 bytes)
+
+    returns
+    -------
+    time in days relative to julian date
+    """
+    if verbose:
+        ftype = unpack('I', d[:4])
+        print('file type: %d' % ftype)
+
+    t = unpack('d', d[8:16])[0]
+    return t
 
 
 def et3_tell(file_name):
@@ -237,6 +299,7 @@ def trim_pattern():
     0......0 0......0 0......0 etc.,
     """
     idx = np.ones(256, dtype=np.bool)
+
     for i in range(32):
         j = i * 8
         # exclude the stimulation indices (i.e., 0-8 stimulus)
@@ -249,6 +312,7 @@ def trim_pattern():
 def demo():
     """ demo shows how-to use et3 """
     file_name = '../../datasets/DATA.et3'
+    # file_name = '../../datasets/RAWDATA.et0'
 
     # 1. using raw interface and calculate
     #    averaged transfer impedance from raw data
@@ -259,14 +323,15 @@ def demo():
     # 2. using DataFrame interface, resample option:
     #    's' is seconds (default)
     #    'T' is minute
-    et3 = ET3(file_name)
-    df = et3.to_df()
+    et3 = ET3(file_name, verbose=True)
+    df = et3.to_df(rel_date='2017/11/17')
     df['ati'] = np.abs(df).sum(axis=1)/192.0
 
     # 3. plot
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.plot(df['ati'])
+    # TODO: deprecate warning for pandas-0.21.0
+    ax.plot(df.index.to_pydatetime(), df['ati'])
     ax.grid('on')
 
     # format time axis

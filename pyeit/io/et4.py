@@ -136,6 +136,7 @@ def et4_tell(fstr):
 
 def zero_rearrange_index(ex_mtx):
     """
+    (default mode: opposition stimulation)
     0. excitation electrodes are denoted by 'A' and 'B'
     1. for each excitation, REARRANGE all the data start from 'A'
     2. zero all the channels of A, A-1, B, B-1
