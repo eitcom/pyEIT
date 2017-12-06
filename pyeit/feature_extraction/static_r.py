@@ -10,10 +10,15 @@ def ati(x):
     """
     averaged total impedance, unit (mV),
     original / 192.0
-    new / 16.0
+    [experimental] new / 16.0
+
+    Notes
+    -----
+    if I=1mA, then ati returns Ohms
     """
     v = np.abs(x).sum() / 192.0
     return v
+
 
 def rchannel(x, offset=0):
     """

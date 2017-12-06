@@ -6,6 +6,7 @@ using pack and unpack together with regular expression to filter out data.
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from os.path import splitext
+import re
 from struct import unpack
 
 import numpy as np
@@ -48,7 +49,12 @@ class ET3(object):
         self.offset, self.nframe, self.params = et3_tell(self.file_name)
         self.verbose = verbose
         if verbose:
-            print('offset=%d, nf=%d\n' % (self.offset, self.nframe))
+            print('offset=%d, nf=%d' % (self.offset, self.nframe))
+            f, c, g = self.params.values()
+            if int(c) == 0:
+                print('bad current value (0), it may be a et0 file')
+            else:
+                print('frequency=%f, current=%d, gain=%d' % (f, c, g))
 
         # load et3 files (RAW data are complex-valued)
         self.data = self.load()
@@ -118,7 +124,7 @@ class ET3(object):
         # '.et0'
         if ext == 'et0':
             if rel_date is None:
-                # the day when FMMU EIT starts
+                # byliu: the day when FMMU EIT starts.
                 rel_date = '1994/1/1'
             # frame rate = 1 fps
             ta = np.arange(self.nframe)
@@ -281,12 +287,27 @@ def gain_table(gain):
                 5: 129.528,
                 6: 257.514,
                 7: 514}
+    """
+    new pg table (in dll) by Zhang Ge, 2017/12/06
+    byliu: pg_new = pg_old * 2 / 100.0
+
+    pg_table = {0: 0.08,
+                1: 0.16,
+                2: 0.32,
+                3: 0.63,
+                4: 1.26,
+                5: 2.52,
+                6: 5.01,
+                7: 10.0}
+    """
 
     # make sure gain is a valid key
     if gain not in pg_table.keys():
         scale = 1.
     else:
-        scale = 1000.0 * 2.5 / 32768.0 / pg_table[gain]
+        # assume current = 1000 uA
+        current = 1000.0
+        scale = 2.5 * 1000000.0 / 32768.0 / current / (2 * pg_table[gain])
 
     return scale
 
@@ -307,6 +328,21 @@ def trim_pattern():
         idx[j + 7] = False
 
     return idx
+
+
+def get_date_from_folder(file_str):
+    """
+    get datetime from file folder of et3, i.e., 'DATA2015-01-29-16-57-30/'
+    """
+    f = file_str.strip()
+    f = f[:-1]  # remove trailing '/'
+    f = f.replace("DATA", "")
+    # replace the 3rd occurrence of '-'
+    w = [m.start() for m in re.finditer(r'-', f)][2]
+    # before w do not change, after w, '-' -> ':'
+    f = f[:w] + ' ' + f[w+1:].replace('-', ':')
+    # now f becomes '2015-01-29 16:57:30'
+    return pd.to_datetime(f)
 
 
 def demo():
