@@ -143,11 +143,15 @@ class ET3(object):
                         d = fh.read(self.frame_size)
                         t = et3_date(d)
                         ta[i] = t
+                # convert days to seconds
+                ta = ta * 86400.0
             else:
-                ta = np.arange(self.nframe) / 86400.0
+                if self.verbose:
+                    print("relative date is %s" % rel_date)
+                ta = np.arange(self.nframe)
 
             # convert to pandas datetime
-            ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 'D')
+            ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 's')
 
         return ts
 
