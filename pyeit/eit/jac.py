@@ -42,8 +42,8 @@ class JAC(EitBase):
 
         Parameters
         ----------
-        v1 : NDArray
-        v0 : NDArray, optional
+        v1 : NDArray (current frame)
+        v0 : NDArray, optional (reference frame)
             d = H(v1 - v0)
         normalize : Boolean
             true for conducting normalization

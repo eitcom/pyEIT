@@ -37,6 +37,7 @@ plt.show()
 
 """ 2. FEM forward simulations """
 # setup EIT scan conditions
+# adjacent stimulation (el_dist=1), adjacent measures (step=1)
 el_dist, step = 1, 1
 ex_mat = eit_scan_lines(16, el_dist)
 

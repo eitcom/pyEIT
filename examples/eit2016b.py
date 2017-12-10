@@ -29,8 +29,8 @@ tri = mesh_obj['element']
 
 """ 1. problem setup """
 # test function for altering the permittivity in mesh
-anomaly = [{'x': 0.4,  'y': 0,    'd': 0.1, 'perm': 10},
-           {'x': -0.4, 'y': 0,    'd': 0.1, 'perm': 10},
+anomaly = [{'x': 0.4,  'y': 0,    'd': 0.1, 'perm': 5},
+           {'x': -0.4, 'y': 0,    'd': 0.1, 'perm': 5},
            {'x': 0,    'y': 0.5,  'd': 0.1, 'perm': 0.1},
            {'x': 0,    'y': -0.5, 'd': 0.1, 'perm': 0.1}]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
@@ -75,9 +75,10 @@ fig = plt.figure(figsize=size)
 gs = gridspec.GridSpec(2, 2)
 
 # simulation
+pmax = np.max(np.abs(delta_perm))
 ax1 = fig.add_subplot(gs[0, 0])
-im1 = ax1.tripcolor(pts[:, 0], pts[:, 1], tri, delta_perm,
-                    shading='flat', cmap=plt.cm.RdBu)
+im1 = ax1.tripcolor(pts[:, 0], pts[:, 1], tri, delta_perm, shading='flat',
+                    cmap=plt.cm.RdBu, vmin=-pmax, vmax=pmax)
 ax1.set_title(r'(a) $\Delta$ Conductivity')
 ax1.axis(axis_size)
 ax1.set_aspect('equal')
@@ -85,9 +86,10 @@ fig.colorbar(im1)
 ax1.axis('off')
 
 # Filtered BP
+bp_max = np.max(np.abs(ds_bp))
 ax2 = fig.add_subplot(gs[0, 1])
 im2 = ax2.tripcolor(pts[:, 0], pts[:, 1], tri, np.real(ds_bp),
-                    cmap=plt.cm.RdBu)
+                    cmap=plt.cm.RdBu, vmin=-bp_max, vmax=bp_max)
 ax2.set_title(r'(b) BP')
 ax2.axis(axis_size)
 ax2.set_aspect('equal')
@@ -95,9 +97,10 @@ fig.colorbar(im2)
 ax2.axis('off')
 
 # JAC
+jac_max = np.max(np.abs(ds_jac))
 ax3 = fig.add_subplot(gs[1, 0])
 im3 = ax3.tripcolor(pts[:, 0], pts[:, 1], tri, np.real(ds_jac),
-                    cmap=plt.cm.RdBu)
+                    cmap=plt.cm.RdBu, vmin=-jac_max, vmax=jac_max)
 ax3.set_title(r'(c) JAC')
 ax3.axis(axis_size)
 ax3.set_aspect('equal')
@@ -105,9 +108,10 @@ fig.colorbar(im3)
 ax3.axis('off')
 
 # GREIT
+gr_max = np.max(np.abs(ds_greit))
 ax4 = fig.add_subplot(gs[1, 1])
 im4 = ax4.imshow(np.real(ds_greit), interpolation='nearest',
-                 cmap=plt.cm.RdBu)
+                 cmap=plt.cm.RdBu, vmin=-gr_max, vmax=gr_max)
 ax4.set_title(r'(d) GREIT')
 ax4.axis(im_size)
 ax4.set_aspect('equal')

@@ -42,8 +42,7 @@ fig = plt.figure()
 ax1 = fig.add_subplot(111)
 # draw equi-potential lines
 vf = np.linspace(min(f), max(f), 32)
-ax1.tricontour(x, y, tri, f, vf,
-               linewidth=0.5, cmap=plt.cm.viridis)
+ax1.tricontour(x, y, tri, f, vf, cmap=plt.cm.viridis)
 # draw mesh structure
 ax1.tripcolor(x, y, tri, np.real(perm),
               edgecolors='k', shading='flat', alpha=0.5,

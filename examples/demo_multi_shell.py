@@ -13,7 +13,7 @@ from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
 
 
-# (a) using multi-shell (fast, inaccurate)
+# (a) using multi-shell (calls layer_circle, fast, inaccurate)
 n_fan = 6
 n_layer = 12
 r_layers = [n_layer-1]
@@ -21,7 +21,7 @@ perm_layers = [0.01]
 mesh_obj, el_pos = multi_shell(n_fan=n_fan, n_layer=n_layer,
                                r_layer=r_layers, perm_per_layer=perm_layers)
 
-# (b) using multi-circle (slow, high-quality)
+# (b) using multi-circle (calls create, slow, high-quality)
 r_layers = [[0.85, 0.925]]
 perm_layers = [0.01]
 mesh_obj, el_pos = multi_circle(r=1., background=1., n_el=16, h0=0.04,
@@ -69,8 +69,7 @@ vf = np.linspace(min(f), max(f), 32)
 # plot
 fig = plt.figure(figsize=figsize)
 ax1 = fig.add_subplot(111)
-ax1.tricontour(pts[:, 0], pts[:, 1], tri, f, vf,
-               linewidth=0.5, cmap=plt.cm.viridis)
+ax1.tricontour(pts[:, 0], pts[:, 1], tri, f, vf, cmap=plt.cm.viridis)
 ax1.tripcolor(pts[:, 0], pts[:, 1], tri, np.real(tri_perm),
               edgecolors='k', shading='flat', alpha=0.4,
               cmap=plt.cm.Greys)
