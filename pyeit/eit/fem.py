@@ -35,6 +35,12 @@ class Forward(object):
         self.tri_perm = mesh['perm']
         self.el_pos = el_pos
 
+        # reference electrodes [ref node should not be electrodes]
+        ref_el = 0
+        while (ref_el in self.el_pos):
+            ref_el = ref_el + 1
+        self.ref = ref_el
+
         # infer dimensions from mesh
         self.n_pts, self.n_dim = self.pts.shape
         self.n_tri, self.n_vertices = self.tri.shape
@@ -134,11 +140,8 @@ class Forward(object):
         # 1. calculate local stiffness matrix (on each element)
         ke = calculate_ke(self.pts, self.tri)
 
-        # reference electrodes [fixed at electrode 0]
-        ref_el = self.el_pos[0]
-
         # 2. assemble to global K
-        kg = assemble_sparse(ke, self.tri, perm, self.n_pts, ref=ref_el)
+        kg = assemble_sparse(ke, self.tri, perm, self.n_pts, ref=self.ref)
 
         # 3. calculate electrode impedance matrix R = K^{-1}
         r_matrix = la.inv(kg)
@@ -227,9 +230,9 @@ def subtract_row(v, pairs):
 
 def voltage_meter(ex_line, n_el=16, step=1, parser=None):
     """
-    extract subtract_row-voltage measurements on boundary electrodes
-    we direct operate on measurements or Jacobian on electrodes
-    so, we can use local index in this module
+    extract subtract_row-voltage measurements on boundary electrodes.
+    we direct operate on measurements or Jacobian on electrodes,
+    so, we can use LOCAL index in this module, do not require el_pos.
 
     Notes
     -----
