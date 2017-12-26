@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from pyeit.mesh import layer_circle, set_perm
 
 
-def meshgrid(pts, n=32, ext_ratio=0):
+def meshgrid(pts, n=32, ext_ratio=0, gc=False):
     """
     build xg, yg, mask grids from triangles point cloud
     function for interpolating regular grids
@@ -31,27 +31,35 @@ def meshgrid(pts, n=32, ext_ratio=0):
         the number of meshgrid per dimension
     ext_ratio : float
         extend the boundary of meshgrid by ext_ratio*d
+    gc : bool
+        grid_correction, offset xgrid and ygrid by half step size
 
     Notes
     -----
     mask denotes points outside mesh.
     """
-    xg, yg = _build_grid(pts, n=n, ext_ratio=ext_ratio)
+    xg, yg = _build_grid(pts, n=n, ext_ratio=ext_ratio, gc=gc)
     # pts_edges = pts[el_pos]
     pts_edges = _hull_points(pts)
     mask = _build_mask(pts_edges, xg, yg)
     return xg, yg, mask
 
 
-def _build_grid(pts, n=32, ext_ratio=0):
+def _build_grid(pts, n=32, ext_ratio=0, gc=False):
     """generating mesh grids"""
     x, y = pts[:, 0], pts[:, 1]
     x_min, x_max = min(x), max(x)
     y_min, y_max = min(y), max(y)
     x_ext = (x_max - x_min) * ext_ratio
     y_ext = (y_max - y_min) * ext_ratio
-    xv = np.linspace(x_min-x_ext, x_max+x_ext, num=n, endpoint=True)
-    yv = np.linspace(y_min-y_ext, y_max+y_ext, num=n, endpoint=True)
+    xv, xv_step = np.linspace(x_min-x_ext, x_max+x_ext, num=n,
+                              endpoint=False, retstep=True)
+    yv, yv_step = np.linspace(y_min-y_ext, y_max+y_ext, num=n,
+                              endpoint=False, retstep=True)
+    # if need grid correction
+    if gc:
+        xv = xv + xv_step / 2.0
+        yv = yv + yv_step / 2.0
     xg, yg = np.meshgrid(xv, yv, sparse=False, indexing='xy')
     return xg, yg
 
