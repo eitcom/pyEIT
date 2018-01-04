@@ -20,6 +20,11 @@ def ati(x):
     return v
 
 
+def ati_df(x):
+    """ati of DataFrame"""
+    return x.abs().sum(skipna=False) / 192.0
+
+
 def rchannel(x, offset=0):
     """
     calculate R (voltages) of two electrodes counted from the
