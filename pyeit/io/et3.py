@@ -19,9 +19,9 @@ from matplotlib import dates
 
 
 class ET3(object):
-    """.et3 file parser"""
+    """ et0 and et3 file parser"""
 
-    def __init__(self, file_name, trim=True, verbose=False):
+    def __init__(self, file_name, et_type='auto', trim=True, verbose=False):
         """
         initialize file parser (supports .et3, .et0)
         read data and parse FILE HEADER.
@@ -30,31 +30,51 @@ class ET3(object):
         ----------
         file_name : basestring
             file path
+        et_type : string
+            file types, 'et0' or 'et3', default is 'et3'
         trim : bool
-            if True, trim EIT data from 256 down to 206 or 192 (opposition)
+            if True, trim EIT data from 256 down to
+            206 (adjacent stimulation) or 192 (opposition stimulation)
         verbose : bool
             print debug messages
         """
+        # choose file type (auto infer extension)
+        if et_type not in ['et0', 'et3']:
+            et_type = splitext(file_name)[1][1:]
+        if verbose:
+            print('file type is treated as %s' % et_type)
+        # tell et0/et3 file information
+        self.params = et_tell(file_name, et_type)
         self.file_name = file_name
+        self.et_type = et_type
         self.trim = trim
         self.verbose = verbose
 
+        self.offset = self.params['offset']
+        self.nframe = self.params['nframe']
+        # make parameter values valid
+        if self.params['current'] > 1250 or self.params['current'] <= 0:
+            if verbose:
+                print('ET: current (%d) out of range', self.params['current'])
+            # default current = 750 uA
+            self.params['current'] = 750
+        if self.params['gain'] not in [0, 1, 2, 3, 4, 5, 6, 7]:
+            if verbose:
+                print('ET: gain (%d) out of range', self.params['gain'])
+            # default gain control = 3
+            self.params['gain'] = 3
+
+        # print debug information
+        if verbose:
+            for k in self.params.keys():
+                print('%s: %s' % (k, self.params[k]))
+
+        # constant variables
         # each frame = header + 2x256 (Re, Im) doubles
         self.header_size = 1024
         self.data_num = (2 * 256)
         self.data_size = self.data_num * 8
         self.frame_size = self.header_size + self.data_size
-
-        # tell et3 file information
-        self.offset, self.nframe, self.params = et3_tell(self.file_name)
-        self.verbose = verbose
-        if verbose:
-            print('offset=%d, nf=%d' % (self.offset, self.nframe))
-            f, c, g = self.params.values()
-            if int(c) == 0:
-                print('bad current value (0), it may be a et0 file')
-            else:
-                print('frequency=%f, current=%d, gain=%d' % (f, c, g))
 
         # load et3 files (RAW data are complex-valued)
         self.data = self.load()
@@ -93,16 +113,19 @@ class ET3(object):
         # convert Re, Im to complex numbers
         raw_data = x[:, :256] + 1j * x[:, 256:]
 
-        # if we need to remove all zeros columns in raw_data
+        # [PS] remove all zeros columns in raw_data if trim is True
         if self.trim:
             idx = trim_pattern()
             data = raw_data[:, idx]
         else:
             data = raw_data
 
-        # Rescale data (do not needed)
-        # scale = et3_gain(g)
-        # data = data * scale
+        # [PS] convert voltage to resistance (Ohms) if file is 'et0'
+        # for 'et3', file is already in Ohms
+        if self.et_type == 'et0':
+            # byliu: current for et0 is locked to 750 uA
+            # 1250/750 = 1.667
+            data = data / self.params['current'] * 1.667
 
         return data
 
@@ -117,25 +140,20 @@ class ET3(object):
         -----
         Many files ending with .et0 are actual .et3 files, be warned.
         """
-        # time-array storage
-        ta = np.zeros(self.nframe, dtype=np.double)
-        ext = splitext(self.file_name)[1][1:]
-
-        # '.et0'
-        if ext == 'et0':
-            if rel_date is None:
-                # byliu: the day when FMMU EIT starts.
-                rel_date = '1994/1/1'
+        # if user specify the date, use it!
+        if rel_date is not None:
             # frame rate = 1 fps
             ta = np.arange(self.nframe)
-            ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 's')
-
-        # '.et3'
-        if ext == 'et3':
-            if rel_date is None:
-                # read days from frame header
+        else:
+            if self.et_type == 'et0':
+                rel_date = '1994/1/1'
+                # frame rate = 1 fps
+                ta = np.arange(self.nframe)
+            elif self.et_type == 'et3':
                 # December 30, 1899 is the base date. (EXCEL format)
                 rel_date = '1899/12/30'
+                ta = np.zeros(self.nframe, dtype='double')
+                # read days from frame header
                 with open(self.file_name, 'rb') as fh:
                     fh.read(self.offset)
                     for i in range(self.nframe):
@@ -145,13 +163,9 @@ class ET3(object):
                         ta[i] = t
                 # convert days to seconds
                 ta = ta * 86400.0
-            else:
-                if self.verbose:
-                    print("relative date is %s" % rel_date)
-                ta = np.arange(self.nframe)
 
-            # convert to pandas datetime
-            ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 's')
+        # convert to pandas datetime
+        ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 's')
 
         return ts
 
@@ -162,8 +176,8 @@ class ET3(object):
     def to_df(self, resample=None, rel_date=None):
         """convert raw data to pandas.DataFrame"""
         ts = self.load_time(rel_date=rel_date)
-
         df = pd.DataFrame(self.data, index=ts)
+        # resample
         if resample is not None:
             df = df.resample(resample).mean()
 
@@ -209,17 +223,22 @@ def et3_date(d, verbose=False):
     return t
 
 
-def et3_tell(file_name):
+def et_tell(file_name, et_type='et3'):
     """
-    Infer .et3 file-type
+    Infer et0 or et3 file-type and header information
 
     Note: since 2016, all version are without a standalone file header.
     This function may be deprecated in near future.
     """
+    if et_type == 'et3':
+        _header_parser = et3_header
+    else:
+        _header_parser = et0_header
+
     with open(file_name, 'rb') as fh:
         # get file info (header)
         d = fh.read(1024)
-        frequency, current, gain = et3_header(d)
+        frequency, current, gain = _header_parser(d)
 
         # move the cursor to the end (2) of the file
         fh.seek(0, 2)
@@ -234,11 +253,39 @@ def et3_tell(file_name):
     nframe = int((et3_len - offset) / 5120)
 
     # build output
-    params = {'frequency': frequency,
+    params = {'offset': offset,
+              'nframe': nframe,
+              'frequency': frequency,
               'current': current,
               'gain': gain}
 
-    return offset, nframe, params
+    return params
+
+
+def et0_header(d):
+    """
+    parse et0 header. Guess from binary dump (byliu)
+
+    binary dump all (little endian, i.e., LSB 16 bit first):
+
+    print('now dump')
+    h_all = np.array(unpack('256I', d))
+    for i in range(32):
+        h_seg = h_all[i*8 + np.arange(8)]
+        print(','.join('{:02x}'.format(x) for x in h_seg))
+    """
+    # unpack all
+    header_offset = 48
+    header_end = header_offset + 16
+    h = np.array(unpack('8H', d[header_offset:header_end]))
+    # print(','.join('{:02x}'.format(x) for x in h))
+
+    # extract information
+    frequency = np.int(h[1])
+    current = np.int(h[3])
+    gain = np.int(h[5])
+
+    return frequency, current, gain
 
 
 def et3_header(d):
@@ -293,16 +340,15 @@ def gain_table(gain):
                 7: 514}
     """
     new pg table (in dll) by Zhang Ge, 2017/12/06
-    byliu: pg_new = pg_old * 2 / 100.0
-
-    pg_table = {0: 0.08,
-                1: 0.16,
-                2: 0.32,
-                3: 0.63,
-                4: 1.26,
-                5: 2.52,
-                6: 5.01,
-                7: 10.0}
+    gain = {0: 0.08,
+            1: 0.16,
+            2: 0.32,
+            3: 0.63,
+            4: 1.26,
+            5: 2.52,
+            6: 5.01,
+            7: 10.0}
+    gain = 25.7 * keyvalue
     """
 
     # make sure gain is a valid key
@@ -310,8 +356,8 @@ def gain_table(gain):
         scale = 1.
     else:
         # assume current = 1000 uA
-        current = 1000.0
-        scale = 2.5 * 1000000.0 / 32768.0 / current / (2 * pg_table[gain])
+        current = 1250.0
+        scale = 2.5 * 1000000.0 / 32768.0 / current / pg_table[gain]
 
     return scale
 
@@ -353,6 +399,7 @@ def demo():
     """ demo shows how-to use et3 """
     file_name = '../../datasets/DATA.et3'
     # file_name = '../../datasets/RAWDATA.et0'
+    # scale = 1000000.0 / (1250/750) = 600000.0
 
     # 1. using raw interface and calculate
     #    averaged transfer impedance from raw data
@@ -365,7 +412,7 @@ def demo():
     #    'T' is minute
     et3 = ET3(file_name, verbose=True)
     df = et3.to_df(rel_date='2017/11/17')
-    df['ati'] = np.abs(df).sum(axis=1)/192.0
+    df['ati'] = np.abs(df).sum(axis=1) / 192.0
 
     # 3. plot
     fig = plt.figure()
@@ -375,7 +422,7 @@ def demo():
     ax.grid('on')
 
     # format time axis
-    hfmt = dates.DateFormatter('%m/%d %H:%M')
+    hfmt = dates.DateFormatter('%y/%m/%d %H:%M')
     ax.xaxis.set_major_formatter(hfmt)
     fig.autofmt_xdate()
     plt.show()
