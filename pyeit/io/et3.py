@@ -42,7 +42,7 @@ class ET3(object):
         if et_type not in ['et0', 'et3']:
             et_type = splitext(file_name)[1][1:]
         if verbose:
-            print('file type is treated as %s' % et_type)
+            print('file is parsed as %s' % et_type)
         # tell et0/et3 file information
         self.params = et_tell(file_name, et_type)
         self.file_name = file_name
@@ -120,12 +120,11 @@ class ET3(object):
         else:
             data = raw_data
 
-        # [PS] convert voltage to resistance (Ohms) if file is 'et0'
+        # [PS] convert ADC to resistance (Ohms) if file is 'et0'
         # for 'et3', file is already in Ohms
         if self.et_type == 'et0':
-            # byliu: current for et0 is locked to 750 uA
-            # 1250/750 = 1.667
-            data = data / self.params['current'] * 1.667
+            scale = gain_table(self.params['gain'], self.params['current'])
+            data = data * scale
 
         return data
 
@@ -325,39 +324,39 @@ def et3_header(d):
     return frequency, current, gain
 
 
-def gain_table(gain):
+def gain_table(gain, current_in_ua):
     """
     Rescale data using if EIT is using programmable gain.
     """
     # Programmable Gain table (scale mapping), see MainFrm.cpp
-    pg_table = {0: 4.112,
-                1: 8.224,
-                2: 16.448,
-                3: 32.382,
-                4: 64.764,
-                5: 129.528,
-                6: 257.514,
-                7: 514}
+    pgia_table = {0: 4.112,
+                  1: 8.224,
+                  2: 16.448,
+                  3: 32.382,
+                  4: 64.764,
+                  5: 129.528,
+                  6: 257.514,
+                  7: 514}
     """
     new pg table (in dll) by Zhang Ge, 2017/12/06
-    gain = {0: 0.08,
-            1: 0.16,
-            2: 0.32,
-            3: 0.63,
-            4: 1.26,
-            5: 2.52,
-            6: 5.01,
-            7: 10.0}
+    pgia_table = {0: 0.08,
+                  1: 0.16,
+                  2: 0.32,
+                  3: 0.63,
+                  4: 1.26,
+                  5: 2.52,
+                  6: 5.01,
+                  7: 10.0}
     gain = 25.7 * keyvalue
     """
 
     # make sure gain is a valid key
-    if gain not in pg_table.keys():
-        scale = 1.
-    else:
-        # assume current = 1000 uA
-        current = 1250.0
-        scale = 2.5 * 1000000.0 / 32768.0 / current / pg_table[gain]
+    if gain not in pgia_table.keys():
+        gain = 3
+
+    # mapping ADC to resistor
+    voltage_in_uv = 2.5 * 1000000.0 / 32768.0 / pgia_table[gain]
+    scale = voltage_in_uv / current_in_ua
 
     return scale
 
