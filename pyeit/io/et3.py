@@ -66,7 +66,7 @@ class ET3(object):
 
         # print debug information
         if verbose:
-            for k in self.params.keys():
+            for k in self.params:
                 print('%s: %s' % (k, self.params[k]))
 
         # constant variables
@@ -264,7 +264,6 @@ def et_tell(file_name, et_type='et3'):
 def et0_header(d):
     """
     parse et0 header. Guess from binary dump (byliu)
-
     binary dump all (little endian, i.e., LSB 16 bit first):
 
     print('now dump')
@@ -272,6 +271,13 @@ def et0_header(d):
     for i in range(32):
         h_seg = h_all[i*8 + np.arange(8)]
         print(','.join('{:02x}'.format(x) for x in h_seg))
+
+    current can also be read out in each switches:
+
+    header_offset = 84
+    h = np.array(unpack('4H', d[header_offset:header_offset+8]))
+    nGain, nCurrent = h[1], h[3]
+    print(nGain, nCurrent)
     """
     # unpack all
     header_offset = 48
@@ -283,14 +289,6 @@ def et0_header(d):
     frequency = np.int(h[1])
     current = np.int(h[3])
     gain = np.int(h[5])
-
-    """
-    # read gain, current in each switches
-    header_offset = 84
-    h = np.array(unpack('4H', d[header_offset:header_offset+8]))
-    nGain, nCurrent = h[1], h[3]
-    print(nGain, nCurrent)
-    """
 
     return frequency, current, gain
 
@@ -335,18 +333,8 @@ def et3_header(d):
 def gain_table(gain, current_in_ua):
     """
     Rescale data using if EIT is using programmable gain.
-    """
-    # Programmable Gain table (scale mapping), see MainFrm.cpp
-    pgia_table = {0: 4.112,
-                  1: 8.224,
-                  2: 16.448,
-                  3: 32.382,
-                  4: 64.764,
-                  5: 129.528,
-                  6: 257.514,
-                  7: 514}
-    """
-    new pg table (in dll) by Zhang Ge, 2017/12/06
+
+    pg table (in dll) used by Zhang Ge, 2017/12/06
     pgia_table = {0: 0.08,
                   1: 0.16,
                   2: 0.32,
@@ -357,6 +345,15 @@ def gain_table(gain, current_in_ua):
                   7: 10.0}
     gain = 25.7 * keyvalue
     """
+    # Programmable Gain table (scale mapping), see MainFrm.cpp
+    pgia_table = {0: 4.112,
+                  1: 8.224,
+                  2: 16.448,
+                  3: 32.382,
+                  4: 64.764,
+                  5: 129.528,
+                  6: 257.514,
+                  7: 514}
 
     # make sure gain is a valid key
     if gain not in pgia_table.keys():
@@ -424,7 +421,6 @@ def demo():
     # 3. plot
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    # TODO: deprecate warning for pandas-0.21.0
     ax.plot(df.index.to_pydatetime(), df['ati'])
     ax.grid('on')
 
