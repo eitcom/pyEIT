@@ -35,9 +35,9 @@ class Forward(object):
         self.tri_perm = mesh['perm']
         self.el_pos = el_pos
 
-        # reference electrodes [ref node should not be electrodes]
+        # reference electrodes [ref node should not be on electrodes]
         ref_el = 0
-        while (ref_el in self.el_pos):
+        while ref_el in self.el_pos:
             ref_el = ref_el + 1
         self.ref = ref_el
 
