@@ -279,10 +279,18 @@ def et0_header(d):
     h = np.array(unpack('8H', d[header_offset:header_end]))
     # print(','.join('{:02x}'.format(x) for x in h))
 
-    # extract information
+    # extract information in global configurations
     frequency = np.int(h[1])
     current = np.int(h[3])
     gain = np.int(h[5])
+
+    """
+    # read gain, current in each switches
+    header_offset = 84
+    h = np.array(unpack('4H', d[header_offset:header_offset+8]))
+    nGain, nCurrent = h[1], h[3]
+    print(nGain, nCurrent)
+    """
 
     return frequency, current, gain
 
