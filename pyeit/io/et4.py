@@ -65,11 +65,11 @@ class ET4(object):
         # 1. get .et4 file length
         nbytes = et4_tell(self.file_name)
 
-        # 2. get nframes (a frame = (128 + 256 + 256) = 640 Bytes)
-        self.info_num = 128
-        self.data_num = 512
+        # 2. get nframes (a frame = (256 + 256d + 256d) = 5120 Bytes)
+        self.info_num = 256
+        self.data_num = 256 * 2
         self.header_size = self.info_num * 4
-        self.frame_size = (self.info_num + self.data_num) * 4
+        self.frame_size = self.header_size + self.data_num * 8
         self.nframe = int((nbytes) / (self.frame_size))
 
         # 3. load data
@@ -78,13 +78,13 @@ class ET4(object):
     def load(self):
         """load RAW data"""
         # 1. prepare storage
-        x = np.zeros((self.nframe, self.data_num), dtype=np.float)
+        x = np.zeros((self.nframe, self.data_num), dtype=np.double)
 
         # 3. unpack data and extract parameters
         with open(self.file_name, 'rb') as fh:
             for i in range(self.nframe):
                 d = fh.read(self.frame_size)
-                x[i] = np.array(unpack('512f', d[self.header_size:]))
+                x[i] = np.array(unpack('512d', d[self.header_size:]))
 
         data = x[:, :256] + 1j * x[:, 256:]
         # electrode re-arranged the same as .et3 file
@@ -106,13 +106,13 @@ class ET4(object):
     def load_info(self):
         """load info headers from xEIT"""
         # 1. prepare storage
-        info = np.zeros((self.nframe, 128))
+        info = np.zeros((self.nframe, 256))
 
         # 3. unpack data and extract parameters
         with open(self.file_name, 'rb') as fh:
             for i in range(self.nframe):
                 d = fh.read(self.frame_size)
-                info[i, :] = np.array(unpack('33if94i', d[:512]))
+                info[i, :] = np.array(unpack('33if222i', d[:self.header_size]))
 
         return info
 
@@ -175,7 +175,8 @@ def zero_rearrange_index(ex_mtx):
 if __name__ == "__main__":
 
     # .et4 file
-    et_file = "../../datasets/s00-02.et4"
+    et_file = r"C:\vfa\subj99\q0-20fps.et4"
+    # et_file = "../../datasets/s00-02.et4"
 
     # load data
     et4 = ET4(et_file, compatible=True, output_resistor=False)
