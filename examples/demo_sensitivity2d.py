@@ -12,14 +12,14 @@ import matplotlib.gridspec as gridspec
 
 # pyEIT
 import pyeit.mesh as mesh
-from pyeit.eit.interp2d import tri_area
+from pyeit.eit.interp2d import tri_area, sim2pts
 from pyeit.mesh import quality
 from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
 
 """ 0. build mesh """
-# mesh_obj, el_pos = mesh.layer_circle(n_layer=10, n_fan=6)
-mesh_obj, el_pos = mesh.create()
+mesh_obj, el_pos = mesh.layer_circle(n_layer=8, n_fan=6)
+# mesh_obj, el_pos = mesh.create()
 
 # extract node, element, alpha
 pts = mesh_obj['node']
@@ -43,16 +43,18 @@ def calc_sens(fwd, ex_mat):
     s = np.linalg.norm(jac, axis=0)
     ae = tri_area(pts, tri)
     s = np.sqrt(s) / ae
-
     assert(any(s >= 0))
-    return np.log10(s)
+
+    se = np.log10(s)
+    sn = sim2pts(pts, tri, se)
+    return sn
 
 
 """ 1. FEM forward setup """
 # calculate simulated data using FEM
 fwd = Forward(mesh_obj, el_pos)
 # loop over EIT scan settings: vary the distance of stimulation nodes, AB
-ex_list = [1, 4, 8]
+ex_list = [1, 2, 4, 8]
 N = len(ex_list)
 s = []
 for ex_dist in ex_list:
@@ -64,7 +66,7 @@ for ex_dist in ex_list:
 """ 2. Plot (elements) sensitivity """
 vmin = np.min(s)
 vmax = np.max(s)
-fig = plt.figure(figsize=(12, 3))
+fig = plt.figure(figsize=(12, 2.5))
 gs = gridspec.GridSpec(1, N)
 for ix in range(N):
     ax = fig.add_subplot(gs[ix])
@@ -74,7 +76,7 @@ for ix in range(N):
     std = sp.std(sn)
     print("std (ex_dist=%d) = %f" % (ex_dist, std))
     im = ax.tripcolor(x, y, tri, sn,
-                      edgecolors='none', shading='flat', cmap=plt.cm.jet,
+                      edgecolors='none', shading='gouraud', cmap=plt.cm.Reds,
                       antialiased=True, vmin=vmin, vmax=vmax)
     # annotate
     ax.set_title('ex_dist=' + str(ex_dist))
