@@ -106,14 +106,16 @@ Give `pyEIT` a **star**, **fork** this project and commit a pull request **(PR)*
 
 ## 5. Cite our work.
 
-If you find `pyEIT` useful, please cite our work!
+`pyEIT` was published at the 17th International Conference on Electrical Impedance Tomography, 2016. It is now officially published at `softwareX`, vol (7), 2018. If you find `pyEIT` useful, please cite our work!
 
 ```bibtex
-@inproceedings{liu2016pyeit,
-  title={pyEIT: a python based, open source framework for EIT},
-  author={Liu, Benyuan and Yang, Bin and Xu, Canhua and Xia, Junying and Dong, Xiuzhen and Fu, Feng},
-  booktitle={17th International Conference on Electrical Impedance Tomography},
-  pages={139},
-  year={2016}
+@article{liu2018pyeit,
+  title={pyEIT: A python based framework for Electrical Impedance Tomography},
+  author={Liu, Benyuan and Yang, Bin and Xu, Canhua and Xia, Junying and Dai, Meng and Ji, Zhenyu and You, Fusheng and Dong, Xiuzhen and Shi, Xuetao and Fu, Feng},
+  journal={SoftwareX},
+  volume={7},
+  pages={304--308},
+  year={2018},
+  publisher={Elsevier}
 }
 ```
