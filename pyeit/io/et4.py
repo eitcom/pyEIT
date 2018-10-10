@@ -9,6 +9,7 @@ This file structure may be modified in near future.
 from struct import unpack
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 
@@ -116,9 +117,18 @@ class ET4(object):
 
         return info
 
-    def to_df(self):
-        """save file to pandas.DataFrame"""
-        pass
+    def to_df(self, resample=None, rel_date=None, fps=40):
+        """convert raw data to pandas.DataFrame"""
+        if rel_date is None:
+            rel_date = '2019/01/01'
+        ta = np.arange(self.nframe) * 1.0 / 40
+        ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 's')
+        df = pd.DataFrame(self.data, index=ts)
+        # resample
+        if resample is not None:
+            df = df.resample(resample).mean()
+
+        return df
 
     def to_csv(self):
         """save file to csv"""

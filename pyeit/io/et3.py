@@ -128,7 +128,7 @@ class ET3(object):
 
         return data
 
-    def load_time(self, rel_date=None):
+    def load_time(self, rel_date=None, fps=1):
         """
         load timestamp from et file
 
@@ -142,7 +142,7 @@ class ET3(object):
         # if user specify the date, use it!
         if rel_date is not None:
             # frame rate = 1 fps
-            ta = np.arange(self.nframe)
+            ta = np.arange(self.nframe) * 1.0 / fps
         else:
             if self.et_type == 'et0':
                 rel_date = '1994/1/1'
@@ -172,9 +172,9 @@ class ET3(object):
         """reload data using different options"""
         pass
 
-    def to_df(self, resample=None, rel_date=None):
+    def to_df(self, resample=None, rel_date=None, fps=1):
         """convert raw data to pandas.DataFrame"""
-        ts = self.load_time(rel_date=rel_date)
+        ts = self.load_time(rel_date=rel_date, fps=fps)
         df = pd.DataFrame(self.data, index=ts)
         # resample
         if resample is not None:
