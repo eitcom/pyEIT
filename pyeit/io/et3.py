@@ -151,17 +151,17 @@ class ET3(object):
             elif self.et_type == 'et3':
                 # December 30, 1899 is the base date. (EXCEL format)
                 rel_date = '1899/12/30'
-                ta = np.zeros(self.nframe, dtype='double')
-                # read days from frame header
+                # 'ta' should be int/long to keep time resolution to 's'
+                ta = np.zeros(self.nframe, dtype='long')
+                # read days from a frame header
                 with open(self.file_name, 'rb') as fh:
                     fh.read(self.offset)
                     for i in range(self.nframe):
                         # read frame data
                         d = fh.read(self.frame_size)
                         t = et3_date(d)
-                        ta[i] = t
-                # convert days to seconds
-                ta = ta * 86400.0
+                        # convert days to seconds
+                        ta[i] = t * 86400
 
         # convert to pandas datetime
         ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 's')
@@ -401,7 +401,7 @@ def get_date_from_folder(file_str):
 
 def demo():
     """ demo shows how-to use et3 """
-    file_name = '../../datasets/DATA.et3'
+    file_name = '/data/dhca/dut/DATA.et3'
     # file_name = '../../datasets/RAWDATA.et0'
     # scale = 1000000.0 / (1250/750) = 600000.0
 
@@ -415,14 +415,14 @@ def demo():
     #    's' is seconds (default)
     #    'T' is minute
     et3 = ET3(file_name, verbose=True)
-    df = et3.to_df(rel_date='2017/11/17')
+    df = et3.to_df()  # rel_date='2019/01/10'
     df['ati'] = np.abs(df).sum(axis=1) / 192.0
 
     # 3. plot
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(df.index.to_pydatetime(), df['ati'])
-    ax.grid('on')
+    ax.grid(True)
 
     # format time axis
     hfmt = dates.DateFormatter('%y/%m/%d %H:%M')
