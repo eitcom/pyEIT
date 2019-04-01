@@ -14,7 +14,7 @@ from .base import EitBase
 
 
 class JAC(EitBase):
-    """ implementing a JAC class """
+    """ implementing a sensitivity-based EIT imaging class """
 
     def setup(self, p=0.20, lamb=0.001, method='kotre'):
         """
