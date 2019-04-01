@@ -44,9 +44,9 @@ f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new['perm'])
 # (mostly) the shape and the electrode positions are not exactly the same
 # as in mesh generating the jac, then JAC and data must be normalized.
 eit = jac.JAC(mesh_obj, el_pos, ex_mat=ex_mat, step=step,
-              perm=1., parser='std')
+              perm=1., parser='std', jac_normalized=False)
 eit.setup(p=0.5, lamb=0.01, method='kotre')
-ds = eit.solve(f1.v, f0.v, normalize=False)
+ds = eit.solve(f1.v, f0.v, normalize=True)
 ds_n = sim2pts(pts, tri, np.real(ds))
 
 # plot ground truth

@@ -53,7 +53,6 @@ class JAC(EitBase):
         NDArray
             complex-valued NDArray, changes of conductivities
         """
-        # normalize usually is not required for JAC
         if normalize:
             dv = self.normalize(v1, v0)
         else:
@@ -74,16 +73,25 @@ class JAC(EitBase):
         # return average epsilon on element
         return ds
 
-    def bp_solve(self, v1, v0, normalize=False):
-        """ solve_eit via a 'naive' back projection. """
-        # normalize usually is not required for JAC
+    def jt_solve(self, v1, v0, normalize=True):
+        """
+        a 'naive' back projection using the transpose of Jac.
+        This scheme is the one published by kotre (1989):
+
+            Kotre, C. J. (1989). A sensitivity coefficient method for
+            the reconstruction of electrical impedance tomograms.
+            Clinical Physics and Physiological Measurement,
+            10(3), 275–281. doi:10.1088/0143-0815/10/3/008
+
+        The input (dv) and output (ds) is log-normalized
+        """
         if normalize:
-            dv = self.normalize(v1, v0)
+            dv = np.log(np.abs(v1)/np.abs(v0)) * np.sign(v0)
         else:
             dv = (v1 - v0)
         # s_r = J^Tv_r
         ds = -np.dot(self.J.conj().T, dv)
-        return ds
+        return np.exp(ds) - 1.0
 
     def gn(self, v, x0=None, maxiter=1, gtol=1e-4, p=None, lamb=None,
            lamb_decay=1.0, lamb_min=0, method='kotre', verbose=False):
