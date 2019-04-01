@@ -41,11 +41,19 @@ class SVD(JAC):
         # pre-compute H0 for dynamical imaging
         if method == 'svd':
             JtJ = np.dot(self.J.T, self.J)
-            U, s, Ut = np.linalg.svd(JtJ)
 
-            # choose the first N eigenvalues
-            U = U[:, :n_ord]
-            s = s[:n_ord]
+            # using svd
+            # U, s, Ut = np.linalg.svd(JtJ)
+            # U = U[:, :n_ord]
+            # s = s[:n_ord]
+
+            # using eigh (more faster for large, symmetric matrix)
+            s, U = np.linalg.eigh(JtJ)
+            idx = np.argsort(s)[::-1]
+            s = s[idx[:n_ord]]
+            U = U[:, idx[:n_ord]]
+
+            # pseudo inverse
             JtJ_inv = np.dot(U, np.dot(np.diag(s**-1), U.T))
             self.H = np.dot(JtJ_inv, self.J.T)
         elif method == 'pinv':
