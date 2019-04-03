@@ -2,7 +2,7 @@
 
 Thank you for the interest in `pyEIT`!
 
-`pyEIT` is **a python-based, open-source framework of Electrical Impedance Tomography (EIT).**
+`pyEIT` is **a python-based, open-source framework for Electrical Impedance Tomography (EIT).**
 
 The design priciples of `pyEIT` are **modularity, minimalism, extensibility and OOP!**
 
@@ -41,8 +41,9 @@ Interested users can contribute **(create a PR! any type of improvement is welco
  - [x] Add support for 3D forward and inverse computing
  - [x] 3D mesh generation and visualization
  - [ ] Generate complex shape using distmesh
- - [ ] Generate 3D phantoms
+ - [ ] Generate 2D/3D meshes from CT/MRI (based on iso2mesh [https://github.com/fangq/iso2mesh](https://github.com/fangq/iso2mesh))
  - [ ] Complete electrode model (CEM) support
+ - [ ] Implementing the dbar algorithm for 2D difference EIT imaging
 
 ## 2. Installation
 
@@ -106,7 +107,9 @@ Give `pyEIT` a **star**, **fork** this project and commit a pull request **(PR)*
 
 ## 5. Cite our work.
 
-`pyEIT` was published at the 17th International Conference on Electrical Impedance Tomography, 2016. It is now officially published at `softwareX`, vol (7), 2018. If you find `pyEIT` useful, please cite our work!
+`pyEIT` was published at the 17th International Conference on Electrical Impedance Tomography, 2016. It is now officially published at `softwareX`, vol (7), 2018. 
+
+**If you find `pyEIT` useful, please cite our work!**
 
 ```bibtex
 @article{liu2018pyeit,
