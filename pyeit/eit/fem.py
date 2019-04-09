@@ -46,7 +46,7 @@ class Forward(object):
         self.n_tri, self.n_vertices = self.tri.shape
         self.ne = el_pos.size
 
-    def solve_eit(self, ex_mat=None, step=1, perm=None, parser=None):
+    def solve_eit(self, ex_mat=None, step=1, perm=None, parser='std'):
         """
         EIT simulation, generate perturbation matrix and forward v
 
@@ -59,10 +59,30 @@ class Forward(object):
         perm : NDArray
             Mx1 array, initial x0. must be the same size with self.tri_perm
         parser : str
+            'fmmu': data are trimmed, difference voltages are measured,
+                    index (i) always starts relatively from 'A'.
+            'std' : data are trimmed, difference voltages are measured,
+                    index starts from 1.
+            'abs' : data are not trimmed, absolute voltages are measured
+                    on all electrodes.
+
             if parser is 'fmmu', within each stimulation pattern, diff_pairs
-            or boundary measurements are re-indexed and started
-            from the positive stimulus electrode
-            if parser is 'std', subtract_row start from the 1st electrode
+            or boundary measurements are re-indexed and started from the
+            positive stimulus electrode (A).
+
+            For example, in adjacent current patterns (el_dist=1), 13 data are
+            collected each stimulation, with totally 13*16=208 datum, denoted
+            by v_all. The 3rd stimulation is (3, 4), its boundary voltages are
+            v and v is placed at [26 .. 39] of v_all (index starts from 0),
+            v(1) is vdiff(6, 5), v(2) is vdiff(7, 6), etc.
+
+            if parser is 'std', v always starts from the 1st electrode.
+            For the same example above,
+            v(1) is vdiff(2, 1), v(2) is vdiff(6, 5), etc.
+
+            if parser is 'abs', the absolute voltages on electrodes are
+            measured (also on the AB electrodes), 16 data are collected
+            each stimulation. 'abs' is for simulation purpose only.
 
         Returns
         -------
@@ -93,19 +113,26 @@ class Forward(object):
         for i in range(n_lines):
             # FEM solver of one stimulation pattern, a row in ex_mat
             ex_line = ex_mat[i]
-            f, jac_i = self.solve(ex_line, perm0)
+            f, jac_el = self.solve(ex_line, perm0)
             f_el = f[self.el_pos]
 
-            # boundary measurements, subtract_row-voltages on electrodes
-            diff_op = voltage_meter(ex_line, n_el=self.ne, step=step, parser=parser)
-            v_diff = subtract_row(f_el, diff_op)
-            jac_diff = subtract_row(jac_i, diff_op)
+            # boundary measurements, real-life voltage meter
+            diff_op = voltage_meter(ex_line, n_el=self.ne, step=step,
+                                    parser=parser)
 
-            # build bp projection matrix
+            # build back projection matrix (default parser is 'std' for bp)
             # 1. we can either smear at the center of elements, using
             #    >> fe = np.mean(f[self.tri], axis=1)
             # 2. or, simply smear at the nodes using f
             b = smear(f, f_el, diff_op)
+
+            if parser == 'abs':
+                # absolute measurements on all electrodes
+                v_diff, jac_diff = f_el, jac_el
+            else:
+                # difference voltages on electrode pairs
+                v_diff = _subtract(f_el, diff_op)
+                jac_diff = _subtract(jac_el, diff_op)
 
             # append
             v.append(v_diff)
@@ -204,7 +231,7 @@ def smear(f, fb, pairs):
     return np.array(b_matrix)
 
 
-def subtract_row(v, pairs):
+def _subtract(v, pairs):
     """
     v_diff[k] = v[i, :] - v[j, :]
 
@@ -213,7 +240,7 @@ def subtract_row(v, pairs):
     v : NDArray
         Nx1 boundary measurements vector or NxM matrix
     pairs : NDArray
-        Nx2 subtract_row pairs
+        Nx2 [N, M], vdiff = vn - vm
 
     Returns
     -------
@@ -230,7 +257,7 @@ def subtract_row(v, pairs):
 
 def voltage_meter(ex_line, n_el=16, step=1, parser=None):
     """
-    extract subtract_row-voltage measurements on boundary electrodes.
+    extract voltage differences on boundary electrodes.
     we direct operate on measurements or Jacobian on electrodes,
     so, we can use LOCAL index in this module, do not require el_pos.
 
@@ -249,26 +276,28 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None):
     step : int
         measurement method (which two electrodes are used for measuring)
     parser : str
-        if parser is 'fmmu', data are trimmed, start index (i) is always 'A'.
+        see the docstrings of solve_eit for more details
 
     Returns
     -------
     v : NDArray
-        (N-1)*2 arrays of subtract_row pairs
+        N*2 arrays of [N, M] pairs
     """
     # local node
     drv_a = ex_line[0]
     drv_b = ex_line[1]
-    i0 = drv_a if parser == 'fmmu' else 0
+
+    # M starts from 'A' in FMMU EIT
+    m0 = drv_a if parser == 'fmmu' else 0
 
     # build differential pairs
     v = []
-    for a in range(i0, i0 + n_el):
-        m = a % n_el
+    for i in range(m0, m0 + n_el):
+        m = i % n_el
         n = (m + step) % n_el
         # if any of the electrodes is the stimulation electrodes
         if not(m == drv_a or m == drv_b or n == drv_a or n == drv_b):
-            # the order of m, n matters
+            # the order of m, n matters, v_diff = v_el[n] - v_el[m]
             v.append([n, m])
 
     diff_pairs = np.array(v)
