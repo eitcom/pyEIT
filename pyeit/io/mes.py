@@ -71,7 +71,7 @@ def get_bmp_size(fh):
 def save_bmp(fstr, bmp):
     """save bmp segment to file"""
     # automatically infer file name from 'fstr'
-    bmp_file = fstr.replace('mes', 'bmp')
+    bmp_file = fstr.replace('.mes', '.bmp')
     with open(bmp_file, 'wb') as fh:
         fh.write(bmp)
 
