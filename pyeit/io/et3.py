@@ -41,23 +41,24 @@ class ET3(object):
         # choose file type (auto infer extension)
         if et_type not in ['et0', 'et3']:
             et_type = splitext(file_name)[1][1:]
-        if verbose:
-            print('file is parsed as %s' % et_type)
-        # tell et0/et3 file information
-        self.params = et_tell(file_name, et_type)
         self.file_name = file_name
-        self.et_type = et_type
         self.trim = trim
         self.verbose = verbose
 
-        self.offset = self.params['offset']
-        self.nframe = self.params['nframe']
-        # make parameter values valid
+        # try read the file type by the information on extension, default: et0
+        self.params = et_tell(file_name, et_type)
+        # check if it is the right file-format
         if self.params['current'] > 1250 or self.params['current'] <= 0:
             if verbose:
-                print('ET: current (%d) out of range', self.params['current'])
-            # default current = 750 uA
-            self.params['current'] = 750
+                print('ET: file type mismatch')
+            # This file is probable ET3, re-parse the information
+            et_type = 'et3'
+            print('ET: file is re-parsed as %s' % et_type)
+            self.params = et_tell(file_name, et_type)
+
+        self.et_type = et_type
+        self.offset = self.params['offset']
+        self.nframe = self.params['nframe']
         if self.params['gain'] not in [0, 1, 2, 3, 4, 5, 6, 7]:
             if verbose:
                 print('ET: gain (%d) out of range', self.params['gain'])
