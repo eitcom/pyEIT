@@ -41,23 +41,24 @@ class ET3(object):
         # choose file type (auto infer extension)
         if et_type not in ['et0', 'et3']:
             et_type = splitext(file_name)[1][1:]
-        if verbose:
-            print('file is parsed as %s' % et_type)
-        # tell et0/et3 file information
-        self.params = et_tell(file_name, et_type)
         self.file_name = file_name
-        self.et_type = et_type
         self.trim = trim
         self.verbose = verbose
 
-        self.offset = self.params['offset']
-        self.nframe = self.params['nframe']
-        # make parameter values valid
+        # try read the file type by the information on extension, default: et0
+        self.params = et_tell(file_name, et_type)
+        # check if it is the right file-format
         if self.params['current'] > 1250 or self.params['current'] <= 0:
             if verbose:
-                print('ET: current (%d) out of range', self.params['current'])
-            # default current = 750 uA
-            self.params['current'] = 750
+                print('ET: file type mismatch')
+            # This file is probable ET3, re-parse the information
+            et_type = 'et3'
+            print('ET: file is re-parsed as %s' % et_type)
+            self.params = et_tell(file_name, et_type)
+
+        self.et_type = et_type
+        self.offset = self.params['offset']
+        self.nframe = self.params['nframe']
         if self.params['gain'] not in [0, 1, 2, 3, 4, 5, 6, 7]:
             if verbose:
                 print('ET: gain (%d) out of range', self.params['gain'])
@@ -128,7 +129,7 @@ class ET3(object):
 
         return data
 
-    def load_time(self, rel_date=None):
+    def load_time(self, rel_date=None, fps=1):
         """
         load timestamp from et file
 
@@ -142,7 +143,7 @@ class ET3(object):
         # if user specify the date, use it!
         if rel_date is not None:
             # frame rate = 1 fps
-            ta = np.arange(self.nframe)
+            ta = np.arange(self.nframe) * 1.0 / fps
         else:
             if self.et_type == 'et0':
                 rel_date = '1994/1/1'
@@ -151,17 +152,17 @@ class ET3(object):
             elif self.et_type == 'et3':
                 # December 30, 1899 is the base date. (EXCEL format)
                 rel_date = '1899/12/30'
-                ta = np.zeros(self.nframe, dtype='double')
-                # read days from frame header
+                # 'ta' should be int/long to keep time resolution to 's'
+                ta = np.zeros(self.nframe, dtype='long')
+                # read days from a frame header
                 with open(self.file_name, 'rb') as fh:
                     fh.read(self.offset)
                     for i in range(self.nframe):
                         # read frame data
                         d = fh.read(self.frame_size)
                         t = et3_date(d)
-                        ta[i] = t
-                # convert days to seconds
-                ta = ta * 86400.0
+                        # convert days to seconds
+                        ta[i] = t * 86400
 
         # convert to pandas datetime
         ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 's')
@@ -172,9 +173,9 @@ class ET3(object):
         """reload data using different options"""
         pass
 
-    def to_df(self, resample=None, rel_date=None):
+    def to_df(self, resample=None, rel_date=None, fps=1):
         """convert raw data to pandas.DataFrame"""
-        ts = self.load_time(rel_date=rel_date)
+        ts = self.load_time(rel_date=rel_date, fps=fps)
         df = pd.DataFrame(self.data, index=ts)
         # resample
         if resample is not None:
@@ -401,7 +402,7 @@ def get_date_from_folder(file_str):
 
 def demo():
     """ demo shows how-to use et3 """
-    file_name = '../../datasets/DATA.et3'
+    file_name = '/data/dhca/dut/DATA.et3'
     # file_name = '../../datasets/RAWDATA.et0'
     # scale = 1000000.0 / (1250/750) = 600000.0
 
@@ -415,14 +416,14 @@ def demo():
     #    's' is seconds (default)
     #    'T' is minute
     et3 = ET3(file_name, verbose=True)
-    df = et3.to_df(rel_date='2017/11/17')
+    df = et3.to_df()  # rel_date='2019/01/10'
     df['ati'] = np.abs(df).sum(axis=1) / 192.0
 
     # 3. plot
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(df.index.to_pydatetime(), df['ati'])
-    ax.grid('on')
+    ax.grid(True)
 
     # format time axis
     hfmt = dates.DateFormatter('%y/%m/%d %H:%M')

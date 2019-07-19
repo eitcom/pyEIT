@@ -11,7 +11,7 @@ import pyeit.mesh as mesh
 from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
 
-import pyeit.eit.jac as jac
+import pyeit.eit.svd as svd
 from pyeit.eit.interp2d import sim2pts
 
 """ 0. construct mesh """
@@ -24,8 +24,8 @@ tri = mesh_obj['element']
 x, y = pts[:, 0], pts[:, 1]
 
 """ 1. problem setup """
-mesh_obj['alpha'] = np.random.rand(tri.shape[0]) * 200 + 100
-anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'perm': 1000.0}]
+mesh_obj['alpha'] = np.ones(tri.shape[0]) * 10
+anomaly = [{'x': 0.5, 'y': 0.5, 'd': 0.1, 'perm': 100.0}]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly)
 
 """ 2. FEM simulation """
@@ -43,9 +43,9 @@ f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new['perm'])
 # However, when you generate jac from a known mesh, but in real-problem
 # (mostly) the shape and the electrode positions are not exactly the same
 # as in mesh generating the jac, then JAC and data must be normalized.
-eit = jac.JAC(mesh_obj, el_pos, ex_mat=ex_mat, step=step,
-              perm=1., parser='std', jac_normalized=False)
-eit.setup(p=0.5, lamb=0.01, method='kotre')
+eit = svd.SVD(mesh_obj, el_pos, ex_mat=ex_mat, step=step,
+              perm=1., parser='std')
+eit.setup(n=35, method='svd')
 ds = eit.solve(f1.v, f0.v, normalize=True)
 ds_n = sim2pts(pts, tri, np.real(ds))
 
