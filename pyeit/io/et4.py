@@ -185,7 +185,7 @@ def zero_rearrange_index(ex_mtx):
 if __name__ == "__main__":
 
     # .et4 file
-    et_file = r"C:\vfa\subj99\q0-20fps.et4"
+    et_file = r"C:\xeit\eit_20190929-103342.et4"
     # et_file = "../../datasets/s00-02.et4"
 
     # load data
@@ -211,11 +211,11 @@ if __name__ == "__main__":
     axt = ax.twinx()
     axt.plot(ti_imag, 'r-')
     ax.set_xlim([0, xlim])
-    ax.grid('on')
+    ax.grid(True)
 
     ax2 = fig.add_subplot(212)
     ax2.plot(ti_abs, 'r-')
-    ax2.grid('on')
+    ax2.grid(True)
     ax2.set_xlim([0, xlim])
     plt.show()
     # fig.savefig('s00-03-80k.png')
