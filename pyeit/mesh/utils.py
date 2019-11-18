@@ -36,7 +36,46 @@ def dist(p):
 
 def edge_project(pts, fd, h0=1.0):
     """project points back on edge"""
-    return pts - edge_grad(pts, fd, h0)
+    g_vec = edge_grad(pts, fd, h0)
+    return pts - g_vec
+
+
+def grad(p, fd, d_eps=1e-12):
+    """
+    calculate numerical gradient on points
+
+    Parameters
+    ----------
+    p : array_like
+        a point in ND
+
+    Return
+    ------
+    array_like
+        gradient on each dimensions
+
+    Note
+    ----
+    numerical gradient:
+        f'_x = (f(p+delta_x) - f(p)) / delta_x
+        f'_y = (f(p+delta_y) - f(p)) / delta_y
+        f'_z = (f(p+delta_z) - f(p)) / delta_z
+    """
+    d = fd(p)
+
+    # calculate the gradient of each axis
+    ndim = p.shape[1]
+    pts_xyz = np.repeat(p, ndim, axis=0)
+    delta_xyz = np.repeat([np.eye(ndim)], p.shape[0], axis=0).reshape(-1, ndim)
+    deps_xyz = d_eps * delta_xyz
+    g_xyz = (fd(pts_xyz + deps_xyz) - np.repeat(d, ndim, axis=0)) / d_eps
+
+    # normalize gradient, avoid divide by zero
+    g = g_xyz.reshape(-1, ndim)
+    g2 = np.sqrt(np.sum(g**2, axis=1)) + d_eps
+
+    # move unit
+    return g/g2[:, np.newaxis] * d[:, np.newaxis]
 
 
 def edge_grad(pts, fd, h0=1.0):
@@ -64,37 +103,13 @@ def edge_grad(pts, fd, h0=1.0):
     """
     d_eps = np.sqrt(np.finfo(float).eps)*h0
     # get dimensions
-    n_dim = np.shape(pts)[1]
+    if np.ndim(pts)==1:
+        pts = pts[:, np.newaxis]
 
-    def grad(p):
-        """ calculate numerical gradient on a single point
+    # apply on slices taken along the axis (=1)
+    # g_num = np.apply_along_axis(grad, 1, pts)
+    g_num = grad(pts, fd, d_eps)
 
-        Parameters
-        ----------
-        p : array_like
-            a point in ND
-
-        Return
-        ------
-        array_like
-            gradient on each dimensions
-
-        Note
-        ----
-        numerical gradient, f'_x = (f(p+delta_x) - f(x)) / delta
-        """
-        d = fd(p)
-        g = (fd(p + d_eps*np.eye(n_dim)) - d) / d_eps
-        # normalize, avoid divide by zero
-        g2 = np.sqrt(np.sum(g**2)) + d_eps
-        return d * g/g2
-
-    # calculate gradients
-    if len(np.shape(pts)) == 1:
-        g_num = grad(pts)
-    else:
-        # apply on slices taken along the axis (=1)
-        g_num = np.apply_along_axis(grad, 1, pts)
     return g_num
 
 
