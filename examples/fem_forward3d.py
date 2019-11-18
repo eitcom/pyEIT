@@ -3,7 +3,6 @@
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
-
 import numpy as np
 
 import pyeit.mesh as mesh
@@ -13,21 +12,18 @@ from pyeit.eit.fem import Forward
 from pyeit.eit.interp2d import sim2pts
 from pyeit.eit.utils import eit_scan_lines
 
-# build tetrahedron
-# 3D tetrahedron must have a bbox
+# tetrahedron meshing in a 3D bbox
 bbox = [[-1, -1, -1], [1, 1, 1]]
-# save calling convention as distmesh 2D
 mesh_obj, el_pos = mesh.create(h0=0.15, bbox=bbox)
 
+# report the status of the 2D mesh
 pts = mesh_obj['node']
 tri = mesh_obj['element']
-
-# report the status of the 2D mesh
 quality.stats(pts, tri)
 
 """ 1. FEM forward simulations """
 # setup EIT scan conditions
-el_dist, step = 7, 1
+el_dist, step = 4, 1
 ex_mat = eit_scan_lines(16, el_dist)
 
 # calculate simulated data
@@ -47,4 +43,4 @@ f, _ = fwd.solve(ex_line, perm=tri_perm)
 f = np.real(f)
 
 # mplot.tetplot(p, t, edge_color=(0.2, 0.2, 1.0, 1.0), alpha=0.01)
-mplot.tetplot(pts, tri, vertex_color=f, alpha=1.0)
+mplot.tetplot(pts, tri, vertex_color=f, alpha=0.8)
