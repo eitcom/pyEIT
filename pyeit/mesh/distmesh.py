@@ -22,7 +22,7 @@ class DISTMESH(object):
     def __init__(self, fd, fh, h0=0.1,
                  p_fix=None, bbox=None,
                  density_ctrl_freq=30,
-                 dptol=0.01, ttol=0.1, Fscale=1.2, deltat=0.2,
+                 deltat=0.2, dptol=0.01, ttol=0.1, Fscale=1.2,
                  verbose=False):
         """ initial distmesh class
 
@@ -33,8 +33,8 @@ class DISTMESH(object):
         fh : str
             function handle for distance distributions
         h0 : float, optional
-            Distance between points in the initial distribution p0, default=0.1
-            For uniform meshes, h(x,y) = constant,
+            Distance between points in the initial distribution p0,
+            default=0.1 For uniform meshes, h(x,y) = constant,
             the element size in the final mesh will usually be
             a little larger than this input.
         p_fix : array_like, optional
@@ -47,7 +47,7 @@ class DISTMESH(object):
         deltat : float, optional
             mapping forces to distances, default=0.2
         dptol : float, optional
-            exit criterion for minimal distance all points moved, default=0.001
+            exit criterion for minimal distance all points moved, default=0.01
         ttol : float, optional
             enter criterion for re-delaunay the lattices, default=0.1
         Fscale : float, optional
@@ -89,7 +89,7 @@ class DISTMESH(object):
         self.num_density = 0
         self.num_move = 0
 
-        # keep points inside region (specified by fd) with a small gap (geps)
+        # keep points inside (minus distance) with a small gap (geps)
         p = p[fd(p) < self.geps]
 
         # rejection points by sampling on fh
@@ -152,6 +152,7 @@ class DISTMESH(object):
         pmid = np.mean(pts[tri], axis=1)
         # keeps only interior points
         tri = tri[fd(pmid) < -geps]
+
         return tri
 
     def triangulate(self):
@@ -246,12 +247,13 @@ class DISTMESH(object):
         d = self.fd(self.p)
         ix = d > 0
         if sum(ix) > 0:
-            self.p[ix] = edge_project(self.p[ix], self.fd)
+            self.p[ix] = edge_project(self.p[ix], self.fd, self.h0)
 
         # check whether convergence : no big movements
         ix_interior = d < -self.geps
         delta_move = self.deltat * Ftot[ix_interior]
         score = np.max(dist(delta_move)/self.h0)
+
         # debug
         self.debug('  score = ', score)
         return score < self.dptol
@@ -264,7 +266,7 @@ class DISTMESH(object):
 
 def bbox2d(h0, bbox):
     """
-    convert bbox to p (not including the ending point of bbox)
+    generate points in 2D bbox (not including the ending point of bbox)
 
     Parameters
     ----------
@@ -292,7 +294,8 @@ def bbox2d(h0, bbox):
 
 
 def bbox3d(h0, bbox):
-    """ converting bbox to 3D points
+    """
+    generate nodes in 3D bbox
 
     See Also
     --------
@@ -346,8 +349,8 @@ def remove_duplicate_nodes(p, pfix, geps):
 
 
 def build(fd, fh, pfix=None, bbox=None, h0=0.1,
-          densityctrlfreq=32, deltat=0.2,
-          maxiter=500, verbose=False):
+          densityctrlfreq=40, deltat=0.25,
+          maxiter=200, verbose=False):
     """ main function for distmesh
 
     See Also
@@ -396,7 +399,8 @@ def build(fd, fh, pfix=None, bbox=None, h0=0.1,
             g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.275
         else:
             # default parameters for 3D
-            g_dptol, g_ttol, g_Fscale = 0.045, 0.150, 1.125
+            # g_dptol, g_ttol, g_Fscale = 0.045, 0.150, 1.125
+            g_dptol, g_ttol, g_Fscale = 0.04, 0.2, 1.0
 
     # initialize distmesh
     dm = DISTMESH(fd, fh,
