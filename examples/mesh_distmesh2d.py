@@ -67,16 +67,16 @@ def example3():
 
     # interior
     def _fd(pts):
-        rect = shape.rectangle(pts, p1=[-1, -0.6], p2=[1, 0.6])
-        circle = shape.circle(pts, r=0.3)
+        rect = shape.rectangle(pts, p1=[-1, -1], p2=[1, 1])
+        circle = shape.circle(pts, r=0.5)
         return shape.dist_diff(rect, circle)
 
     # constraints
     def _fh(pts):
-        return 0.05 + 0.05 * shape.circle(pts, r=0.3)
+        return 0.05 + 0.3 * shape.circle(pts, r=0.5)
 
     # build triangle
-    p, t = distmesh.build(_fd, _fh, h0=0.05)
+    p, t = distmesh.build(_fd, _fh, h0=0.025)
 
     # plot
     fig, ax = plt.subplots()
@@ -138,7 +138,7 @@ def example5():
     plt.show()
 
 
-def example_voronoi():
+def example_voronoi_plot():
     """draw voronoi plots for triangle elements"""
 
     def _fd(pts):
@@ -185,10 +185,10 @@ def example_intersect():
 
 
 if __name__ == "__main__":
-    # example1()
+    example1()
     # example2()
     # example3()
     # example4()
     # example5()
-    # example_voronoi()
-    example_intersect()
+    # example_voronoi_plot()
+    # example_intersect()
