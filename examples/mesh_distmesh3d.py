@@ -10,7 +10,7 @@ import pyeit.mesh as mesh
 import pyeit.mesh.plot as mplot
 
 # tetrahedron meshing in a 3D bbox
-bbox = [[-1.1, -1.1, -1.1], [1.1, 1.1, 1.1]]
+bbox = [[-1.2, -1.2, -1.2], [1.2, 1.2, 1.2]]
 ms, el_pos = mesh.create(h0=0.15, bbox=bbox)
 
 # print mesh quality
