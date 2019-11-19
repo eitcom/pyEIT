@@ -11,7 +11,8 @@ from .utils import dist, edge_project
 
 
 def circle(pts, pc=None, r=1.0):
-    """ Distance function for the circle centered at pc = [xc, yc]
+    """
+    Distance function for the circle centered at pc = [xc, yc]
 
     Parameters
     ----------
@@ -48,17 +49,7 @@ def ellipse(pts, pc=None, ab=None):
 
 
 def unit_circle(pts):
-    """ unit circle at (0,0)
-
-    Parameters
-    ----------
-    pts : array_like
-        points coordinates
-
-    Returns
-    -------
-    array_like
-    """
+    """ unit circle at (0,0) """
     return circle(pts, r=1.)
 
 
@@ -68,7 +59,8 @@ def box_circle(pts):
 
 
 def ball(pts, pc=None, r=1.0):
-    """ generate balls in 3D
+    """
+    generate balls in 3D (default: unit ball)
 
     See Also
     --------
@@ -84,7 +76,7 @@ def unit_ball(pts):
     return ball(pts)
 
 
-def rectangle(pts, p1=None, p2=None):
+def rectangle0(pts, p1=None, p2=None):
     """
     Distance function for the rectangle p1=[x1, y1] and p2=[x2, y2]
 
@@ -116,6 +108,49 @@ def rectangle(pts, p1=None, p2=None):
     pd_right = [max(row) for row in pts - p2]
 
     return np.maximum(pd_left, pd_right)
+
+
+def rectangle(pts, p1=None, p2=None):
+    """
+    smoothed rectangle
+
+    p1: buttom-left corner
+    p2: top-right corner
+    """
+    if p1 is None:
+        p1 = [0, 0]
+    if p2 is None:
+        p2 = [1, 1]
+    if pts.ndim == 1:
+        pts = pts[np.newaxis]
+
+    d1x = -(pts[:, 0] - p1[0])
+    d2x = pts[:, 0] - p2[0]
+    d1y = -(pts[:, 1] - p1[1])
+    d2y = pts[:, 1] - p2[1]
+
+    # find interior points (d < 0)
+    dx = np.maximum(d1x, d2x)
+    dy = np.maximum(d1y, d2y)
+    d = np.maximum(dx, dy)
+
+    # smoothed corner distance function
+    ix_left = d1x > 0
+    ix_right = d2x > 0
+    iy_below = d1y > 0
+    iy_above = d2y > 0
+
+    # 1, 2, 3, 4 Quadrant outside-points smooth distance
+    ix1 = np.logical_and(ix_right, iy_above)
+    d[ix1] = np.sqrt(d2x[ix1]**2 + d2y[ix1]**2)
+    ix2 = np.logical_and(ix_left, iy_above)
+    d[ix2] = np.sqrt(d1x[ix2]**2 + d2y[ix2]**2)
+    ix3 = np.logical_and(ix_left, iy_below)
+    d[ix3] = np.sqrt(d1x[ix3]**2 + d1y[ix3]**2)
+    ix4 = np.logical_and(ix_right, iy_below)
+    d[ix4] = np.sqrt(d2x[ix4]**2 + d1y[ix4]**2)
+
+    return d
 
 
 def fix_points_fd(fd, n_el=16, pc=None):

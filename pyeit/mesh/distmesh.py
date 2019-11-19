@@ -20,9 +20,8 @@ class DISTMESH(object):
     """ class for distmesh """
 
     def __init__(self, fd, fh, h0=0.1,
-                 p_fix=None, bbox=None,
-                 density_ctrl_freq=30,
-                 deltat=0.2, dptol=0.01, ttol=0.1, Fscale=1.2,
+                 p_fix=None, bbox=None, density_ctrl_freq=30,
+                 deltat=0.1, dptol=0.001, ttol=0.1, Fscale=1.2,
                  verbose=False):
         """ initial distmesh class
 
@@ -62,8 +61,10 @@ class DISTMESH(object):
         self.fd = fd
         self.fh = fh
         self.h0 = h0
+
         # a small gap, allow points who are slightly outside of the region
-        self.geps = 0.001 * h0
+        self.deps = np.sqrt(np.finfo(np.double).eps) * h0
+        self.geps = 1e-1 * h0
 
         # control the distmesh computation flow
         self.densityctrlfreq = density_ctrl_freq
@@ -77,11 +78,11 @@ class DISTMESH(object):
             bbox = [[-1, -1],
                     [1, 1]]
         # p : coordinates (x,y) or (x,y,z) of meshes
-        self.Ndim = np.shape(bbox)[1]
-        if self.Ndim == 2:
-            p = bbox2d(h0, bbox)
+        self.n_dim = np.shape(bbox)[1]
+        if self.n_dim == 2:
+            p = bbox2d_init(h0, bbox)
         else:
-            p = bbox3d(h0, bbox)
+            p = bbox3d_init(h0, bbox)
 
         # control debug messages
         self.verbose = verbose
@@ -93,7 +94,7 @@ class DISTMESH(object):
         p = p[fd(p) < self.geps]
 
         # rejection points by sampling on fh
-        r0 = 1. / fh(p)**2
+        r0 = 1. / fh(p)**self.n_dim
         selection = np.random.rand(p.shape[0]) < (r0 / np.max(r0))
         p = p[selection]
 
@@ -112,12 +113,14 @@ class DISTMESH(object):
         # store p and N
         self.N = p.shape[0]
         self.p = p
+
         # initialize pold with inf: it will be re-triangulate at start
-        self.pold = np.inf * np.ones((self.N, self.Ndim))
+        self.pold = np.inf * np.ones((self.N, self.n_dim))
 
         # build edges list for triangle or tetrahedral. i.e., in 2D triangle
         # edge_combinations is [[0, 1], [1, 2], [2, 0]]
-        self.edge_combinations = list(combinations(range(self.Ndim+1), 2))
+        self.edge_combinations = list(combinations(range(self.n_dim+1), 2))
+
         # triangulate, generate simplices and bars
         self.triangulate()
 
@@ -125,51 +128,26 @@ class DISTMESH(object):
         """ test whether re-triangulate is needed """
         return np.max(dist(self.p - self.pold)) > (self.h0 * self.ttol)
 
-    @staticmethod
-    def _delaunay(pts, fd, geps):
-        """
-        Compute the Delaunay triangulation and remove trianges with
-        centroids outside the domain (with a geps gap).
-        3D, ND compatible
-
-        Parameters
-        ----------
-        pts : array_like
-            points
-        fd : str
-            distance function
-        geps : float
-            tol on the gap of distances compared to zero
-
-        Returns
-        -------
-        array_like
-            triangles
-        """
-        # simplices :
-        # triangles where the points are arranged counterclockwise
-        tri = Delaunay(pts).simplices
-        pmid = np.mean(pts[tri], axis=1)
-        # keeps only interior points
-        tri = tri[fd(pmid) < -geps]
-
-        return tri
-
     def triangulate(self):
         """ retriangle by delaunay """
         self.debug('enter triangulate = ', self.num_triangulate)
         self.num_triangulate += 1
         # pnew[:] = pold[:] makes a new copy, not reference
-        self.pold[:] = self.p[:]
-        # generate new simplices
-        t = self._delaunay(self.p, self.fd, self.geps)
+        self.pold = self.p.copy()
+
+        # triangles where the points are arranged counterclockwise
+        tri = Delaunay(self.p).simplices
+        pmid = np.mean(self.p[tri], axis=1)
+        # keeps only interior points
+        t = tri[self.fd(pmid) < -self.geps]
+
         # extract edges (bars)
         bars = t[:, self.edge_combinations].reshape((-1, 2))
         # sort and remove duplicated edges, eg (1,2) and (2,1)
         # note : for all edges, non-duplicated edge is boundary edge
         bars = np.sort(bars, axis=1)
-        # save
         bars_tuple = bars.view([('', bars.dtype)]*bars.shape[1])
+
         self.bars = np.unique(bars_tuple).view(bars.dtype).reshape((-1, 2))
         self.t = t
 
@@ -177,8 +155,8 @@ class DISTMESH(object):
         """ the forces of bars (python is by-default row-wise operation) """
         # two node of a bar
         bars_a, bars_b = self.p[self.bars[:, 0]], self.p[self.bars[:, 1]]
-        # bar vector
         barvec = bars_a - bars_b
+
         # L : length of bars, must be column ndarray (2D)
         L = dist(barvec).reshape((-1, 1))
         # density control on bars
@@ -201,7 +179,7 @@ class DISTMESH(object):
         # cols : x, y, x, y (2D)
         #      : x, y, z, x, y, z (3D)
         data = np.hstack([Fvec, -Fvec])
-        if self.Ndim == 2:
+        if self.n_dim == 2:
             rows = self.bars[:, [0, 0, 1, 1]]
             cols = np.dot(np.ones(np.shape(F)), np.array([[0, 1, 0, 1]]))
         else:
@@ -210,13 +188,14 @@ class DISTMESH(object):
         # sum nodes at duplicated locations using sparse matrices
         Ftot = csr_matrix((data.reshape(-1),
                            [rows.reshape(-1), cols.reshape(-1)]),
-                          shape=(self.N, self.Ndim))
+                          shape=(self.N, self.n_dim))
         Ftot = Ftot.toarray()
         # zero out forces at fixed points, as they do not move
         Ftot[0:len(self.pfix)] = 0
+
         return Ftot
 
-    def density_control(self, L, L0):
+    def density_control(self, L, L0, dscale=3.0):
         """
         Density control - remove points that are too close
         L0 : Kx1, L : Kx1, bars : Kx2
@@ -224,14 +203,15 @@ class DISTMESH(object):
         """
         self.debug('enter density control = ', self.num_density)
         self.num_density += 1
+        print(self.num_density, self.p.shape)
         # quality control
-        ixout = (L0 > 2*L).ravel()
+        ixout = (L0 > dscale*L).ravel()
         ixdel = np.setdiff1d(self.bars[ixout, :].reshape(-1),
                              np.arange(self.nfix))
         self.p = self.p[np.setdiff1d(np.arange(self.N), ixdel)]
         # Nold = N
         self.N = self.p.shape[0]
-        self.pold = np.inf * np.ones((self.N, self.Ndim))
+        self.pold = np.inf * np.ones((self.N, self.n_dim))
         # print('density control ratio : %f' % (float(N)/Nold))
 
     def move_p(self, Ftot):
@@ -246,17 +226,15 @@ class DISTMESH(object):
         # using the numerical gradient of distance function
         d = self.fd(self.p)
         ix = d > 0
-        if sum(ix) > 0:
-            self.p[ix] = edge_project(self.p[ix], self.fd, self.h0)
+        if ix.any():
+            self.p[ix] = edge_project(self.p[ix], self.fd, self.geps)
 
         # check whether convergence : no big movements
-        ix_interior = d < -self.geps
-        delta_move = self.deltat * Ftot[ix_interior]
-        score = np.max(dist(delta_move)/self.h0)
+        delta_move = self.deltat * np.max(dist(Ftot[d < -self.geps]))
+        self.debug('  delta_move = ', delta_move)
+        score = delta_move < self.dptol*self.h0
 
-        # debug
-        self.debug('  score = ', score)
-        return score < self.dptol
+        return score
 
     def debug(self, *args):
         """ print debug messages """
@@ -264,7 +242,7 @@ class DISTMESH(object):
             print(*args)
 
 
-def bbox2d(h0, bbox):
+def bbox2d_init(h0, bbox):
     """
     generate points in 2D bbox (not including the ending point of bbox)
 
@@ -293,7 +271,7 @@ def bbox2d(h0, bbox):
     return p
 
 
-def bbox3d(h0, bbox):
+def bbox3d_init(h0, bbox):
     """
     generate nodes in 3D bbox
 
@@ -349,8 +327,7 @@ def remove_duplicate_nodes(p, pfix, geps):
 
 
 def build(fd, fh, pfix=None, bbox=None, h0=0.1,
-          densityctrlfreq=40, deltat=0.25,
-          maxiter=200, verbose=False):
+          densityctrlfreq=10, maxiter=500, verbose=False):
     """ main function for distmesh
 
     See Also
@@ -385,8 +362,9 @@ def build(fd, fh, pfix=None, bbox=None, h0=0.1,
     """
     # parsing arguments
     # make sure : g_Fscale < 1.5
+    mode_3D = False
     if bbox is None:
-        g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.275
+        g_dptol, g_ttol, g_Fscale, g_deltat = 0.001, 0.1, 1.2, 0.2
     else:
         # perform error check on bbox
         bbox = np.array(bbox)
@@ -396,32 +374,35 @@ def build(fd, fh, pfix=None, bbox=None, h0=0.1,
             raise TypeError('please specify lower and upper bound of bbox')
         if bbox.shape[1] == 2:
             # default parameters for 2D
-            g_dptol, g_ttol, g_Fscale = 0.01, 0.1, 1.275
+            g_dptol, g_ttol, g_Fscale, g_deltat = 0.001, 0.1, 1.3, 0.2
         else:
             # default parameters for 3D
             # g_dptol, g_ttol, g_Fscale = 0.045, 0.150, 1.125
-            g_dptol, g_ttol, g_Fscale = 0.04, 0.2, 1.0
+            mode_3D = True
+            g_dptol, g_ttol, g_Fscale, g_deltat = 0.001, 0.1, 1.1, 0.1
 
     # initialize distmesh
     dm = DISTMESH(fd, fh,
                   h0=h0, p_fix=pfix, bbox=bbox,
-                  density_ctrl_freq=densityctrlfreq, deltat=deltat,
+                  density_ctrl_freq=densityctrlfreq, deltat=g_deltat,
                   dptol=g_dptol, ttol=g_ttol, Fscale=g_Fscale,
                   verbose=verbose)
 
     # now iterate to push to equilibrium
     for i in range(maxiter):
         if dm.is_retriangulate():
+            print("triangulate = %d" % dm.num_triangulate)
             dm.triangulate()
 
         # calculate bar forces
         L, L0, barvec = dm.bar_length()
 
         # density control
-        if (i % densityctrlfreq) == 0 and (L0 > 2*L).any():
-            dm.density_control(L, L0)
-            # continue to triangulate
-            continue
+        if mode_3D==False:
+            if (i % densityctrlfreq) == 0 and (L0 > 2*L).any():
+                dm.density_control(L, L0)
+                # continue to triangulate
+                continue
 
         # calculate bar forces
         Ftot = dm.bar_force(L, L0, barvec)

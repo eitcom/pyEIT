@@ -10,7 +10,7 @@ import numpy as np
 from .distmesh import build
 from .mesh_circle import MeshCircle
 from .utils import check_order
-from .shape import unit_circle, unit_ball, area_uniform
+from .shape import circle, ball, area_uniform
 from .shape import fix_points_fd, fix_points_ball
 
 
@@ -50,12 +50,12 @@ def create(n_el=16, fd=None, fh=None, p_fix=None, bbox=None, h0=0.1):
 
     if n_dim == 2:
         if fd is None:
-            fd = unit_circle
+            fd = circle
         if p_fix is None:
             p_fix = fix_points_fd(fd, n_el=n_el)
     elif n_dim == 3:
         if fd is None:
-            fd = unit_ball
+            fd = ball
         if p_fix is None:
             p_fix = fix_points_ball(n_el=n_el)
 

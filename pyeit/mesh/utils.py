@@ -40,52 +40,14 @@ def edge_project(pts, fd, h0=1.0):
     return pts - g_vec
 
 
-def grad(p, fd, d_eps=1e-12):
-    """
-    calculate numerical gradient on points
-
-    Parameters
-    ----------
-    p : array_like
-        a point in ND
-
-    Return
-    ------
-    array_like
-        gradient on each dimensions
-
-    Note
-    ----
-    numerical gradient:
-        f'_x = (f(p+delta_x) - f(p)) / delta_x
-        f'_y = (f(p+delta_y) - f(p)) / delta_y
-        f'_z = (f(p+delta_z) - f(p)) / delta_z
-    """
-    d = fd(p)
-
-    # calculate the gradient of each axis
-    ndim = p.shape[1]
-    pts_xyz = np.repeat(p, ndim, axis=0)
-    delta_xyz = np.repeat([np.eye(ndim)], p.shape[0], axis=0).reshape(-1, ndim)
-    deps_xyz = d_eps * delta_xyz
-    g_xyz = (fd(pts_xyz + deps_xyz) - np.repeat(d, ndim, axis=0)) / d_eps
-
-    # normalize gradient, avoid divide by zero
-    g = g_xyz.reshape(-1, ndim)
-    g2 = np.sqrt(np.sum(g**2, axis=1)) + d_eps
-
-    # move unit
-    return g/g2[:, np.newaxis] * d[:, np.newaxis]
-
-
-def edge_grad(pts, fd, h0=1.0):
+def edge_grad(p, fd, h0=1.0):
     """
     project points back on the boundary (where fd=0) using numerical gradient
     3D, ND compatible
 
     Parameters
     ----------
-    pts : array_like
+    p : array_like
         points on 2D, 3D
     fd : str
         function handler of distances
@@ -99,16 +61,37 @@ def edge_grad(pts, fd, h0=1.0):
 
     Note
     ----
-    you should specify h0 according to your actual mesh size
-    """
-    d_eps = np.sqrt(np.finfo(float).eps)*h0
-    # get dimensions
-    if np.ndim(pts)==1:
-        pts = pts[:, np.newaxis]
+        numerical gradient:
+        f'_x = (f(p+delta_x) - f(p)) / delta_x
+        f'_y = (f(p+delta_y) - f(p)) / delta_y
+        f'_z = (f(p+delta_z) - f(p)) / delta_z
 
-    # apply on slices taken along the axis (=1)
-    # g_num = np.apply_along_axis(grad, 1, pts)
-    g_num = grad(pts, fd, d_eps)
+        you should specify h0 according to your actual mesh size
+    """
+    # d_eps = np.sqrt(np.finfo(float).eps)*h0
+    # d_eps = np.sqrt(np.finfo(float).eps)
+    d_eps = 1e-8 * h0
+
+    # get dimensions
+    if np.ndim(p)==1:
+        p = p[:, np.newaxis]
+
+    # distance
+    d = fd(p)
+
+    # calculate the gradient of each axis
+    ndim = p.shape[1]
+    pts_xyz = np.repeat(p, ndim, axis=0)
+    delta_xyz = np.repeat([np.eye(ndim)], p.shape[0], axis=0).reshape(-1, ndim)
+    deps_xyz = d_eps * delta_xyz
+    g_xyz = (fd(pts_xyz + deps_xyz) - np.repeat(d, ndim, axis=0)) / d_eps
+
+    # normalize gradient, avoid divide by zero
+    g = g_xyz.reshape(-1, ndim)
+    g2 = np.sum(g**2, axis=1)
+
+    # move unit
+    g_num = g/g2[:, np.newaxis] * d[:, np.newaxis]
 
     return g_num
 
