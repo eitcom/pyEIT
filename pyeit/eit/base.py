@@ -25,19 +25,19 @@ class EitBase(object):
         """
         Parameters
         ----------
-        mesh : dict
+        mesh: dict
             mesh structure
-        el_pos : array_like
+        el_pos: array_like
             position (numbering) of electrodes
-        ex_mat : array_like, optional (default: opposition)
+        ex_mat: array_like, optional (default: opposition)
             2D array, each row is one stimulation pattern/line
-        step : int, optional
+        step: int, optional
             measurement method
-        perm : array_like, optional
+        perm: array_like, optional
             initial permittivity in generating Jacobian
         jac_normalized: Boolean (default is False)
             normalize the jacobian using f0 computed from input perm
-        parser : str, optional, default is 'std'
+        parser: str, optional, default is 'std'
             parsing file format
 
         Notes

@@ -21,14 +21,18 @@ class Forward(object):
         """
         A good FEM forward solver should only depend on
         mesh structure and the position of electrodes
-        NOTE: the nodes are assumed continuous numbered.
 
         Parameters
         ----------
-        mesh : dict
-            mesh structure
-        el_pos : NDArray
+        mesh: dict
+            mesh structure, {'node', 'element', 'perm'}
+        el_pos: NDArray
             numbering of electrodes positions
+            
+        Note
+        ----
+        the nodes are continuous numbered, the numbering of an element is
+        CCW (counter-clock-wise).
         """
         self.pts = mesh['node']
         self.tri = mesh['element']
@@ -52,13 +56,13 @@ class Forward(object):
 
         Parameters
         ----------
-        ex_mat : NDArray
+        ex_mat: NDArray
             numLines x n_el array, stimulation matrix
-        step : int
+        step: int
             the configuration of measurement electrodes (default: adjacent)
-        perm : NDArray
+        perm: NDArray
             Mx1 array, initial x0. must be the same size with self.tri_perm
-        parser : str
+        parser: str
             if parser is 'fmmu', within each stimulation pattern, diff_pairs
             or boundary measurements are re-indexed and started
             from the positive stimulus electrode
@@ -66,11 +70,11 @@ class Forward(object):
 
         Returns
         -------
-        jac : NDArray
+        jac: NDArray
             number of measures x n_E complex array, the Jacobian
-        v : NDArray
+        v: NDArray
             number of measures x 1 array, simulated boundary measures
-        b_matrix : NDArray
+        b_matrix: NDArray
             back-projection mappings (smear matrix)
         """
         # initialize/extract the scan lines (default: apposition)
@@ -123,18 +127,22 @@ class Forward(object):
         """
         with one pos (A), neg(B) driven pairs, calculate and
         compute the potential distribution (complex-valued)
+        
+        TODO: the calculation of Jacobian can be skipped.
+        TODO: handle CEM (complete electrode model)
 
         Parameters
-        ex_line : NDArray
+        ----------
+        ex_line: NDArray
             stimulation (scan) patterns/lines
-        perm : NDArray
+        perm: NDArray
             permittivity on elements (initial)
 
         Returns
         -------
-        f : NDArray
+        f: NDArray
             potential on nodes
-        J : NDArray
+        J: NDArray
             Jacobian
         """
         # 1. calculate local stiffness matrix (on each element)
@@ -184,16 +192,16 @@ def smear(f, fb, pairs):
 
     Parameters
     ----------
-    f : NDArray
+    f: NDArray
         potential on nodes
-    fb : NDArray
+    fb: NDArray
         potential on adjacent electrodes
-    pairs : NDArray
+    pairs: NDArray
         electrodes numbering pairs
 
     Returns
     -------
-    NDArray
+    B: NDArray
         back-projection matrix
     """
     b_matrix = []
@@ -210,14 +218,14 @@ def subtract_row(v, pairs):
 
     Parameters
     ----------
-    v : NDArray
+    v: NDArray
         Nx1 boundary measurements vector or NxM matrix
-    pairs : NDArray
+    pairs: NDArray
         Nx2 subtract_row pairs
 
     Returns
     -------
-    NDArray
+    v_diff: NDArray
         difference measurements
     """
     i = pairs[:, 0]
@@ -236,24 +244,25 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None):
 
     Notes
     -----
-    A : current driving electrode
-    B : current sink
-    M, N : boundary electrodes, where v_diff = v_n - v_m
+    ABMN Model.
+    A: current driving electrode,
+    B: current sink,
+    M, N: boundary electrodes, where v_diff = v_n - v_m.
 
     Parameters
     ----------
-    ex_line : NDArray
+    ex_line: NDArray
         2x1 array, 0 for positive electrode, 1 for negative electrode
-    n_el : int
+    n_el: int
         number of electrodes
-    step : int
+    step: int
         measurement method (which two electrodes are used for measuring)
-    parser : str
+    parser: str
         if parser is 'fmmu', data are trimmed, start index (i) is always 'A'.
 
     Returns
     -------
-    v : NDArray
+    v: NDArray
         (N-1)*2 arrays of subtract_row pairs
     """
     # local node
@@ -281,20 +290,20 @@ def assemble(ke, tri, perm, n_pts, ref=0):
 
     Parameters
     ----------
-    ke : NDArray
+    ke: NDArray
         n_tri x (n_dim x n_dim) 3d matrix
-    tri : NDArray
+    tri: NDArray
         the structure of mesh
-    perm : NDArray
+    perm: NDArray
         n_tri x 1 conductivities on elements
-    n_pts : int
+    n_pts: int
         number of nodes
-    ref : int
+    ref: int
         reference electrode
 
     Returns
     -------
-    NDArray
+    K: NDArray
         k_matrix, NxN array of complex stiffness matrix
 
     Notes
@@ -329,20 +338,20 @@ def assemble_sparse(ke, tri, perm, n_pts, ref=0):
 
     Parameters
     ----------
-    ke : NDArray
+    ke: NDArray
         n_tri x (n_dim x n_dim) 3d matrix
-    tri : NDArray
+    tri: NDArray
         the structure of mesh
-    perm : NDArray
+    perm: NDArray
         n_tri x 1 conductivities on elements
-    n_pts : int
+    n_pts: int
         number of nodes
-    ref : int
+    ref: int
         reference electrode
 
     Returns
     -------
-    NDArray
+    K: NDArray
         k_matrix, NxN array of complex stiffness matrix
 
     Notes
@@ -390,14 +399,14 @@ def calculate_ke(pts, tri):
 
     Parameters
     ----------
-    pts : NDArray
+    pts: NDArray
         Nx2 (x,y) or Nx3 (x,y,z) coordinates of points
-    tri : NDArray
+    tri: NDArray
         Mx3 (triangle) or Mx4 (tetrahedron) connectivity of elements
 
     Returns
     -------
-    ke_array : NGArray
+    ke_array: NDArray
         n_tri x (n_dim x n_dim) 3d matrix
     """
     n_tri, n_vertices = tri.shape
@@ -432,12 +441,12 @@ def _k_triangle(xy):
 
     Parameters
     ----------
-    xy : NDArray
+    xy: NDArray
         (x,y) of nodes 1,2,3 given in counterclockwise manner
 
     Returns
     -------
-    ke_matrix : NDArray
+    ke_matrix: NDArray
         local stiffness matrix
     """
     # edges (vector) of triangles
@@ -458,7 +467,7 @@ def _k_triangle(xy):
 
 
 def det2x2(s1, s2):
-    """Calculate the determinant of a 2x2 matrix"""
+    """ Calculate the determinant of a 2x2 matrix """
     return s1[0]*s2[1] - s1[1]*s2[0]
 
 
@@ -469,13 +478,13 @@ def _k_tetrahedron(xy):
 
     Parameters
     ----------
-    xy : NDArray
+    xy: NDArray
         (x,y) of nodes 1, 2, 3, 4 given in counterclockwise manner,
         see notes.
 
     Returns
     -------
-    ke_matrix : NDArray
+    ke_matrix: NDArray
         local stiffness matrix
 
     Notes

@@ -23,15 +23,15 @@ def meshgrid(pts, n=32, ext_ratio=0, gc=False):
 
     Parameters
     ----------
-    pts : NDArray
+    pts: NDArray
         nx2 array of points (x, y)
-    el_pos : NDArray (optional)
+    el_pos: NDArray (optional)
         the location of electrodes (for extract the convex hull of pts)
-    n : int
+    n: int
         the number of meshgrid per dimension
-    ext_ratio : float
+    ext_ratio: float
         extend the boundary of meshgrid by ext_ratio*d
-    gc : bool
+    gc: bool
         grid_correction, offset xgrid and ygrid by half step size
 
     Notes
@@ -103,8 +103,7 @@ def _distance_matrix2d(xy, xyi):
     """
     Description
     -----------
-    (2D only)
-    return element-wise distance matrix (pair-wise)
+    (2D only) return element-wise distance matrix (pair-wise)
     """
     # Make a distance matrix between pairwise observations
     # Note: from <http://stackoverflow.com/questions/1871536>
@@ -125,18 +124,18 @@ def weight_sigmod(xy, xyi, ratio=0.05, s=20.0):
 
     Parameters
     ----------
-    xy : NDArray
+    xy: NDArray
         (x, y) of values
-    xyi : NDArray
+    xyi: NDArray
         (xi, yi) of interpolated locations
-    ratio : float
+    ratio: float
         R0 = d_max * ratio
-    s : float
+    s: float
         control the decay ratio
 
     Returns
     -------
-    w_mat : NDArray
+    w_mat: NDArray
         weighting matrix mapping from xy to xyi (xy meshgrid)
     """
     d_mat = _distance_matrix2d(xy, xyi)
@@ -162,18 +161,18 @@ def weight_idw(xy, xyi, k=6, p=1.):
 
     Parameters
     ----------
-    xy : NDArray
+    xy: NDArray
         (x, y) of values
-    xyi : NDArray
+    xyi: NDArray
         (xi, yi) of interpolated locations
-    k : int
+    k: int
         number of nearest neighbores
-    p : float
+    p: float
         scaling distance
 
     Returns
     -------
-    w_mat : NDArray
+    w_mat: NDArray
         weighting matrix mapping from xy to xy_mesh
     """
     d_mat = _distance_matrix2d(xy, xyi)
@@ -199,14 +198,14 @@ def weight_linear_rbf(xy, xyi, z):
 
     Parameters
     ----------
-    xy : NDArray
+    xy: NDArray
         (x, y) of values
-    xyi : NDArray
+    xyi: NDArray
         (xi, yi) of interpolated locations
 
     Returns
     -------
-    w_mat : NDArray
+    w_mat: NDArray
         weighting matrix mapping from xy to xy_mesh
     """
     internal_dist = _distance_matrix2d(xy, xy)
@@ -227,14 +226,14 @@ def weight_barycentric_gradient():
 
     Parameters
     ----------
-    xy : NDArray
+    xy: NDArray
         (x, y) of values
-    xyi : NDArray
+    xyi: NDArray
         (xi, yi) of interpolated locations
 
     Returns
     -------
-    w_mat : NDArray
+    w_mat: NDArray
         weighting matrix mapping from xy to xy_mesh
     """
     pass
@@ -293,11 +292,11 @@ def pts2sim(sim, pts_values):
 
     Parameters
     ----------
-    sim : NDArray
+    sim: NDArray
         Mx3, Mx4 array, elements or simplex
         triangles denote connectivity [[i, j, k]]
         tetrahedrons denote connectivity [[i, j, m, n]]
-    pts_values : NDArray
+    pts_values: NDArray
         Nx1 array, real/complex valued
 
     Returns
@@ -320,14 +319,14 @@ def tri_area(pts, sim):
 
     Parameters
     ----------
-    pts : NDArray
+    pts: NDArray
         Nx2 array, (x,y) locations for points
-    sim : NDArray
+    sim: NDArray
         Mx3 array, elements (triangles) connectivity
 
     Returns
     -------
-    a : NDArray
+    a: NDArray
         Areas of triangles
     """
     a = np.zeros(np.shape(sim)[0])
@@ -352,14 +351,14 @@ def tet_volume(pts, sim):
 
     Parameters
     ----------
-    pts : NDArray
+    pts: NDArray
         Nx3 array, (x,y, z) locations for points
-    sim : NDArray
+    sim: NDArray
         Mx4 array, elements (tetrahedrons) connectivity
 
     Returns
     -------
-    v : NDArray
+    v: NDArray
         Volumes of tetrahedrons
     """
     v = np.zeros(np.shape(sim)[0])
@@ -389,18 +388,18 @@ def pdetrg(pts, tri):
 
     Parameters
     ----------
-    pts : NDArray
+    pts: NDArray
         Nx2 array, (x,y) locations for points
-    tri : NDArray
+    tri: NDArray
         Mx3 array, elements (triangles) connectivity
 
     Returns
     -------
-    a : NDArray
+    a: NDArray
         Mx1 array, areas of elements
-    grad_phi_x : NDArray
+    grad_phi_x: NDArray
         Mx3 array, x-gradient on elements' local coordinate
-    grad_phi_y : NDArray
+    grad_phi_y: NDArray
         Mx3 array, y-gradient on elements' local coordinate
     """
     m = np.size(tri, 0)
@@ -439,16 +438,16 @@ def pdegrad(pts, tri, node_value):
 
     Parameters
     ----------
-    pts : NDArray
+    pts: NDArray
         Nx2 array, (x,y) locations for points
-    tri : NDArray
+    tri: NDArray
         Mx3 array, elements (triangles) connectivity
-    node_value : NDArray
+    node_value: NDArray
         Nx1 array, real/complex valued
 
     Returns
     -------
-    NDArray
+    el_grad: NDArray
         el_grad, Mx2 array, real/complex valued
     """
     m = np.size(tri, 0)

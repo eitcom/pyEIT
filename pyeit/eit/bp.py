@@ -10,7 +10,7 @@ from .base import EitBase
 
 
 class BP(EitBase):
-    """ implement a naive inversion of (Euclidean) back projection. """
+    """ A naive inversion of (Euclidean) back projection. """
 
     def setup(self, weight='none'):
         """ setup BP """
@@ -30,15 +30,16 @@ class BP(EitBase):
 
         Parameters
         ----------
-        v1 : NDArray
-        v0 : NDArray, optional
-            d = H(v1 - v0)
-        normalize : Boolean
+        v1: NDArray
+            current frame
+        v0: NDArray, optional
+            referenced frame, d = H(v1 - v0)
+        normalize: Boolean
             true for conducting normalization
 
         Returns
         -------
-        NDArray
+        ds: NDArray
             real-valued NDArray, changes of conductivities
         """
         # without specifying any reference frame
@@ -71,19 +72,20 @@ class BP(EitBase):
 
         Note
         ----
-        as in fem.py, we could either smear at
+        as in fem.py, we could either smear at,
+        
         (1) elements, using the center co-ordinates (x,y) of each element
             >> center_e = np.mean(self.pts[self.tri], axis=1)
         (2) nodes.
 
         Parameters
         ----------
-        num_voltages : int
+        num_voltages: int
             number of equal-potential lines
 
         Returns
         -------
-        NDArray
+        w: NDArray
             weighting matrix
         """
         d = np.sqrt(np.sum(self.pts ** 2, axis=1))

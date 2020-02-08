@@ -16,26 +16,26 @@ from .shape import fix_points_fd, fix_points_ball
 
 def create(n_el=16, fd=None, fh=None, p_fix=None, bbox=None, h0=0.1):
     """
-    wrapper for pyEIT interface
+    Generating 2D/3D meshes using distmesh (pyEIT built-in)
 
     Parameters
     ----------
-    n_el : int, optional
-        number of electrodes
-    fd : function
+    n_el: int
+        number of electrodes (point-type electrode)
+    fd: function
         distance function
-    fh : function
+    fh: function
         mesh size quality control function
-    p_fix : NDArray
+    p_fix: NDArray
         fixed points
-    bbox : NDArray
+    bbox: NDArray
         bounding box
-    h0 : float, optional
-        initial mesh size
+    h0: float
+        initial mesh size, default=0.1
 
     Returns
     -------
-    dict
+    mesh_obj: dict
         {'element', 'node', 'perm'}
     """
     if bbox is None:
@@ -86,20 +86,20 @@ def set_perm(mesh, anomaly=None, background=None):
 
     Parameters
     ----------
-    mesh : dict
+    mesh: dict
         mesh structure
-    anomaly : dict, optional
+    anomaly: dict, optional
         anomaly is a dictionary (or arrays of dictionary) contains,
         {'x': val, 'y': val, 'd': val, 'perm': val}
         all permittivity on triangles whose distance to (x,y) are less than (d)
         will be replaced with a new value, 'perm' may be a complex value.
-    background : float, optional
+    background: float, optional
         set background permittivity
 
     Returns
     -------
-    dict
-        updated mesh structure
+    mesh_obj: dict
+        updated mesh structure, {'element', 'node', 'perm'}
     """
     pts = mesh['element']
     tri = mesh['node']

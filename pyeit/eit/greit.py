@@ -21,12 +21,12 @@ from .interp2d import meshgrid, weight_sigmod
 
 
 class GREIT(EitBase):
-    """ the GREIT algorithm """
+    """ The GREIT algorithm """
 
     def setup(self, method='dist', w=None, p=0.20, lamb=1e-2,
               n=32, s=20., ratio=0.1):
         """
-        set up for GREIT.
+        setup GREIT
 
         Parameters
         ----------
@@ -42,16 +42,16 @@ class GREIT(EitBase):
             grid size
         s: float, optional
             control the blur
-        ratio : float, optional
+        ratio: float, optional
             desired ratio
 
         References
         ----------
-        .. [1] Bartlomiej Grychtol, Beat Muller, Andy Adler
-               "3D EIT image reconstruction with GREIT"
-        .. [2] Adler, Andy, et al. "GREIT: a unified approach to
-               2D linear EIT reconstruction of lung images."
-               Physiological measurement 30.6 (2009): S35.
+        [1] Bartlomiej Grychtol, Beat Muller, Andy Adler
+            "3D EIT image reconstruction with GREIT"
+        [2] Adler, Andy, et al.
+            "GREIT: a unified approach to 2D linear EIT reconstruction of 
+            lung images." Physiological measurement 30.6 (2009): S35.
         """
         # parameters for GREIT projection
         if w is None:
@@ -101,7 +101,7 @@ class GREIT(EitBase):
         return h_mat
 
     def _build_grid(self):
-        """build grids and mask"""
+        """ build grids and mask """
         # initialize grids
         n = self.params['n']
         xg, yg, mask = meshgrid(self.pts, n=n)
@@ -114,7 +114,7 @@ class GREIT(EitBase):
         return w_mat, xg, yg, mask
 
     def get_grid(self):
-        """get grids and mask"""
+        """ get grids and mask """
         return self.xg, self.yg, self.mask
 
     def mask_value(self, ds, mask_value=0):

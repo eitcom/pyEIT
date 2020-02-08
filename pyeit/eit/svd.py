@@ -19,13 +19,13 @@ class SVD(JAC):
 
         Parameters
         ----------
-        n : int
+        n: int
             largest n eigenvalues to be kept
-        rcond : double
+        rcond: double
             r-condition number of pinv
-        method : string
-            'svd' -- SVD truncation
-            'pinv' -- pseudo inverse
+        method: string
+            'svd': SVD truncation,
+            'pinv': pseudo inverse
         """
         # correct n_ord
         nm, ne = self.J.shape

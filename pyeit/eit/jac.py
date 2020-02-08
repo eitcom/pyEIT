@@ -14,7 +14,7 @@ from .base import EitBase
 
 
 class JAC(EitBase):
-    """ implementing a sensitivity-based EIT imaging class """
+    """ A sensitivity-based EIT imaging class """
 
     def setup(self, p=0.20, lamb=0.001, method='kotre'):
         """
@@ -22,9 +22,9 @@ class JAC(EitBase):
 
         Parameters
         ----------
-        p, lamb : float
+        p, lamb: float
             JAC parameters
-        method : str
+        method: str
             regularization methods
         """
         # passing imaging parameters
@@ -42,15 +42,16 @@ class JAC(EitBase):
 
         Parameters
         ----------
-        v1 : NDArray (current frame)
-        v0 : NDArray, optional (reference frame)
-            d = H(v1 - v0)
-        normalize : Boolean
+        v1: NDArray
+            current frame
+        v0: NDArray, optional
+            referenced frame, d = H(v1 - v0)
+        normalize: Boolean
             true for conducting normalization
 
         Returns
         -------
-        NDArray
+        ds: NDArray
             complex-valued NDArray, changes of conductivities
         """
         if normalize:
@@ -78,8 +79,9 @@ class JAC(EitBase):
         a 'naive' back projection using the transpose of Jac.
         This scheme is the one published by kotre (1989):
 
-            Kotre, C. J. (1989). A sensitivity coefficient method for
-            the reconstruction of electrical impedance tomograms.
+        [1] Kotre, C. J. (1989).
+            A sensitivity coefficient method for the reconstruction of
+            electrical impedance tomograms.
             Clinical Physics and Physiological Measurement,
             10(3), 275–281. doi:10.1088/0143-0815/10/3/008
 
@@ -101,25 +103,26 @@ class JAC(EitBase):
 
         Parameters
         ----------
-        v : NDArray
+        v: NDArray
             boundary measurement
-        x0 : NDArray, optional
+        x0: NDArray, optional
             initial guess
-        maxiter : int, optional
-        p, lamb : float
+        maxiter: int, optional
+            number of maximum iterations
+        p, lamb: float
             JAC parameters (can be overridden)
-        lamb_decay : float
+        lamb_decay: float
             decay of lamb0, i.e., lamb0 = lamb0 * lamb_delay of each iteration
-        lamb_min : float
+        lamb_min: float
             minimal value of lamb
-        method : str, optional
+        method: str, optional
             'kotre' or 'lm'
-        verbose : bool, optional
+        verbose: bool, optional
             print debug information
 
         Returns
         -------
-        NDArray
+        sigma: NDArray
             Complex-valued conductivities
 
         Note
@@ -179,7 +182,7 @@ class JAC(EitBase):
 
         Parameters
         ----------
-        ds : NDArray
+        ds: NDArray
             delta sigma (conductivities)
 
         Returns
@@ -197,16 +200,16 @@ def h_matrix(jac, p, lamb, method='kotre'):
 
     Parameters
     ----------
-    jac : NDArray
+    jac: NDArray
         Jacobian
-    p, lamb : float
+    p, lamb: float
         regularization parameters
-    method : str, optional
+    method: str, optional
         regularization method
 
     Returns
     -------
-    NDArray
+    H: NDArray
         pseudo-inverse matrix of JAC
     """
     j_w_j = np.dot(jac.transpose(), jac)
@@ -236,12 +239,12 @@ def sar(el2no):
 
     Parameters
     ----------
-    el2no : NDArray
+    el2no: NDArray
         triangle structures
 
     Returns
     -------
-    NDArray
+    D: NDArray
         SAR matrix
     """
     ne = el2no.shape[0]

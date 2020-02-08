@@ -65,15 +65,19 @@ def create(num_el, max_area=0.01, curve=disc, refine=False):
 
     Parameters
     ----------
-    inputs,
-        num_el : number of electrodes
-        curve : functions of generating curvature
-    outputs,
-        mesh : mesh object, including
-            ['elements'] -> Mx3 ndarray
-            ['node']     -> Nx2 ndarray
-            ['perm']     -> Mx1 ndarray
-        el_pos : the location of electrodes nodes
+    num_el: int
+        number of electrodes
+    curve: function handler
+        functions of generating curvature
+    
+    Returns
+    -------
+    mesh: mesh object
+        including
+        ['elements'] -> Mx3 ndarray,
+        ['node']     -> Nx2 ndarray,
+        ['perm']     -> Mx1 ndarray.
+    el_pos: the location of electrodes nodes
     """
     # number of interpolate boundary nodes, 4x
     num_poly = 4 * num_el
