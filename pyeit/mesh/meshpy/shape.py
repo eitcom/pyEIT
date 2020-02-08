@@ -11,12 +11,17 @@ def throx(num_poly):
     draw 'throx' outline (points)
     codes copied from A. F. Schkarbanenko EIT2D MATLAB
 
-    <input>
-    num_poly : number of nodes on the outer facet
+    Parameters
+    ----------
+    num_poly: int
+        number of nodes on the outer facet
 
-    <output>
-    points : points locations on the facet
-    npoints : the length of the facet
+    Returns
+    -------
+    points: NDArray
+        points locations on the facet
+    npoints: int
+        the length of a facet
     """
     r1 = [2.5, 3.0, 3.2, 3.3, 3.5, 3.8, 4.0, 4.2, 4.5, 5.0,
           5.4, 5.6, 5.6, 5.6, 5.5, 5.4, 5.2, 5.1, 5.0, 4.8,
@@ -52,62 +57,11 @@ def throx(num_poly):
     return pts, n
 
 
-def disc(num_poly):
-    """
-    draw a disc outline (circle
-
-    <input>
-    num_poly : number of nodes on the outer facet
-
-    <output>
-    points : points locations on the facet
-    npoints : the length of the facet
-    """
-    angles = np.linspace(0, 2*np.pi, num_poly, endpoint=False)
-    points = [(np.cos(a), np.sin(a)) for a in angles]
-    npoints = [np.size(points, 0)]
-    return points, npoints
-
-
-def disc_anomaly(num_poly):
-    """
-    a simple disc shape with refined anomaly region
-
-    Notes
-    -----
-    generate 'disc-anomaly' example, inhomogenious regions
-    codes copied from A. F. Schkarbanenko EIT2D MATLAB
-
-    <input>
-    num_poly : number of nodes on the outer facet
-
-    <output>
-    points : points generated for the inhomogenious regions
-    npoints : the length of each facet
-    """
-    points, npoints = disc(num_poly)
-    # Anomaly: kite
-    phi = np.linspace(0, 2*np.pi, 20, endpoint=False)
-    anomaly = [(0.15*(np.cos(p) + 0.65*np.cos(2*p)),
-                0.15*(1.5*np.sin(p)) - 1./3) for p in phi]
-    # append
-    points.extend(anomaly)
-    npoints = npoints + [np.size(points, 0)]
-    return points, npoints
-
-
 # a throx shape with refined anomaly region
 def throx_anomaly(num_poly):
     """
     generate 'throx-anomaly' example, inhomogenious regions
     codes copied from A. F. Schkarbanenko EIT2D MATLAB
-
-    <input>
-    num_poly : number of nodes on the outer facet
-
-    <output>
-    points : points generated for the inhomogenious regions
-    npoints : the length of each facet
     """
     points, npoints = throx(num_poly)
     # Heart
@@ -135,13 +89,54 @@ def throx_anomaly(num_poly):
     return points, npoints
 
 
+def disc(num_poly):
+    """
+    draw a disc outline (circle
+
+    Parameters
+    ----------
+    num_poly: int
+        number of nodes on the outer facet
+
+    Returns
+    -------
+    points: NDArray
+        points locations on the facet
+    npoints: int
+        the length of the facet
+    """
+    angles = np.linspace(0, 2*np.pi, num_poly, endpoint=False)
+    points = [(np.cos(a), np.sin(a)) for a in angles]
+    npoints = [np.size(points, 0)]
+    return points, npoints
+
+
+def disc_anomaly(num_poly):
+    """
+    a simple disc shape with refined anomaly region
+
+    Notes
+    -----
+    generate 'disc-anomaly' example, inhomogenious regions
+    codes copied from A. F. Schkarbanenko EIT2D MATLAB
+    """
+    points, npoints = disc(num_poly)
+    # Anomaly: kite
+    phi = np.linspace(0, 2*np.pi, 20, endpoint=False)
+    anomaly = [(0.15*(np.cos(p) + 0.65*np.cos(2*p)),
+                0.15*(1.5*np.sin(p)) - 1./3) for p in phi]
+    # append
+    points.extend(anomaly)
+    npoints = npoints + [np.size(points, 0)]
+    return points, npoints
+
+
 # generate anomaly patterns with regional IDs
 # numel of 'perm' must match numel 'ID'
 def anomaly_perm(mesh, curve='disc-anomaly'):
     """
-    append anomaly permitivity on mesh obj
-    <format> ID : sigma
-    only 'disc-anomaly' and 'throx-anomaly' are supported
+    append anomaly permitivity on mesh obj, generate {ID: signam} dict.
+    currently, only 'disc-anomaly' and 'throx-anomaly' are supported
     """
     if curve == 'disc-anomaly':
         perm = {0: 1,       # background

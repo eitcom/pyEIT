@@ -12,9 +12,9 @@ def stats(p, t):
 
     Parameters
     ----------
-    p : array_like
-        coordinates of nodes
-    t : array_like
+    p: array_like
+        coordinates of nodes (x, y) in 2D, (x, y, z) in 3D
+    t: array_like
         connectives forming elements
 
     Notes

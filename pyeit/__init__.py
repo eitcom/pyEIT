@@ -1,5 +1,5 @@
 """
-pyEIT : Python based Electrical Impedance Tomography
+pyEIT: Python based Electrical Impedance Tomography
 
 eit:
     reconstruction algorithms
