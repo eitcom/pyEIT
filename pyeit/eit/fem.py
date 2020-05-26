@@ -17,7 +17,7 @@ from .utils import eit_scan_lines
 class Forward(object):
     """ FEM forward computing code """
 
-    def __init__(self, mesh, el_pos):
+    def __init__(self, mesh, el_pos, parser='std'):
         """
         A good FEM forward solver should only depend on
         mesh structure and the position of electrodes
@@ -28,6 +28,11 @@ class Forward(object):
             mesh structure, {'node', 'element', 'perm'}
         el_pos: NDArray
             numbering of electrodes positions
+        parser : str
+            if parser is 'fmmu', within each stimulation pattern, diff_pairs
+            or boundary measurements are re-indexed and started
+            from the positive stimulus electrode
+            if parser is 'std', subtract_row start from the 1st electrode
             
         Note
         ----
@@ -38,6 +43,7 @@ class Forward(object):
         self.tri = mesh['element']
         self.tri_perm = mesh['perm']
         self.el_pos = el_pos
+        self.parser = parser
 
         # reference electrodes [ref node should not be on electrodes]
         ref_el = 0
@@ -50,7 +56,7 @@ class Forward(object):
         self.n_tri, self.n_vertices = self.tri.shape
         self.ne = el_pos.size
 
-    def solve_eit(self, ex_mat=None, step=1, perm=None, parser=None):
+    def solve_eit(self, ex_mat=None, step=1, perm=None):
         """
         EIT simulation, generate perturbation matrix and forward v
 
@@ -62,11 +68,6 @@ class Forward(object):
             the configuration of measurement electrodes (default: adjacent)
         perm: NDArray
             Mx1 array, initial x0. must be the same size with self.tri_perm
-        parser: str
-            if parser is 'fmmu', within each stimulation pattern, diff_pairs
-            or boundary measurements are re-indexed and started
-            from the positive stimulus electrode
-            if parser is 'std', subtract_row start from the 1st electrode
 
         Returns
         -------
@@ -101,7 +102,8 @@ class Forward(object):
             f_el = f[self.el_pos]
 
             # boundary measurements, subtract_row-voltages on electrodes
-            diff_op = voltage_meter(ex_line, n_el=self.ne, step=step, parser=parser)
+            diff_op = voltage_meter(ex_line, n_el=self.ne, step=step,
+                                    parser=self.parser)
             v_diff = subtract_row(f_el, diff_op)
             jac_diff = subtract_row(jac_i, diff_op)
 
@@ -156,7 +158,10 @@ class Forward(object):
         r_el = r_matrix[self.el_pos]
 
         # 4. solving nodes potential using boundary conditions
-        b = self._natural_boundary(ex_line)
+        if self.parser == 'mit_utron':
+            b = self._natural_boundary_mit(ex_line)
+        else:
+            b = self._natural_boundary(ex_line)
         f = np.dot(r_matrix, b).ravel()
 
         # 5. build Jacobian matrix column wise (element wise)
@@ -182,6 +187,14 @@ class Forward(object):
         b = np.zeros((self.n_pts, 1))
         b[drv_a_global] = 1.
         b[drv_b_global] = -1.
+
+        return b
+
+    def _natural_boundary_mit(self, ex_line):
+        """ MIT has only one drive coil """
+        drv_coil = self.el_pos[ex_line]
+        b = np.zeros((self.n_pts, 1))
+        b[drv_coil] = 1.
 
         return b
 
@@ -265,22 +278,27 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None):
     v: NDArray
         (N-1)*2 arrays of subtract_row pairs
     """
-    # local node
-    drv_a = ex_line[0]
-    drv_b = ex_line[1]
-    i0 = drv_a if parser == 'fmmu' else 0
+    if parser == 'mit_utron':
+        diff = [[m, ex_line] for m in range(n_el) if m != ex_line]
+        diff_pairs = np.array(diff)
+    else:
+        # local node
+        drv_a = ex_line[0]
+        drv_b = ex_line[1]
+        i0 = drv_a if parser == 'fmmu' else 0
 
-    # build differential pairs
-    v = []
-    for a in range(i0, i0 + n_el):
-        m = a % n_el
-        n = (m + step) % n_el
-        # if any of the electrodes is the stimulation electrodes
-        if not(m == drv_a or m == drv_b or n == drv_a or n == drv_b):
-            # the order of m, n matters
-            v.append([n, m])
+        # build differential pairs
+        v = []
+        for a in range(i0, i0 + n_el):
+            m = a % n_el
+            n = (m + step) % n_el
+            # if any of the electrodes is the stimulation electrodes
+            if not(m == drv_a or m == drv_b or n == drv_a or n == drv_b):
+                # the order of m, n matters
+                v.append([n, m])
 
-    diff_pairs = np.array(v)
+        diff_pairs = np.array(v)
+
     return diff_pairs
 
 

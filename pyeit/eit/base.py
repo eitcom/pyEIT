@@ -51,7 +51,7 @@ class EitBase(object):
             perm = mesh['perm']
 
         # build forward solver
-        fwd = Forward(mesh, el_pos)
+        fwd = Forward(mesh, el_pos, parser=parser)
         self.fwd = fwd
 
         # solving mesh structure
@@ -77,7 +77,7 @@ class EitBase(object):
 
         # solving Jacobian using uniform sigma distribution
         res = fwd.solve_eit(ex_mat, step=step,
-                            perm=self.perm, parser=self.parser)
+                            perm=self.perm)
         self.J, self.v0, self.B = res.jac, res.v, res.b_matrix
 
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])

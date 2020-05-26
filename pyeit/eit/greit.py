@@ -88,8 +88,7 @@ class GREIT(EitBase):
         """ generate R using distribution method. """
         lamb, p = self.params['lamb'], self.params['p']
 
-        f = self.fwd.solve_eit(self.ex_mat, step=self.step, perm=self.perm,
-                               parser=self.parser)
+        f = self.fwd.solve_eit(self.ex_mat, step=self.step, perm=self.perm)
         jac = f.jac
         # E[yy^T], it is more efficient to use left pinv than right pinv
         j_j_w = np.dot(jac, jac.T)
