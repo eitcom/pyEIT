@@ -16,7 +16,12 @@ def ati(x):
     -----
     if I=1mA, then ati returns Ohms
     """
-    v = np.abs(x).sum() / 192.0
+    # implement old behavior of numpy.nansum
+    if np.isnan(x).any():
+        v = np.nan
+    else:
+        v = np.sum(np.abs(x)) / 192.0
+
     return v
 
 
@@ -58,7 +63,7 @@ def fmmu_index(n_el=16, dist=8, step=1):
 
 
 def ati_lr(x, sel):
-    x_sel = np.mean(np.abs(x[sel]))
+    x_sel = np.nanmean(np.abs(x[sel]))
 
     return x_sel
 
