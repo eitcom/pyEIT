@@ -47,6 +47,7 @@ class ET3(object):
 
         # try read the file type by the information on extension, default: et0
         self.params = et_tell(file_name, et_type)
+
         # check if it is the right file-format
         if self.params['current'] > 1250 or self.params['current'] <= 0:
             if verbose:
@@ -57,11 +58,12 @@ class ET3(object):
             self.params = et_tell(file_name, et_type)
 
         self.et_type = et_type
+        self.version = self.params['version']
         self.offset = self.params['offset']
         self.nframe = self.params['nframe']
+        self.npar = 8  # number of maximum parameters
         if self.params['gain'] not in [0, 1, 2, 3, 4, 5, 6, 7]:
-            if verbose:
-                print('ET: gain (%d) out of range', self.params['gain'])
+            print('ET: gain (%d) out of range, set to 3', self.params['gain'])
             # default gain control = 3
             self.params['gain'] = 3
 
@@ -78,7 +80,7 @@ class ET3(object):
         self.frame_size = self.header_size + self.data_size
 
         # load et3 files (RAW data are complex-valued)
-        self.data = self.load()
+        self.data, self.dp = self.load()
 
     def load(self):
         """
@@ -96,10 +98,11 @@ class ET3(object):
             complex-valued ndarray
         """
         x = np.zeros((self.nframe, self.data_num), dtype=np.double)
+        xp = np.zeros((self.nframe, self.npar), dtype=np.double)
 
         # convert
         with open(self.file_name, 'rb') as fh:
-            # skip frame header (1024 Bytes), offset
+            # skip frame offset, if any (et0)
             fh.read(self.offset)
 
             # read data frame by frame
@@ -107,6 +110,10 @@ class ET3(object):
 
                 # get frame data
                 d = fh.read(self.frame_size)
+
+                # parse aux ADC
+                dp = d[960:self.header_size]
+                xp[i] = np.array(unpack('8d', dp))
 
                 # parse data every frame and store in a row of x
                 x[i] = np.array(unpack('512d', d[self.header_size:]))
@@ -127,7 +134,7 @@ class ET3(object):
             scale = gain_table(self.params['gain'], self.params['current'])
             data = data * scale
 
-        return data
+        return data, xp
 
     def load_time(self, rel_date=None, fps=1):
         """
@@ -177,11 +184,36 @@ class ET3(object):
         """convert raw data to pandas.DataFrame"""
         ts = self.load_time(rel_date=rel_date, fps=fps)
         df = pd.DataFrame(self.data, index=ts)
+
         # resample
         if resample is not None:
             df = df.resample(resample).mean()
 
         return df
+
+    def to_dp(self, resample=None, rel_date=None, fps=1, filter=False):
+        """convert raw parameters to pandas.DataFrame"""
+        ts = self.load_time(rel_date=rel_date, fps=fps)
+        columns = ['tleft', 'tright', 'nt_s', 'rt_s', 'r0', 'r1', 'r2', 'r3']
+        dp = pd.DataFrame(self.dp, index=ts, columns=columns)
+
+        if filter:
+            # correct temperature (temperature cannot be 0)
+            dp.loc[dp['tleft']==0, 'tleft'] = np.nan
+            dp.loc[dp['tright']==0, 'tright'] = np.nan
+            dp.loc[dp['nt_s']==0, 'nt_s'] = np.nan
+            dp.loc[dp['rt_s']==0, 'rt_s'] = np.nan
+
+            dp.tleft = med_outlier(dp.tleft)
+            dp.tright = med_outlier(dp.tright)
+            dp.nt_s = med_outlier(dp.nt_s)
+            dp.rt_s = med_outlier(dp.rt_s)
+
+        # resample
+        if resample is not None:
+            dp = dp.resample(resample).mean()
+
+        return dp
 
     def to_csv(self):
         """
@@ -191,6 +223,15 @@ class ET3(object):
         $ df.to_csv(file_to, columns=None, header=False, index=False)
         """
         pass
+
+
+def med_outlier(d, window=17):
+    med = d.rolling(window, center=False).median()
+    std = d.rolling(window, center=False).std()
+    std[std==np.nan] = 0.0
+    # replace med with d for outlier removal
+    df = med[(d <= med+3*std) & (d >= med-3*std)]
+    return df
 
 
 def et0_date():
@@ -231,14 +272,14 @@ def et_tell(file_name, et_type='et3'):
     This function may be deprecated in near future.
     """
     if et_type == 'et3':
-        _header_parser = et3_header
+        _header_parser_func = et3_header
     else:
-        _header_parser = et0_header
+        _header_parser_func = et0_header
 
     with open(file_name, 'rb') as fh:
         # get file info (header)
         d = fh.read(1024)
-        frequency, current, gain = _header_parser(d)
+        params = _header_parser_func(d)
 
         # move the cursor to the end (2) of the file
         fh.seek(0, 2)
@@ -251,13 +292,8 @@ def et_tell(file_name, et_type='et3'):
     is_header = (et3_len % 5120) != 0
     offset = 4096 if is_header else 0
     nframe = int((et3_len - offset) / 5120)
-
-    # build output
-    params = {'offset': offset,
-              'nframe': nframe,
-              'frequency': frequency,
-              'current': current,
-              'gain': gain}
+    params['offset'] = offset
+    params['nframe'] = nframe
 
     return params
 
@@ -291,7 +327,12 @@ def et0_header(d):
     current = np.int(h[3])
     gain = np.int(h[5])
 
-    return frequency, current, gain
+    params = {'version': 0,
+              'frequency': frequency,
+              'current': current,
+              'gain': gain}
+
+    return params
 
 
 def et3_header(d):
@@ -341,11 +382,16 @@ def et3_header(d):
     current = h[5]
     gain = h[6]
 
-    # print version
-    # version = int(unpack('I', d[:4])[0])
+    # extract version info {et0: NA, et3: 1, shi: 3}
+    version = int(unpack('I', d[:4])[0])
     # print('file version (header) = {}'.format(version))
 
-    return frequency, current, gain
+    params = {'version': version,
+              'frequency': frequency,
+              'current': current,
+              'gain': gain}
+
+    return params
 
 
 def gain_table(gain, current_in_ua):
