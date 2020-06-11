@@ -38,12 +38,12 @@ class ET3(object):
         verbose : bool
             print debug messages
         """
-        # choose file type (auto infer extension)
-        if et_type not in ['et0', 'et3']:
-            et_type = splitext(file_name)[1][1:]
         self.file_name = file_name
         self.trim = trim
         self.verbose = verbose
+        # choose file type (auto infer extension)
+        if et_type not in ['et0', 'et1', 'et3']:
+            et_type = splitext(file_name)[1][1:]
 
         # try read the file type by the information on extension, default: et0
         self.params = et_tell(file_name, et_type)
@@ -99,7 +99,7 @@ class ET3(object):
 
         # convert
         with open(self.file_name, 'rb') as fh:
-            # skip offset
+            # skip frame header (1024 Bytes), offset
             fh.read(self.offset)
 
             # read data frame by frame
@@ -298,10 +298,11 @@ def et3_header(d):
     """
     Parse the header of et files, bytes order:
 
-    nVersion : int (4 Bytes)
-    frame index : int (4 Bytes)
-    time : double (8 bytes)
-    -- offset 3 double (24 Bytes) --
+    nVersion: int (4 Bytes)
+    frame index: int (4 Bytes)
+    time: double (8 bytes)
+    tt: 3*double (reserved)
+    -- offset 5 double (40 Bytes) --
 
     Reconstruction Parameters
     -- offset 40 double (320 Bytes) --
@@ -318,6 +319,18 @@ def et3_header(d):
         float fElecSize;        // size of electrodes
         float fPeriod;          // frame interval (s)
     };
+    measure info: 5*16 int
+    -- offset 90 int (360 Bytes)
+
+    electrode SQ: 16 double
+    reserved 14 double
+    -- offset 30 double (240 Bytes)
+
+    temperature 6 channel (double)
+    reserved 16 Bytes
+    -- offset 8 double (64 Bytes)
+
+    total header = 40 + 320 + 360 + 240 + 64 = 1024
     """
     header_offset = 360
     header_end = header_offset + 40
@@ -327,6 +340,10 @@ def et3_header(d):
     frequency = h[4]
     current = h[5]
     gain = h[6]
+
+    # print version
+    # version = int(unpack('I', d[:4])[0])
+    # print('file version (header) = {}'.format(version))
 
     return frequency, current, gain
 
