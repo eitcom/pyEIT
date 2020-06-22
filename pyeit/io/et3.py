@@ -49,21 +49,25 @@ class ET3(object):
         self.params = et_tell(file_name, et_type)
 
         # check if it is the right file-format
-        if self.params['current'] > 1250 or self.params['current'] <= 0:
+        current = self.params['current']
+        if current > 1250 or current <= 0:
             if verbose:
                 print('ET: file type mismatch')
-            # This file is probable ET3, re-parse the information
+            # force file type to ET3, re-parse the information
             et_type = 'et3'
-            print('ET: file is re-parsed as %s' % et_type)
+            print('ET: current = %d is out of range (0, 1250]' % current)
             self.params = et_tell(file_name, et_type)
 
         self.et_type = et_type
         self.version = self.params['version']
         self.offset = self.params['offset']
         self.nframe = self.params['nframe']
-        self.npar = 8  # number of maximum parameters
-        if self.params['gain'] not in [0, 1, 2, 3, 4, 5, 6, 7]:
-            print('ET: gain (%d) out of range, set to 3', self.params['gain'])
+        self.npar = 8  # number of maximum parameters [0622]
+
+        # check if gain is correct
+        gain = self.params['gain']
+        if gain not in [0, 1, 2, 3, 4, 5, 6, 7]:
+            print('ET: gain = %d is out of range, set to 3' % gain)
             # default gain control = 3
             self.params['gain'] = 3
 
