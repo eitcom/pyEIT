@@ -1,6 +1,10 @@
 # Mesh Models
 
-These binary mesh models are installed by `setup.py` by default, and can be used via
+  - [x] `DLS2.mes` human head annotated mesh
+  - [x] `I0007.mes` small scaled down human head mesh
+  - [x] `lung.mes` human throax annotated mesh
+
+These binary mesh models are installed by `setup.py` by default, and can be used using
 
 ```python
 import pkg_resources
