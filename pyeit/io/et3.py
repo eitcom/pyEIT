@@ -164,7 +164,7 @@ class ET3(object):
                 # December 30, 1899 is the base date. (EXCEL format)
                 rel_date = '1899/12/30'
                 # 'ta' should be int/long to keep time resolution to 's'
-                ta = np.zeros(self.nframe, dtype='long')
+                ta = np.zeros(self.nframe, dtype='int64')
                 # read days from a frame header
                 with open(self.file_name, 'rb') as fh:
                     fh.read(self.offset)
