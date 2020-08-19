@@ -122,7 +122,7 @@ def multi_circle(r=1., background=1., n_el=16, h0=0.006,
             p_fix = np.vstack([p_fix, p_fix_layer])
 
     # 3. build triangle (more frequently control the nodes)
-    p, t = build(_fd, _fh, pfix=p_fix, h0=h0, densityctrlfreq=10, deltat=0.2)
+    p, t = build(_fd, _fh, pfix=p_fix, h0=h0, densityctrlfreq=10)
 
     # check whether t is counter-clock-wise, otherwise reshape it
     t = check_order(p, t)
