@@ -37,7 +37,7 @@ class JAC(EitBase):
         # H = (J.T*J + R)^(-1) * J.T
         self.H = h_matrix(self.J, p, lamb, method)
 
-    def solve(self, v1, v0, normalize=False):
+    def solve(self, v1, v0, normalize=False, log_scale=False):
         """ dynamic solve_eit
 
         Parameters
@@ -60,6 +60,9 @@ class JAC(EitBase):
             dv = (v1 - v0)
         # s = -Hv
         ds = -np.dot(self.H, dv)
+        if log_scale:
+            ds = np.exp(ds) - 1.0
+
         return ds
 
     def map(self, v):
