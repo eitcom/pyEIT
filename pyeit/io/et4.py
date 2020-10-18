@@ -1,6 +1,6 @@
 # pylint: disable=no-member, invalid-name
 # pylint: disable=too-many-arguments, too-many-instance-attributes
-""" 
+"""
 Load .et4 file into mem (experimental).
 This file structure may be modified in near future.
 """
@@ -14,12 +14,12 @@ import matplotlib.pyplot as plt
 
 
 class ET4(object):
-    """.et4 file parser"""
+    """.et4 file loader """
 
     def __init__(self, file_name, ex_mtx=None, step=1, compatible=False,
                  output_resistor=False):
         """
-        initialize .et4 parser.
+        initialize .et4 handler.
         .et4 is an experimental file format for XEIT-ng system
 
         try to read data and parse FILE HEADER

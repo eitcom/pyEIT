@@ -4,7 +4,7 @@ load daeger .eit files
 reimplement daeger-eit in EIDORS3D (eidors_readdata.m)
 
 You need to create a ex_mat using eit_scan_lines with 16 electrodes and
-adjacent stimulation, and using parser='fmmu' in eit simulation.
+adjacent stimulation, rotate measurements in eit simulation.
 """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
@@ -28,7 +28,7 @@ class DAEGER_EIT(object):
         1, 16 electrodes, 1 ring,
         2, adjacent stimulation, adjacent measurement, [ex_mat, step=1]
         3, skip current carring electrodes,
-        4, rotate measurements with stimulation patterns (parser='fmmu')
+        4, rotate measurements with stimulation patterns
         5, 1 unit current
 
         Parameters
