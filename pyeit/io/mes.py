@@ -1,5 +1,13 @@
 # pylint: disable=no-member, invalid-name
-""" open/view .mes file """
+"""
+open/view .mes file (a binary mesh structure)
+
+The mesh structure in mes was developed by FMMU EIT group (Bin Yang, et al.)
+Please Cite the following paper if you are using .mes in your research:
+    Yang, Bin, et al. "Comparison of electrical impedance tomography and
+    intracranial pressure during dehydration treatment of cerebral edema."
+    NeuroImage: Clinical 23 (2019): 101909.
+""" 
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import ctypes

@@ -2,6 +2,12 @@
 """
 load .et3, .et0 file into mem
 using pack and unpack together with regular expression to filter out data.
+
+The .et3, .et0 file type was developed by FMMU EIT group.
+Please cite the following paper if you are using et3 in your research:
+    Fu, Feng, et al. "Use of electrical impedance tomography to monitor
+    regional cerebral edema during clinical dehydration treatment."
+    PloS one 9.12 (2014): e113202.
 """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.

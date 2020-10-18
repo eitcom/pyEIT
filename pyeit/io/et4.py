@@ -1,6 +1,6 @@
 # pylint: disable=no-member, invalid-name
 # pylint: disable=too-many-arguments, too-many-instance-attributes
-"""
+""" 
 Load .et4 file into mem (experimental).
 This file structure may be modified in near future.
 """

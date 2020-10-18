@@ -203,7 +203,7 @@ class DISTMESH(object):
         """
         self.debug('enter density control = ', self.num_density)
         self.num_density += 1
-        print(self.num_density, self.p.shape)
+        # print(self.num_density, self.p.shape)
         # quality control
         ixout = (L0 > dscale*L).ravel()
         ixdel = np.setdiff1d(self.bars[ixout, :].reshape(-1),
@@ -391,7 +391,7 @@ def build(fd, fh, pfix=None, bbox=None, h0=0.1,
     # now iterate to push to equilibrium
     for i in range(maxiter):
         if dm.is_retriangulate():
-            print("triangulate = %d" % dm.num_triangulate)
+            # print("triangulate = %d" % dm.num_triangulate)
             dm.triangulate()
 
         # calculate bar forces
