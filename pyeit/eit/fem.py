@@ -17,7 +17,7 @@ from .utils import eit_scan_lines
 class Forward(object):
     """ FEM forward computing code """
 
-    def __init__(self, mesh, el_pos, parser='std'):
+    def __init__(self, mesh, el_pos):
         """
         A good FEM forward solver should only depend on
         mesh structure and the position of electrodes
@@ -28,8 +28,6 @@ class Forward(object):
             mesh structure, {'node', 'element', 'perm'}
         el_pos: NDArray
             numbering of electrodes positions
-        parser: str
-            see voltage_meter for more details.
 
         Note
         ----
@@ -40,7 +38,6 @@ class Forward(object):
         self.tri = mesh['element']
         self.tri_perm = mesh['perm']
         self.el_pos = el_pos
-        self.parser = parser
 
         # reference electrodes [ref node should not be on electrodes]
         ref_el = 0
@@ -53,7 +50,7 @@ class Forward(object):
         self.n_tri, self.n_vertices = self.tri.shape
         self.ne = el_pos.size
 
-    def solve_eit(self, ex_mat=None, step=1, perm=None):
+    def solve_eit(self, ex_mat=None, step=1, perm=None, parser='std'):
         """
         EIT simulation, generate perturbation matrix and forward v
 
@@ -65,6 +62,8 @@ class Forward(object):
             the configuration of measurement electrodes (default: adjacent)
         perm: NDArray
             Mx1 array, initial x0. must be the same size with self.tri_perm
+        parser: str
+            see voltage_meter for more details.
 
         Returns
         -------
@@ -100,7 +99,7 @@ class Forward(object):
 
             # boundary measurements, subtract_row-voltages on electrodes
             diff_op = voltage_meter(ex_line, n_el=self.ne, step=step,
-                                    parser=self.parser)
+                                    parser=parser)
             v_diff = subtract_row(f_el, diff_op)
             jac_diff = subtract_row(jac_i, diff_op)
 
@@ -122,7 +121,7 @@ class Forward(object):
                        b_matrix=np.vstack(b_matrix))
         return p
 
-    def solve(self, ex_line, perm):
+    def solve(self, ex_line, perm, parser):
         """
         with one pos (A), neg(B) driven pairs, calculate and
         compute the potential distribution (complex-valued)
@@ -155,7 +154,7 @@ class Forward(object):
         r_el = r_matrix[self.el_pos]
 
         # 4. solving nodes potential using boundary conditions
-        if self.parser == 'mit_utron':
+        if parser == 'mit_utron':
             b = self._natural_boundary_mit(ex_line)
         else:
             b = self._natural_boundary(ex_line)
