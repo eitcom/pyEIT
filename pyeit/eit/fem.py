@@ -94,7 +94,7 @@ class Forward(object):
         for i in range(n_lines):
             # FEM solver of one stimulation pattern, a row in ex_mat
             ex_line = ex_mat[i]
-            f, jac_i = self.solve(ex_line, perm0)
+            f, jac_i = self.solve(ex_line, perm0, parser=parser)
             f_el = f[self.el_pos]
 
             # boundary measurements, subtract_row-voltages on electrodes

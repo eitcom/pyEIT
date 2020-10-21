@@ -51,7 +51,7 @@ class EitBase(object):
             perm = mesh['perm']
 
         # build forward solver
-        fwd = Forward(mesh, el_pos, parser=parser)
+        fwd = Forward(mesh, el_pos)
         self.fwd = fwd
 
         # solving mesh structure
