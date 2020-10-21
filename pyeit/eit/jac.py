@@ -18,7 +18,7 @@ class JAC(EitBase):
 
     def setup(self, p=0.20, lamb=0.001, method='kotre'):
         """
-        JAC, default file parser is 'std'
+        JAC, Jacobian matrix based reconstruction.
 
         Parameters
         ----------
@@ -38,7 +38,7 @@ class JAC(EitBase):
         self.H = h_matrix(self.J, p, lamb, method)
 
     def solve(self, v1, v0, normalize=False, log_scale=False):
-        """ dynamic solve_eit
+        """ dynamic imaging
 
         Parameters
         ----------
@@ -151,8 +151,8 @@ class JAC(EitBase):
         for i in range(maxiter):
 
             # forward solver
-            fs = self.fwd.solve_eit(self.ex_mat, step=self.step,
-                                    perm=x0, parser=self.parser)
+            fs = self.fwd.solve_eit(self.ex_mat, step=self.step, perm=x0,
+                                    parser=self.parser)
             # Residual
             r0 = v - fs.v
             jac = fs.jac

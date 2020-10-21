@@ -25,11 +25,11 @@ from matplotlib import dates
 
 
 class ET3(object):
-    """ et0 and et3 file parser"""
+    """ et0 and et3 file loader """
 
     def __init__(self, file_name, et_type='auto', trim=True, verbose=False):
         """
-        initialize file parser (supports .et3, .et0)
+        initialize file handler (supports .et3, .et0)
         read data and parse FILE HEADER.
 
         Parameters
@@ -282,14 +282,14 @@ def et_tell(file_name, et_type='et3'):
     This function may be deprecated in near future.
     """
     if et_type == 'et3':
-        _header_parser_func = et3_header
+        _header_proc_func = et3_header
     else:
-        _header_parser_func = et0_header
+        _header_proc_func = et0_header
 
     with open(file_name, 'rb') as fh:
         # get file info (header)
         d = fh.read(1024)
-        params = _header_parser_func(d)
+        params = _header_proc_func(d)
 
         # move the cursor to the end (2) of the file
         fh.seek(0, 2)

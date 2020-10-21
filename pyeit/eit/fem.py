@@ -28,12 +28,7 @@ class Forward(object):
             mesh structure, {'node', 'element', 'perm'}
         el_pos: NDArray
             numbering of electrodes positions
-        parser : str
-            if parser is 'fmmu', within each stimulation pattern, diff_pairs
-            or boundary measurements are re-indexed and started
-            from the positive stimulus electrode
-            if parser is 'std', subtract_row start from the 1st electrode
-            
+
         Note
         ----
         the nodes are continuous numbered, the numbering of an element is
@@ -68,6 +63,11 @@ class Forward(object):
             the configuration of measurement electrodes (default: adjacent)
         perm: NDArray
             Mx1 array, initial x0. must be the same size with self.tri_perm
+<<<<<<< HEAD
+=======
+        parser: str
+            see voltage_meter for more details.
+>>>>>>> master
 
         Returns
         -------
@@ -103,7 +103,11 @@ class Forward(object):
 
             # boundary measurements, subtract_row-voltages on electrodes
             diff_op = voltage_meter(ex_line, n_el=self.ne, step=step,
+<<<<<<< HEAD
                                     parser=self.parser)
+=======
+                                    parser=parser)
+>>>>>>> master
             v_diff = subtract_row(f_el, diff_op)
             jac_diff = subtract_row(jac_i, diff_op)
 
@@ -129,7 +133,7 @@ class Forward(object):
         """
         with one pos (A), neg(B) driven pairs, calculate and
         compute the potential distribution (complex-valued)
-        
+
         TODO: the calculation of Jacobian can be skipped.
         TODO: handle CEM (complete electrode model)
 
@@ -262,22 +266,30 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None):
     B: current sink,
     M, N: boundary electrodes, where v_diff = v_n - v_m.
 
+    'no_meas_current': (EIDORS3D)
+    mesurements on current carrying electrodes are discarded.
+
     Parameters
     ----------
     ex_line: NDArray
-        2x1 array, 0 for positive electrode, 1 for negative electrode
+        2x1 array, [positive electrode, negative electrode].
     n_el: int
-        number of electrodes
+        number of total electrodes.
     step: int
-        measurement method (which two electrodes are used for measuring)
+        measurement method (two adjacent electrodes are used for measuring).
     parser: str
-        if parser is 'fmmu', data are trimmed, start index (i) is always 'A'.
+        if parser is 'fmmu', or 'rotate_meas' then data are trimmed,
+        boundary voltage measurements are re-indexed and rotated,
+        start from the positive stimulus electrodestart index 'A'.
+        if parser is 'std', or 'no_rotate_meas' then data are trimmed,
+        the start index (i) of boundary voltage measurements is always 0.
 
     Returns
     -------
     v: NDArray
         (N-1)*2 arrays of subtract_row pairs
     """
+<<<<<<< HEAD
     if parser == 'mit_utron':
         diff = [[m, ex_line] for m in range(n_el) if m != ex_line]
         diff_pairs = np.array(diff)
@@ -299,6 +311,24 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None):
 
         diff_pairs = np.array(v)
 
+=======
+    # local node
+    drv_a = ex_line[0]
+    drv_b = ex_line[1]
+    i0 = drv_a if parser == 'fmmu' or parser == 'rotate_meas' else 0;
+
+    # build differential pairs
+    v = []
+    for a in range(i0, i0 + n_el):
+        m = a % n_el
+        n = (m + step) % n_el
+        # if any of the electrodes is the stimulation electrodes
+        if not(m == drv_a or m == drv_b or n == drv_a or n == drv_b):
+            # the order of m, n matters
+            v.append([n, m])
+
+    diff_pairs = np.array(v)
+>>>>>>> master
     return diff_pairs
 
 

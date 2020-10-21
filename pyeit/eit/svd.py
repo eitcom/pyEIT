@@ -15,7 +15,7 @@ class SVD(JAC):
 
     def setup(self, n=25, rcond=1e-2, method='svd'):
         """
-        SVD, default file parser is 'std'
+        SVD, singular value decomposition based reconstruction.
 
         Parameters
         ----------
