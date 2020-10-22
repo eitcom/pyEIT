@@ -16,7 +16,7 @@ from scipy.sparse import csr_matrix
 from .utils import dist, edge_project
 
 
-class DISTMESH(object):
+class DISTMESH():
     """ class for distmesh """
 
     def __init__(self, fd, fh, h0=0.1,
@@ -398,7 +398,7 @@ def build(fd, fh, pfix=None, bbox=None, h0=0.1,
         L, L0, barvec = dm.bar_length()
 
         # density control
-        if mode_3D==False:
+        if not mode_3D:
             if (i % densityctrlfreq) == 0 and (L0 > 2*L).any():
                 dm.density_control(L, L0)
                 # continue to triangulate

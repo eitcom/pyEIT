@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class MeshCircle(object):
+class MeshCircle():
     """ create meshes on uniform circle """
 
     def __init__(self, n_fan=6, n_layer=8, n_el=16):

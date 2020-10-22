@@ -1,4 +1,4 @@
-# pylint: disable=no-member, invalid-name, too-many-instance-attributes
+# pylint: disable=no-member, invalid-name, too-many-locals
 """
 load daeger .eit files
 reimplement daeger-eit in EIDORS3D (eidors_readdata.m)
@@ -13,7 +13,7 @@ import struct
 import numpy as np
 
 
-class DAEGER_EIT(object):
+class DAEGER_EIT():
     """ process daeger pulmovista .eit file """
 
     def __init__(self, fname):
@@ -42,6 +42,7 @@ class DAEGER_EIT(object):
 
     @staticmethod
     def read_header(fname, max_lines=50):
+        """ read information from header in text format """
         fr = 0
         fmt = 0
         with open(fname, 'r', encoding="ISO-8859-1") as fd:
@@ -93,6 +94,7 @@ class DAEGER_EIT(object):
         return par
 
     def read_data(self):
+        """ read data frame by frame """
         nframe = self.info['nframe']
         data = np.zeros((nframe, 600), dtype=np.double)
         with open(self.fname, 'rb') as fh:
@@ -104,6 +106,7 @@ class DAEGER_EIT(object):
         return data
 
     def load(self):
+        """ convert data in to measurements (voltages) """
         data = self.read_data()
         vv = self.ft[0]*data[:, :208] - self.ft[1]*data[:, 322:530]
         return vv
@@ -113,11 +116,12 @@ class DAEGER_EIT(object):
         Require a data structure document within a frame of daeger pulmovista,
         to extract the time stamp information and build the time series index.
         """
-        pass
+        raise NotImplementedError()
 
 
 if __name__=="__main__":
-    fname = r"./ID_SC_10_001.eit"
-    model = DAEGER_EIT(fname=fname)
+    file_name = r"./ID_SC_10_001.eit"
+    model = DAEGER_EIT(fname=file_name)
     print(model.info)
-    d = model.load()
+    # test loading from daeger EIT
+    model.load()

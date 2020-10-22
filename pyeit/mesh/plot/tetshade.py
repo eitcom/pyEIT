@@ -56,7 +56,7 @@ class TetVisual(CompoundVisual):
             """
             update parameters to visuals
             """
-            pass
+            raise NotImplementedError()
 
         @property
         def edge_color(self):

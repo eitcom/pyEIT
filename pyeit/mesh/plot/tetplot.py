@@ -103,7 +103,8 @@ class TetPlotVisual(Visual):
                           polygon_offset=(1, 1))
         self._draw_mode = mode
 
-    def _prepare_transforms(self, view):
+    @staticmethod
+    def _prepare_transforms(view):
         """ This method is called when the user or the scenegraph has assigned
         new transforms to this visual """
         # Note we use the "additive" GL blending settings so that we do not

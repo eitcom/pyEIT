@@ -73,7 +73,7 @@ class BP(EitBase):
         Note
         ----
         as in fem.py, we could either smear at,
-        
+
         (1) elements, using the center co-ordinates (x,y) of each element
             >> center_e = np.mean(self.pts[self.tri], axis=1)
         (2) nodes.

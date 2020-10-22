@@ -173,7 +173,7 @@ class JAC(EitBase):
                 print('iter = %d, lamb = %f, gtol = %f' % (i, lamb, c))
 
             # update regularization parameter
-            # TODO: support user defined decreasing order of lambda series
+            # lambda can be given in user defined decreasing lists
             lamb *= lamb_decay
             if lamb < lamb_min:
                 lamb = lamb_min

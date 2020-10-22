@@ -14,7 +14,7 @@ if [ ${TRAVIS_OS_NAME} == "osx" ]; then
     fi
 fi
 
-if [ ${TASK} == "lint" ]; then
-    pip install cpplint 'pylint==1.4.4' 'astroid==1.3.6' --user `whoami`
+if [ ${TASK} == "build" ]; then
+    python setup.py install
 fi
 

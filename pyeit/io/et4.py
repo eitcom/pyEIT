@@ -13,7 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-class ET4(object):
+class ET4():
     """.et4 file loader """
 
     def __init__(self, file_name, ex_mtx=None, step=1, compatible=False,
@@ -117,11 +117,11 @@ class ET4(object):
 
         return info
 
-    def to_df(self, resample=None, rel_date=None, fps=40):
+    def to_df(self, resample=None, rel_date=None, fps=20):
         """convert raw data to pandas.DataFrame"""
         if rel_date is None:
             rel_date = '2019/01/01'
-        ta = np.arange(self.nframe) * 1.0 / 40
+        ta = np.arange(self.nframe) * 1.0 / fps
         ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 's')
         df = pd.DataFrame(self.data, index=ts)
         # resample
@@ -132,7 +132,7 @@ class ET4(object):
 
     def to_csv(self):
         """save file to csv"""
-        pass
+        raise NotImplementedError()
 
 
 def et4_tell(fstr):
@@ -176,7 +176,7 @@ def zero_rearrange_index(ex_mtx):
         for i in range(num_el):
             # re-order data start after A
             j = (i + a) % num_el
-            if not(j == a or j == b or j == ap or j == bp):
+            if j not in (a, b, ap, bp):
                 v_index.append(k*num_el + j)
 
     return v_index, c_index

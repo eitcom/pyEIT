@@ -14,7 +14,7 @@ from scipy import sparse
 from .utils import eit_scan_lines
 
 
-class Forward(object):
+class Forward():
     """ FEM forward computing code """
 
     def __init__(self, mesh, el_pos):
@@ -126,8 +126,9 @@ class Forward(object):
         with one pos (A), neg(B) driven pairs, calculate and
         compute the potential distribution (complex-valued)
 
-        TODO: the calculation of Jacobian can be skipped.
-        TODO: handle CEM (complete electrode model)
+        The calculation of Jacobian can be skipped.
+        Currently, only simple electrode model is supported,
+        CEM (complete electrode model) is under development.
 
         Parameters
         ----------
@@ -476,10 +477,10 @@ def _k_triangle(xy):
     # s2 = xy[0, :] - xy[2, :]
     # s3 = xy[1, :] - xy[0, :]
 
-    # area of triangles
-    # TODO: remove abs, user must make sure all triangles are CCW.
+    # area of triangles. Note, abs is removed since version 2020,
+    # user must make sure all triangles are CCW (conter clock wised).
     # at = 0.5 * la.det(s[[0, 1]])
-    at = np.abs(0.5 * det2x2(s[0], s[1]))
+    at = 0.5 * det2x2(s[0], s[1])
 
     # (e for element) local stiffness matrix
     ke_matrix = np.dot(s, s.T) / (4. * at)
@@ -516,9 +517,9 @@ def _k_tetrahedron(xy):
     """
     s = xy[[2, 3, 0, 1]] - xy[[1, 2, 3, 0]]
 
-    # volume of the tetrahedron
-    # TODO: remove abs, user must make sure all tetrahedrons are CCW.
-    vt = np.abs(1./6 * la.det(s[[0, 1, 2]]))
+    # volume of the tetrahedron, Note abs is removed since version 2020,
+    # user must make sure all tetrahedrons are CCW (counter clock wised).
+    vt = 1./6 * la.det(s[[0, 1, 2]])
 
     # calculate area (vector) of triangle faces
     # re-normalize using alternative (+,-) signs

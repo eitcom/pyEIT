@@ -15,7 +15,7 @@ from .fem import Forward
 from .utils import eit_scan_lines
 
 
-class EitBase(object):
+class EitBase():
     """
     A base EIT solver.
     """

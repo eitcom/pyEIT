@@ -1,16 +1,37 @@
-*.pyc
-*.jpg
-*.jpeg
-*.so
-*.dll
+# package testing folders
 datasets/
 sandbox/
-
 .directory
-__pycache__/
 .idea/
 .spyproject/
+
+*.jpg
+*.jpeg
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+*.dll
+
+# Distribution / packaging
+.Python
+env/
 build/
+develop-eggs/
 dist/
-pyeit.egg-info/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
 
