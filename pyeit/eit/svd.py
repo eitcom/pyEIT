@@ -54,7 +54,7 @@ class SVD(JAC):
             U = U[:, idx[:n_ord]]
 
             # pseudo inverse
-            U, s, Ut = np.linalg.svd(JtJ)
+            U, s, _ = np.linalg.svd(JtJ)
 
             # choose the first N eigenvalues
             U = U[:, :n_ord]
@@ -63,4 +63,3 @@ class SVD(JAC):
             self.H = np.dot(JtJ_inv, self.J.T)
         elif method == 'pinv':
             self.H = np.linalg.pinv(self.J, rcond=rcond)
-

@@ -9,7 +9,7 @@ from pyeit.eit import bp
 from pyeit.eit import jac
 
 
-class DynamicEIT(object):
+class DynamicEIT():
     """ dynamic eit imaging """
 
     def __init__(self, mesh=None, el_pos=None, parser='et3',

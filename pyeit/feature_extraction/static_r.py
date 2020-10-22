@@ -1,4 +1,4 @@
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, too-many-locals
 """static features of R values measured using EIT system"""
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
@@ -63,13 +63,14 @@ def fmmu_index(n_el=16, dist=8, step=1):
 
 
 def ati_lr(x, sel):
+    """ extract ATI left, right """
     x_sel = np.nanmean(np.abs(x[sel]))
 
     return x_sel
 
 
 def ati_df(x):
-    """ati of DataFrame"""
+    """ ati of DataFrame """
     return x.abs().sum(skipna=False) / 192.0
 
 

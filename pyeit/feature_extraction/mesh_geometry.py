@@ -13,7 +13,7 @@ import pkg_resources
 from pyeit.io import mes
 
 
-class SimpleMeshGeometry(object):
+class SimpleMeshGeometry():
     """
     extract segments from meshes using:
     5-13 as the line for left and right hemisphere
@@ -131,7 +131,7 @@ class SimpleMeshGeometry(object):
         return proj >= 0
 
 
-class FitEllipse(object):
+class FitEllipse():
     """
     find the enclosing ellipse of a set of points
 
