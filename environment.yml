@@ -1,0 +1,12 @@
+name: pyeit-environment
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - pylint
+  - pytest
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - vispy

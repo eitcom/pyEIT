@@ -73,7 +73,7 @@ def edge_grad(p, fd, h0=1.0):
     d_eps = 1e-8 * h0
 
     # get dimensions
-    if np.ndim(p)==1:
+    if np.ndim(p) == 1:
         p = p[:, np.newaxis]
 
     # distance

@@ -53,7 +53,8 @@ f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new['perm'])
 
 """ 3. JAC solver """
 # number of stimulation lines/patterns
-eit = jac.JAC(mesh_obj, el_pos, ex_mat=ex_mat, step=step, perm=1., parser='std')
+eit = jac.JAC(mesh_obj, el_pos, ex_mat=ex_mat, step=step, perm=1.,
+              parser='std')
 eit.setup(p=0.50, lamb=1e-3, method='kotre')
 ds = eit.solve(f1.v, f0.v, normalize=False)
 node_ds = sim2pts(pts, tri, np.real(ds))

@@ -58,7 +58,7 @@ N = len(ex_list)
 s = []
 for ex_dist in ex_list:
     ex_mat = eit_scan_lines(16, ex_dist)
-    # TODO: ex_mat can also be stacked, see demo_dynamic_stack.py
+    # Note: ex_mat can also be stacked, see demo_dynamic_stack.py
     s0 = calc_sens(fwd, ex_mat)
     s.append(s0)
 

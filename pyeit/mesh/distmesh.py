@@ -91,7 +91,7 @@ class DISTMESH():
         self.num_move = 0
 
         # keep points inside (minus distance) with a small gap (geps)
-        p = p[fd(p) < self.geps]
+        p = p[fd(p) < self.geps]  # pylint: disable=E1136
 
         # rejection points by sampling on fh
         r0 = 1. / fh(p)**self.n_dim
