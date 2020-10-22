@@ -56,10 +56,10 @@ class DAEGER_EIT():
                     cell = line.split(':')
                     fmt = int(cell[1])
         # failed to find valid parameters
-        if fr==0:
+        if fr == 0:
             print('Frame rate could not be read, setting to 20')
             fr = 20
-        if fmt==0:
+        if fmt == 0:
             print('Format could not be read, setting to 51')
             fmt = 51
 
@@ -119,7 +119,7 @@ class DAEGER_EIT():
         raise NotImplementedError()
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     file_name = r"./ID_SC_10_001.eit"
     model = DAEGER_EIT(fname=file_name)
     print(model.info)

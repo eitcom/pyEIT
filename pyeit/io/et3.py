@@ -210,10 +210,10 @@ class ET3():
         if aux_filter:
             # filter auxillary sampled data
             # correct temperature (temperature cannot be 0)
-            dp.loc[dp['tleft']==0, 'tleft'] = np.nan
-            dp.loc[dp['tright']==0, 'tright'] = np.nan
-            dp.loc[dp['nt_s']==0, 'nt_s'] = np.nan
-            dp.loc[dp['rt_s']==0, 'rt_s'] = np.nan
+            dp.loc[dp['tleft'] == 0, 'tleft'] = np.nan
+            dp.loc[dp['tright'] == 0, 'tright'] = np.nan
+            dp.loc[dp['nt_s'] == 0, 'nt_s'] = np.nan
+            dp.loc[dp['rt_s'] == 0, 'rt_s'] = np.nan
 
             dp.tleft = med_outlier(dp.tleft)
             dp.tright = med_outlier(dp.tright)
@@ -240,7 +240,7 @@ def med_outlier(d, window=17):
     """ filter outliers using median filter """
     med = d.rolling(window, center=False).median()
     std = d.rolling(window, center=False).std()
-    std[std==np.nan] = 0.0
+    std[std == np.nan] = 0.0
     # replace med with d for outlier removal
     df = med[(d <= med+3*std) & (d >= med-3*std)]
     return df
