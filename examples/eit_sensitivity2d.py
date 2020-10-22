@@ -6,7 +6,6 @@ from __future__ import division, absolute_import, print_function
 
 # numeric
 import numpy as np
-import scipy as sp
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
@@ -73,7 +72,7 @@ for ix in range(N):
     sn = s[ix]
     ex_dist = ex_list[ix]
     # statistics, it seems like ex_dist=4 yields the minimal std
-    std = sp.std(sn)
+    std = np.std(sn)
     print("std (ex_dist=%d) = %f" % (ex_dist, std))
     im = ax.tripcolor(x, y, tri, sn,
                       edgecolors='none', shading='gouraud', cmap=plt.cm.Reds,
