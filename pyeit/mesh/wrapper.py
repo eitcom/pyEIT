@@ -14,8 +14,8 @@ from .shape import circle, area_uniform
 from .shape import fix_points_fd, fix_points_ball
 
 
-def create(n_el=16, fd=circle, fh=area_uniform, p_fix=None,
-           bbox=[[-1, -1], [1, 1]], h0=0.1):
+def create(n_el=16, fd=circle, fh=area_uniform, h0=0.1,
+           p_fix=None, bbox=None):
     """
     Generating 2D/3D meshes using distmesh (pyEIT built-in)
 
@@ -40,7 +40,8 @@ def create(n_el=16, fd=circle, fh=area_uniform, p_fix=None,
         {'element', 'node', 'perm'}
     """
     # infer dim
-    bbox = np.array(bbox)
+    if bbox is None:
+        bbox = np.array([[-1, -1], [1, 1]])
     n_dim = bbox.shape[1]
     if n_dim not in [2, 3]:
         raise TypeError('distmesh only supports 2D or 3D')
