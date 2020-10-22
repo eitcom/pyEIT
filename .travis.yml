@@ -7,10 +7,8 @@ os:
   - linux
 
 python:
-  - "2.7"
-  - "3.5"
-  - "3.6-dev" # 3.5 development branch
-  - "nightly" # currently points to 3.6-dev
+  - "3.7"
+  - "3.8"
 
 # command to install dependencies
 # install: "pip install -r requirements.txt"

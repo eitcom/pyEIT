@@ -4,7 +4,7 @@
 export MINICONDA=$HOME/miniconda
 export PATH="$MINICONDA/bin:$PATH"
 hash -r
-wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
 bash miniconda.sh -b -f -p $MINICONDA
 conda config --set always_yes yes
 conda update conda
