@@ -22,7 +22,7 @@ env:
     # list package dependencies
     - PYEIT_DEPS="pytest cpplint numpy scipy pandas matplotlib"
     # package name for test invocation
-    - PACKAGENAME="pyeit"
+    - TESTNAME="tests"
   # code analysis
   - TASK=lint
   # build analysis
@@ -47,7 +47,7 @@ install:
   - source scripts/travis/setup.sh
 
 script:
-  - pytest $PACKAGENAME
+  - pytest $TESTNAME
 
 cache:
   directories:
