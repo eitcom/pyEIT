@@ -16,8 +16,6 @@ python:
 # script: nosetests
 
 env:
-  # code analysis
-  - TASK=lint
   # build analysis
   - TASK=build
 
