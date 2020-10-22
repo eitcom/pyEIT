@@ -10,11 +10,12 @@ import numpy as np
 from .distmesh import build
 from .mesh_circle import MeshCircle
 from .utils import check_order
-from .shape import circle, ball, area_uniform
+from .shape import circle, area_uniform
 from .shape import fix_points_fd, fix_points_ball
 
 
-def create(n_el=16, fd=None, fh=None, p_fix=None, bbox=None, h0=0.1):
+def create(n_el=16, fd=circle, fh=area_uniform, p_fix=None,
+           bbox=[[-1, -1], [1, 1]], h0=0.1):
     """
     Generating 2D/3D meshes using distmesh (pyEIT built-in)
 
@@ -23,7 +24,7 @@ def create(n_el=16, fd=None, fh=None, p_fix=None, bbox=None, h0=0.1):
     n_el: int
         number of electrodes (point-type electrode)
     fd: function
-        distance function
+        distance function (circle in 2D, ball in 3D)
     fh: function
         mesh size quality control function
     p_fix: NDArray
@@ -38,8 +39,6 @@ def create(n_el=16, fd=None, fh=None, p_fix=None, bbox=None, h0=0.1):
     mesh_obj: dict
         {'element', 'node', 'perm'}
     """
-    if bbox is None:
-        bbox = [[-1, -1], [1, 1]]
     # infer dim
     bbox = np.array(bbox)
     n_dim = bbox.shape[1]
@@ -48,19 +47,11 @@ def create(n_el=16, fd=None, fh=None, p_fix=None, bbox=None, h0=0.1):
     if bbox.shape[0] != 2:
         raise TypeError('please specify lower and upper bound of bbox')
 
-    if n_dim == 2:
-        if fd is None:
-            fd = circle
-        if p_fix is None:
+    if p_fix is None:
+        if n_dim == 2:
             p_fix = fix_points_fd(fd, n_el=n_el)
-    elif n_dim == 3:
-        if fd is None:
-            fd = ball
-        if p_fix is None:
+        elif n_dim == 3:
             p_fix = fix_points_ball(n_el=n_el)
-
-    if fh is None:
-        fh = area_uniform
 
     # 1. build mesh
     p, t = build(fd, fh, pfix=p_fix, bbox=bbox, h0=h0)
