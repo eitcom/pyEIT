@@ -18,10 +18,6 @@ python:
 # script: nosetests
 
 env:
-  # list package dependencies
-  - PYEIT_DEPS="pytest cpplint numpy scipy pandas matplotlib"
-  # package name for test invocation
-  - TESTNAME="tests"
   # code analysis
   - TASK=lint
   # build analysis
@@ -36,8 +32,8 @@ addons:
       - libcurl4-openssl-dev
       - unzip
       - libatlas-dev
-      - gcc-5.0
-      - g++-5.0
+      - gcc-4.9
+      - g++-4.9
 
 before_install:
   - source scripts/travis/travis_setup_env.sh
@@ -46,7 +42,7 @@ install:
   - source scripts/travis/setup.sh
 
 script:
-  - pytest $TESTNAME
+  - pytest tests
 
 cache:
   directories:

@@ -11,7 +11,7 @@ conda update conda
 conda info -a
 conda create -n testenv python=$TRAVIS_PYTHON_VERSION
 source activate testenv
-conda install $PYEIT_DEPS
+conda install pytest cpplint numpy scipy pandas matplotlib
 
 # copied from dmlc-core
 # setup all enviroment variables
