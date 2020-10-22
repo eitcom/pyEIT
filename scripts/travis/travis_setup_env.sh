@@ -1,8 +1,22 @@
 # script to be sourced in travis yml
+
+# install miniconda
+export MINICONDA=$HOME/miniconda
+export PATH="$MINICONDA/bin:$PATH"
+hash -r
+wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+bash miniconda.sh -b -f -p $MINICONDA
+conda config --set always_yes yes
+conda update conda
+conda info -a
+conda create -n testenv python=$TRAVIS_PYTHON_VERSION
+source activate testenv
+conda install $PYEIT_DEPS
+
 # copied from dmlc-core
 # setup all enviroment variables
 
-export PATH=${HOME}/.local/bin:${PATH}
+# export PATH=${HOME}/.local/bin:${PATH}
 export PATH=${PATH}:${CACHE_PREFIX}/bin
 export CACHE_PREFIX=${HOME}/.cache/usr
 export CPLUS_INCLUDE_PATH=${CPLUS_INCLUDE_PATH}:${CACHE_PREFIX}/include
