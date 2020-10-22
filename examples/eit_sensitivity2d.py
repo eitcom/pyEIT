@@ -6,7 +6,6 @@ from __future__ import division, absolute_import, print_function
 
 # numeric
 import numpy as np
-import scipy as sp
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
@@ -59,7 +58,7 @@ N = len(ex_list)
 s = []
 for ex_dist in ex_list:
     ex_mat = eit_scan_lines(16, ex_dist)
-    # TODO: ex_mat can also be stacked, see demo_dynamic_stack.py
+    # Note: ex_mat can also be stacked, see demo_dynamic_stack.py
     s0 = calc_sens(fwd, ex_mat)
     s.append(s0)
 
@@ -73,7 +72,7 @@ for ix in range(N):
     sn = s[ix]
     ex_dist = ex_list[ix]
     # statistics, it seems like ex_dist=4 yields the minimal std
-    std = sp.std(sn)
+    std = np.std(sn)
     print("std (ex_dist=%d) = %f" % (ex_dist, std))
     im = ax.tripcolor(x, y, tri, sn,
                       edgecolors='none', shading='gouraud', cmap=plt.cm.Reds,
