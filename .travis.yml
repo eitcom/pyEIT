@@ -18,11 +18,10 @@ python:
 # script: nosetests
 
 env:
-  global:
-    # list package dependencies
-    - PYEIT_DEPS="pytest cpplint numpy scipy pandas matplotlib"
-    # package name for test invocation
-    - TESTNAME="tests"
+  # list package dependencies
+  - PYEIT_DEPS="pytest cpplint numpy scipy pandas matplotlib"
+  # package name for test invocation
+  - TESTNAME="tests"
   # code analysis
   - TASK=lint
   # build analysis
