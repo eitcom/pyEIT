@@ -50,7 +50,7 @@ class GREIT(EitBase):
         [1] Bartlomiej Grychtol, Beat Muller, Andy Adler
             "3D EIT image reconstruction with GREIT"
         [2] Adler, Andy, et al.
-            "GREIT: a unified approach to 2D linear EIT reconstruction of 
+            "GREIT: a unified approach to 2D linear EIT reconstruction of
             lung images." Physiological measurement 30.6 (2009): S35.
         """
         # parameters for GREIT projection

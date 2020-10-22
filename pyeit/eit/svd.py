@@ -1,5 +1,5 @@
 # coding: utf-8
-# pylint: disable=invalid-name, no-member, too-many-arguments
+# pylint: disable=invalid-name, no-member, arguments-differ
 """ dynamic EIT solver using SVD """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.

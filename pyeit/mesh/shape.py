@@ -1,5 +1,5 @@
 # coding: utf-8
-# pylint: disable=invalid-name, no-member
+# pylint: disable=invalid-name, no-member, too-many-locals
 """ implement distance functions for distmesh """
 # Copyright (c) Benyuan Liu. All rights reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.

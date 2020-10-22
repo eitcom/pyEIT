@@ -236,7 +236,7 @@ def weight_barycentric_gradient():
     w_mat: NDArray
         weighting matrix mapping from xy to xy_mesh
     """
-    pass
+    raise NotImplementedError()
 
 
 def sim2pts(pts, sim, sim_values):
@@ -414,7 +414,7 @@ def pdetrg(pts, tri):
 
     a = 0.5*(s2[:, 0]*s3[:, 1] - s3[:, 0]*s2[:, 1])
     if any(a) < 0:
-        exit("triangles should be given in CCW order")
+        raise ValueError("Triangles are not in CCW order")
 
     # note in python, reshape place elements first on the right-most index
     grad_phi_x = np.reshape([-s1[:, 1] / (2. * a),

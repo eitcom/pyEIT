@@ -32,7 +32,7 @@ def eit_scan_lines(ne=16, dist=1):
     in the scan of EIT (or stimulation matrix), we use 4-electrodes
     mode, where A, B are used as positive and negative stimulation
     electrodes and M, N are used as voltage measurements
-    
+
     1 (A) for positive current injection,
     -1 (B) for negative current sink
 
@@ -42,12 +42,12 @@ def eit_scan_lines(ne=16, dist=1):
     Examples
     --------
     # let the number of electrodes, ne=16
-    
+
     if mode=='neighbore':
         ex_mat = eit_scan_lines()
     elif mode=='apposition':
         ex_mat = eit_scan_lines(dist=8)
-        
+
     WARNING
     -------
     ex_mat is a local index, where it is ranged from 0...15, within the range

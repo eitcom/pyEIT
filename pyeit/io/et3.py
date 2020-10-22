@@ -24,7 +24,7 @@ from matplotlib import dates
 # converter.register()
 
 
-class ET3(object):
+class ET3():
     """ et0 and et3 file loader """
 
     def __init__(self, file_name, et_type='auto', trim=True, verbose=False):
@@ -188,7 +188,7 @@ class ET3(object):
 
     def reload(self):
         """reload data using different options"""
-        pass
+        raise NotImplementedError()
 
     def to_df(self, resample=None, rel_date=None, fps=1):
         """convert raw data to pandas.DataFrame"""
@@ -201,13 +201,14 @@ class ET3(object):
 
         return df
 
-    def to_dp(self, resample=None, rel_date=None, fps=1, filter=False):
+    def to_dp(self, resample=None, rel_date=None, fps=1, aux_filter=False):
         """convert raw parameters to pandas.DataFrame"""
         ts = self.load_time(rel_date=rel_date, fps=fps)
         columns = ['tleft', 'tright', 'nt_s', 'rt_s', 'r0', 'r1', 'r2', 'r3']
         dp = pd.DataFrame(self.dp, index=ts, columns=columns)
 
-        if filter:
+        if aux_filter:
+            # filter auxillary sampled data
             # correct temperature (temperature cannot be 0)
             dp.loc[dp['tleft']==0, 'tleft'] = np.nan
             dp.loc[dp['tright']==0, 'tright'] = np.nan
@@ -232,10 +233,11 @@ class ET3(object):
         this function is embedded in to pandas.DataFrame, simply call
         $ df.to_csv(file_to, columns=None, header=False, index=False)
         """
-        pass
+        raise NotImplementedError()
 
 
 def med_outlier(d, window=17):
+    """ filter outliers using median filter """
     med = d.rolling(window, center=False).median()
     std = d.rolling(window, center=False).std()
     std[std==np.nan] = 0.0
