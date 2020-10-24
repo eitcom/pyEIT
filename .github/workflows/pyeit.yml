@@ -40,8 +40,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - uses: actions/checkout@v2
-    - name: Install with dependencies
+    - name: Install dependencies
       run: |
-        $CONDA/bin/conda install numpy scipy matplotlib pandas vispy
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        $CONDA/bin/conda env update --file environment.yml --name base
+    - name: Build and install
+      run: |
         $CONDA/bin/python setup.py install
 
