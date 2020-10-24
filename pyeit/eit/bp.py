@@ -12,14 +12,12 @@ from .base import EitBase
 class BP(EitBase):
     """ A naive inversion of (Euclidean) back projection. """
 
-    def setup(self, weight='none'):
+    def setup(self, weight="none"):
         """ setup BP """
-        self.params = {
-            "weight": weight
-        }
+        self.params = {"weight": weight}
 
         # build the weighting matrix
-        if weight == 'simple':
+        if weight == "simple":
             weights = self.simple_weight(self.B.shape[0])
             self.H = weights * self.B
 
@@ -49,7 +47,7 @@ class BP(EitBase):
         if normalize:
             vn = -(v1 - v0) / np.sign(self.v0)
         else:
-            vn = (v1 - v0)
+            vn = v1 - v0
         # smearing
         ds = np.dot(self.H.transpose(), vn)
         return np.real(ds)
@@ -62,7 +60,7 @@ class BP(EitBase):
     def solve_gs(self, v1, v0):
         """ solving using gram-schmidt """
         a = np.dot(v1, v0) / np.dot(v0, v0)
-        vn = - (v1 - a*v0) / np.sign(self.v0)
+        vn = -(v1 - a * v0) / np.sign(self.v0)
         ds = np.dot(self.H.transpose(), vn)
         return ds
 
@@ -90,7 +88,7 @@ class BP(EitBase):
         """
         d = np.sqrt(np.sum(self.pts ** 2, axis=1))
         r = np.max(d)
-        w = (1.01*r - d) / (1.01*r)
+        w = (1.01 * r - d) / (1.01 * r)
         # weighting by element-wise multiplication W with B
         weights = np.dot(np.ones((num_voltages, 1)), w.reshape(1, -1))
         return weights

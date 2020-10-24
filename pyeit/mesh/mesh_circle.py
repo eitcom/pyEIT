@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class MeshCircle():
+class MeshCircle:
     """ create meshes on uniform circle """
 
     def __init__(self, n_fan=6, n_layer=8, n_el=16):
@@ -28,7 +28,7 @@ class MeshCircle():
         self.n_el = n_el
 
         # number of points per-layer
-        pts_per_layer = self.n_fan * np.arange(self.n_layer+1)
+        pts_per_layer = self.n_fan * np.arange(self.n_layer + 1)
         # The number of points of the initial layer (center point: 1 node)
         pts_per_layer[0] = 1
         self.pts_per_layer = pts_per_layer
@@ -54,12 +54,13 @@ class MeshCircle():
 
     def _get_electrodes(self):
         """ return the numbering of electrodes """
-        el_start = self.index_per_layer[self.n_layer-1]
+        el_start = self.index_per_layer[self.n_layer - 1]
         el_len = self.pts_per_layer[self.n_layer]
 
         # place electrodes uniformly on the boundary
-        n = np.linspace(el_start, el_start + el_len, num=self.n_el,
-                        endpoint=False, dtype=np.int)
+        n = np.linspace(
+            el_start, el_start + el_len, num=self.n_el, endpoint=False, dtype=np.int
+        )
 
         # for FMMU, electrodes should be placed clockwise
         # with 1 on the right (x+)
@@ -73,12 +74,12 @@ class MeshCircle():
         p = [0, 0]
 
         # divide r uniformly axial
-        delta_r = 1. / self.n_layer
+        delta_r = 1.0 / self.n_layer
 
-        for i in range(1, self.n_layer+1):
+        for i in range(1, self.n_layer + 1):
             # increment points per-layer by fans
-            n = i*self.n_fan
-            r = i*delta_r
+            n = i * self.n_fan
+            r = i * delta_r
             # generate points on a layer
             pts = r * self._points_on_circle(n, offset=i)
             p = np.vstack([p, pts])
@@ -88,10 +89,10 @@ class MeshCircle():
     @staticmethod
     def _points_on_circle(n, offset=0, offset_enabled=False):
         """ generate points on unit circle """
-        fan_angle = 2*np.pi / n
-        a = np.array([i*fan_angle for i in range(n)])
+        fan_angle = 2 * np.pi / n
+        a = np.array([i * fan_angle for i in range(n)])
         if offset_enabled:
-            a += offset * (fan_angle / 2.)
+            a += offset * (fan_angle / 2.0)
         pts = np.array([np.cos(a), np.sin(a)]).T
 
         return pts
@@ -123,7 +124,7 @@ class MeshCircle():
 
         # starting index of current and previous layer
         index_now = self.index_per_layer[i]
-        index_pre = self.index_per_layer[i-1]
+        index_pre = self.index_per_layer[i - 1]
 
         e = []
         # A circle is divided into multiple fans, we assume that
@@ -147,7 +148,7 @@ class MeshCircle():
             inner_next = index_pre + (k + 1) % ppl_pre
 
             # every (ppl_now/n_fan) points
-            mode = (j % point_plpf)
+            mode = j % point_plpf
             if mode == 0:
                 # outer points is on the boundary
                 ei = [outer_now, outer_next, inner_now]
@@ -173,21 +174,21 @@ def demo():
     print(e[[0, 1, 2]])
 
     _, ax = plt.subplots(figsize=(6, 6))
-    ax.plot(p[:, 0], p[:, 1], 'ro', markersize=5)
+    ax.plot(p[:, 0], p[:, 1], "ro", markersize=5)
     for i in range(p.shape[0]):
         ax.text(p[i, 0], p[i, 1], str(i))
     ax.set_xlim([-1.2, 1.2])
     ax.set_ylim([-1.2, 1.2])
-    ax.grid('on')
+    ax.grid("on")
 
     _, ax = plt.subplots(figsize=(6, 6))
     ax.triplot(p[:, 0], p[:, 1], e)
-    ax.plot(p[el_pos, 0], p[el_pos, 1], 'ro')
+    ax.plot(p[el_pos, 0], p[el_pos, 1], "ro")
     for i, el in enumerate(el_pos):
-        ax.text(p[el, 0], p[el, 1], str(i+1))
+        ax.text(p[el, 0], p[el, 1], str(i + 1))
     ax.set_xlim([-1.2, 1.2])
     ax.set_ylim([-1.2, 1.2])
-    ax.grid('on')
+    ax.grid("on")
 
     plt.show()
 

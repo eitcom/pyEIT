@@ -20,8 +20,8 @@ def load(fstr, resample=None):
     df = xl_file.parse(xl_file.sheet_names[0])
 
     # using values to extract data from DataFrame
-    icp_data = df['p'].values
-    icp_timestmp = df['timestmp'].values
+    icp_data = df["p"].values
+    icp_timestmp = df["timestmp"].values
     # print('file %s size is %d' % (fstr, icp_data.size))
 
     # build a timeseries structure
@@ -63,11 +63,11 @@ def load_csv(fstr, resample=None):
 
     def f(x):
         """ f = lambda x: re.sub('/', '-', x) """
-        return re.sub('/', '-', x)
+        return re.sub("/", "-", x)
 
-    timestr = df['timestmp'].map(f)
+    timestr = df["timestmp"].map(f)
     icp_timestmp = pd.to_datetime(timestr)
-    icp_data = df['p'].values
+    icp_data = df["p"].values
 
     # build a timeseries structure
     ts = pd.Series(icp_data, index=icp_timestmp)
@@ -79,12 +79,12 @@ def load_csv(fstr, resample=None):
     return ts
 
 
-def convert(file_from, file_to, resample='s'):
+def convert(file_from, file_to, resample="s"):
     """
     load icp from xlsx and save it to a csv file,
     resample by default
     """
-    if file_from.find('xlsx') > 0:
+    if file_from.find("xlsx") > 0:
         ts = load(file_from, resample=resample)
     else:
         ts = load_csv(file_from, resample=resample)
@@ -105,16 +105,16 @@ def demo_read_csv(filestr):
     """
     export .xlsx in .csv and read using load_csv(), it is much faster
     """
-    ts = load_csv(filestr, resample='600s')
+    ts = load_csv(filestr, resample="600s")
     return ts
 
 
 if __name__ == "__main__":
-    ts_data = demo_read_csv('../../datasets/all.csv')
+    ts_data = demo_read_csv("../../datasets/all.csv")
 
     # plot and see
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(ts_data)
-    ax.grid('on')
+    ax.grid("on")
     plt.show()

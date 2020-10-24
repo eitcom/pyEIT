@@ -22,5 +22,5 @@ def stats(p, t):
     a simple function for illustration purpose only.
     print the status (size) of nodes and elements
     """
-    print('mesh status:')
-    print('%d nodes, %d elements' % (p.shape[0], t.shape[0]))
+    print("mesh status:")
+    print("%d nodes, %d elements" % (p.shape[0], t.shape[0]))

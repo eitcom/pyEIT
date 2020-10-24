@@ -16,15 +16,15 @@ from pyeit.eit.utils import eit_scan_lines
 mesh_obj, el_pos = mesh.create(16, h0=0.08)
 
 # extract node, element, alpha
-pts = mesh_obj['node']
-tri = mesh_obj['element']
+pts = mesh_obj["node"]
+tri = mesh_obj["element"]
 x, y = pts[:, 0], pts[:, 1]
 quality.stats(pts, tri)
 
 # change permittivity
-anomaly = [{'x': 0.40, 'y': 0.50, 'd': 0.20, 'perm': 100.0}]
+anomaly = [{"x": 0.40, "y": 0.50, "d": 0.20, "perm": 100.0}]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
-perm = mesh_new['perm']
+perm = mesh_new["perm"]
 
 """ 1. FEM forward simulations """
 # setup EIT scan conditions
@@ -44,16 +44,23 @@ ax1 = fig.add_subplot(111)
 vf = np.linspace(min(f), max(f), 32)
 ax1.tricontour(x, y, tri, f, vf, cmap=plt.cm.viridis)
 # draw mesh structure
-ax1.tripcolor(x, y, tri, np.real(perm),
-              edgecolors='k', shading='flat', alpha=0.5,
-              cmap=plt.cm.Greys)
+ax1.tripcolor(
+    x,
+    y,
+    tri,
+    np.real(perm),
+    edgecolors="k",
+    shading="flat",
+    alpha=0.5,
+    cmap=plt.cm.Greys,
+)
 # draw electrodes
-ax1.plot(x[el_pos], y[el_pos], 'ro')
+ax1.plot(x[el_pos], y[el_pos], "ro")
 for i, e in enumerate(el_pos):
-    ax1.text(x[e], y[e], str(i+1), size=12)
-ax1.set_title('equi-potential lines')
+    ax1.text(x[e], y[e], str(i + 1), size=12)
+ax1.set_title("equi-potential lines")
 # clean up
-ax1.set_aspect('equal')
+ax1.set_aspect("equal")
 ax1.set_ylim([-1.2, 1.2])
 ax1.set_xlim([-1.2, 1.2])
 fig.set_size_inches(6, 6)

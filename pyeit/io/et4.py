@@ -13,11 +13,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-class ET4():
+class ET4:
     """.et4 file loader """
 
-    def __init__(self, file_name, ex_mtx=None, step=1, compatible=False,
-                 output_resistor=False):
+    def __init__(
+        self, file_name, ex_mtx=None, step=1, compatible=False, output_resistor=False
+    ):
         """
         initialize .et4 handler.
         .et4 is an experimental file format for XEIT-ng system
@@ -82,10 +83,10 @@ class ET4():
         x = np.zeros((self.nframe, self.data_num), dtype=np.double)
 
         # 3. unpack data and extract parameters
-        with open(self.file_name, 'rb') as fh:
+        with open(self.file_name, "rb") as fh:
             for i in range(self.nframe):
                 d = fh.read(self.frame_size)
-                x[i] = np.array(unpack('512d', d[self.header_size:]))
+                x[i] = np.array(unpack("512d", d[self.header_size :]))
 
         data = x[:, :256] + 1j * x[:, 256:]
         # electrode re-arranged the same as .et3 file
@@ -110,19 +111,19 @@ class ET4():
         info = np.zeros((self.nframe, 256))
 
         # 3. unpack data and extract parameters
-        with open(self.file_name, 'rb') as fh:
+        with open(self.file_name, "rb") as fh:
             for i in range(self.nframe):
                 d = fh.read(self.frame_size)
-                info[i, :] = np.array(unpack('33if222i', d[:self.header_size]))
+                info[i, :] = np.array(unpack("33if222i", d[: self.header_size]))
 
         return info
 
     def to_df(self, resample=None, rel_date=None, fps=20):
         """convert raw data to pandas.DataFrame"""
         if rel_date is None:
-            rel_date = '2019/01/01'
+            rel_date = "2019/01/01"
         ta = np.arange(self.nframe) * 1.0 / fps
-        ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, 's')
+        ts = pd.to_datetime(rel_date) + pd.to_timedelta(ta, "s")
         df = pd.DataFrame(self.data, index=ts)
         # resample
         if resample is not None:
@@ -137,7 +138,7 @@ class ET4():
 
 def et4_tell(fstr):
     """ check the filetype of et4 """
-    with open(fstr, 'rb') as fh:
+    with open(fstr, "rb") as fh:
         fh.seek(0, 2)  # move the cursor to the end (2) of the file
         file_len = fh.tell()
 
@@ -167,17 +168,17 @@ def zero_rearrange_index(ex_mtx):
             a = np.where(ex_pat == 1)[0][0]
             b = np.where(ex_pat == -1)[0][0]
         else:
-            a = k                       # positive excitation
+            a = k  # positive excitation
             b = (a + el_dist) % num_el  # negative excitation
         ap = (a - 1) % num_el  # positive adjacent
         bp = (b - 1) % num_el  # negative adjacent
         # print(A, B, Ap, Bp)
-        c_index.append(k*num_el + b)
+        c_index.append(k * num_el + b)
         for i in range(num_el):
             # re-order data start after A
             j = (i + a) % num_el
             if j not in (a, b, ap, bp):
-                v_index.append(k*num_el + j)
+                v_index.append(k * num_el + j)
 
     return v_index, c_index
 
@@ -196,7 +197,7 @@ if __name__ == "__main__":
     ti = et4_data.sum(axis=1) / 192.0
     ti_real = np.real(ti)
     ti_imag = np.imag(ti)
-    ti_abs = np.sqrt(ti_real**2 + ti_imag**2)
+    ti_abs = np.sqrt(ti_real ** 2 + ti_imag ** 2)
     print("max = ", np.max(ti_abs))
     print("min = ", np.min(ti_abs))
 
@@ -207,14 +208,14 @@ if __name__ == "__main__":
     # plot
     fig = plt.figure(figsize=(6, 4))
     ax = fig.add_subplot(211)
-    ax.plot(ti_real, 'b-')
+    ax.plot(ti_real, "b-")
     axt = ax.twinx()
-    axt.plot(ti_imag, 'r-')
+    axt.plot(ti_imag, "r-")
     ax.set_xlim([0, xlim])
     ax.grid(True)
 
     ax2 = fig.add_subplot(212)
-    ax2.plot(ti_abs, 'r-')
+    ax2.plot(ti_abs, "r-")
     ax2.grid(True)
     ax2.set_xlim([0, xlim])
     plt.show()

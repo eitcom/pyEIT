@@ -30,7 +30,7 @@ def load(fstr, mirror=False):
 
     # note: seek is global position,
     # fh can be advanced using read in sub-function
-    with open(fstr, 'rb') as fh:
+    with open(fstr, "rb") as fh:
 
         # 0. extract BMP
         # (offset=bmp_size)
@@ -53,11 +53,11 @@ def load(fstr, mirror=False):
 
     if mirror:
         ne = np.size(el_pos)
-        ne_start = np.int(ne/2)
+        ne_start = np.int(ne / 2)
         el_index = np.mod(np.arange(ne_start, -ne_start, -1), ne)
         el_pos = el_pos[el_index]
 
-    mesh = {'node': pts, 'element': tri, 'perm': perm}
+    mesh = {"node": pts, "element": tri, "perm": perm}
     return mesh, el_pos
 
 
@@ -68,7 +68,7 @@ def get_bmp_size(fh):
     # seek backwards from the end (2) of the file
     fh.seek(-nff, 2)
     # unsigned long long is 'Q'
-    bmp_size = struct.unpack('Q', fh.read(nff))[0]
+    bmp_size = struct.unpack("Q", fh.read(nff))[0]
     # fh is a file ID,
     # it can be modified via read within subroutine, rewind!
     fh.seek(0)
@@ -79,8 +79,8 @@ def get_bmp_size(fh):
 def save_bmp(fstr, bmp):
     """save bmp segment to file"""
     # automatically infer file name from 'fstr'
-    bmp_file = fstr.replace('.mes', '.bmp')
-    with open(bmp_file, 'wb') as fh:
+    bmp_file = fstr.replace(".mes", ".bmp")
+    with open(bmp_file, "wb") as fh:
         fh.write(bmp)
 
 
@@ -104,12 +104,12 @@ def extract_element(fh):
     """
     # number of element
     nff = ctypes.sizeof(ctypes.c_int)
-    ne = struct.unpack('i', fh.read(nff))[0]
-    tri = np.zeros((ne, 3), dtype='int')
-    perm = np.zeros(ne, dtype='double')
+    ne = struct.unpack("i", fh.read(nff))[0]
+    tri = np.zeros((ne, 3), dtype="int")
+    perm = np.zeros(ne, dtype="double")
 
     for _ in range(ne):
-        d = np.array(struct.unpack('4i10dd', fh.read(104)))
+        d = np.array(struct.unpack("4i10dd", fh.read(104)))
         # global element number
         ge_num = int(d[3])
         tri[ge_num, :] = d[:3]
@@ -134,17 +134,17 @@ def extract_node(fh):
     """
     # number of nodes
     nff = ctypes.sizeof(ctypes.c_int)
-    nn = struct.unpack('i', fh.read(nff))[0]
-    pts = np.zeros((nn, 2), dtype='double')
+    nn = struct.unpack("i", fh.read(nff))[0]
+    pts = np.zeros((nn, 2), dtype="double")
 
     for _ in range(nn):
-        d = np.array(struct.unpack('2di', fh.read(20)))
+        d = np.array(struct.unpack("2di", fh.read(20)))
         # global node number
         gn_num = int(d[2])
         # offset to overlay on .bmp file
         # x_new = x+8, y_new = -y-8 (yang bin)
         # x_new = x-8, y_new = -y-8 (lby)
-        pts[gn_num, :] = [d[0]-4., -d[1]-4.]
+        pts[gn_num, :] = [d[0] - 4.0, -d[1] - 4.0]
 
     return pts
 
@@ -153,9 +153,9 @@ def extract_el(fh):
     """extract the locations of electrodes"""
     # how many electrodes in .mes
     nff = ctypes.sizeof(ctypes.c_int)
-    ne = struct.unpack('i', fh.read(nff))[0]
+    ne = struct.unpack("i", fh.read(nff))[0]
     # read all at once
-    el_pos = np.array(struct.unpack(ne*'i', fh.read(ne*4)))
+    el_pos = np.array(struct.unpack(ne * "i", fh.read(ne * 4)))
 
     return el_pos
 
@@ -163,36 +163,36 @@ def extract_el(fh):
 def demo():
     """demo for mes"""
     # a demo on how to load a .mes file
-    mesh_file = '../data/model/DLS2.mes'
+    mesh_file = "../data/model/DLS2.mes"
     mesh_obj, el_pos = load(fstr=mesh_file)
 
     # print the size
-    e, pts = mesh_obj['element'], mesh_obj['node']
+    e, pts = mesh_obj["element"], mesh_obj["node"]
     # print('tri size = (%d, %d)' % e.shape)
     # print('pts size = (%d, %d)' % pts.shape)
 
     # show mesh
     fig, ax = plt.subplots(1, figsize=(6, 6))
     ax.triplot(pts[:, 0], pts[:, 1], e)
-    ax.plot(pts[el_pos, 0], pts[el_pos, 1], 'ro')
+    ax.plot(pts[el_pos, 0], pts[el_pos, 1], "ro")
     for i, el in enumerate(el_pos):
-        ax.text(pts[el, 0], pts[el, 1], str(i+1), color='r')
-    ax.set_aspect('equal')
+        ax.text(pts[el, 0], pts[el, 1], str(i + 1), color="r")
+    ax.set_aspect("equal")
     ax.invert_yaxis()
 
     # bmp and mesh overlay
     fig, ax = plt.subplots(figsize=(6, 6))
-    image_name = mesh_file.replace('mes', 'bmp')
+    image_name = mesh_file.replace("mes", "bmp")
     im = plt.imread(image_name)
     ax.imshow(im)
-    ax.set_aspect('equal')
+    ax.set_aspect("equal")
 
     # the plot will automatically align with an overlay image
     ax.triplot(pts[:, 0], pts[:, 1], e)
-    ax.plot(pts[el_pos, 0], pts[el_pos, 1], 'ro')
+    ax.plot(pts[el_pos, 0], pts[el_pos, 1], "ro")
     for i, el in enumerate(el_pos):
-        ax.text(pts[el, 0], pts[el, 1], str(i+1), color='r')
-    ax.axis('off')
+        ax.text(pts[el, 0], pts[el, 1], str(i + 1), color="r")
+    ax.axis("off")
     plt.show()
 
     return fig, ax

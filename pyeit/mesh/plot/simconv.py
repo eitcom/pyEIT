@@ -12,7 +12,7 @@ def sim_conv(simplex, n=3):
     # change to (num_of_points x n)
     t = np.sort(np.array(v).reshape(-1, n), axis=1)
     # delete duplicated entries
-    t_unique = np.unique(t.view([('', t.dtype)] * n)).view(np.uint32)
+    t_unique = np.unique(t.view([("", t.dtype)] * n)).view(np.uint32)
     return t_unique
 
 

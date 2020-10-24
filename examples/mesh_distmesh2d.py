@@ -18,12 +18,12 @@ def example1():
 
     def _fd(pts):
         """ shape function """
-        return shape.circle(pts, pc=[0, 0], r=1.)
+        return shape.circle(pts, pc=[0, 0], r=1.0)
 
     def _fh(pts):
         """ distance function """
-        r2 = np.sum(pts**2, axis=1)
-        return 0.2*(2.0 - r2)
+        r2 = np.sum(pts ** 2, axis=1)
+        return 0.2 * (2.0 - r2)
 
     # build fix points, may be used as the position for electrodes
     num = 16
@@ -38,8 +38,8 @@ def example1():
     # plot
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
-    ax.plot(p[el_pos, 0], p[el_pos, 1], 'ro')
-    ax.set_aspect('equal')
+    ax.plot(p[el_pos, 0], p[el_pos, 1], "ro")
+    ax.set_aspect("equal")
     ax.set_xlim([-1.5, 1.5])
     ax.set_ylim([-1.1, 1.1])
     plt.show()
@@ -49,8 +49,7 @@ def example2():
     """unit circle with a whole at the center"""
 
     def _fd(pts):
-        return shape.dist_diff(shape.circle(pts, r=0.7),
-                               shape.circle(pts, r=0.3))
+        return shape.dist_diff(shape.circle(pts, r=0.7), shape.circle(pts, r=0.3))
 
     # build triangle
     p, t = distmesh.build(_fd, shape.area_uniform, h0=0.1)
@@ -58,7 +57,7 @@ def example2():
     # plot
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
-    ax.set_aspect('equal')
+    ax.set_aspect("equal")
     plt.show()
 
 
@@ -81,7 +80,7 @@ def example3():
     # plot
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
-    ax.set_aspect('equal')
+    ax.set_aspect("equal")
     ax.set_xlim([-1.2, 1.2])
     ax.set_ylim([-1, 1])
     plt.show()
@@ -94,16 +93,15 @@ def example4():
         if pts.ndim == 1:
             pts = pts[np.newaxis]
         a, b = 2.0, 1.0
-        return np.sum((pts/[a, b])**2, axis=1) - 1.0
+        return np.sum((pts / [a, b]) ** 2, axis=1) - 1.0
 
     # build triangle
-    p, t = distmesh.build(_fd, shape.area_uniform,
-                          bbox=[[-2, -1], [2, 1]], h0=0.15)
+    p, t = distmesh.build(_fd, shape.area_uniform, bbox=[[-2, -1], [2, 1]], h0=0.15)
 
     # plot
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
-    ax.set_aspect('equal')
+    ax.set_aspect("equal")
     plt.show()
 
 
@@ -117,13 +115,14 @@ def example5():
     """
 
     # set fixed points
-    p_fix = [[1, 0],  [1, -1], [0, -1], [-1, -1],
-             [-1, 0], [-1, 1], [0, 1],  [0, 0]]
+    p_fix = [[1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [0, 0]]
     p_fix = np.array(p_fix)
 
     def _fd(pts):
-        return shape.dist_diff(shape.rectangle(pts, p1=[-1, -1], p2=[1, 1]),
-                               shape.rectangle(pts, p1=[0, 0], p2=[1, 1]))
+        return shape.dist_diff(
+            shape.rectangle(pts, p1=[-1, -1], p2=[1, 1]),
+            shape.rectangle(pts, p1=[0, 0], p2=[1, 1]),
+        )
 
     # build
     p, t = distmesh.build(_fd, shape.area_uniform, pfix=p_fix, h0=0.15)
@@ -131,8 +130,8 @@ def example5():
     # plot
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
-    ax.plot(p_fix[:, 0], p_fix[:, 1], 'ro')
-    ax.set_aspect('equal')
+    ax.plot(p_fix[:, 0], p_fix[:, 1], "ro")
+    ax.set_aspect("equal")
     ax.set_xlim([-1.2, 1.2])
     ax.set_ylim([-1.2, 1.2])
     plt.show()
@@ -142,16 +141,15 @@ def example_voronoi_plot():
     """draw voronoi plots for triangle elements"""
 
     def _fd(pts):
-        return shape.dist_diff(shape.circle(pts, r=0.9),
-                               shape.circle(pts, r=0.4))
+        return shape.dist_diff(shape.circle(pts, r=0.9), shape.circle(pts, r=0.4))
 
     # build triangle
     p, t = distmesh.build(_fd, shape.area_uniform, h0=0.1)
 
     # plot using customized voronoi function
     _, ax = voronoi_plot(p, t, figsize=(9, 6))
-    ax.triplot(p[:, 0], p[:, 1], t, color='k', alpha=0.35)
-    ax.set_aspect('equal')
+    ax.triplot(p[:, 0], p[:, 1], t, color="k", alpha=0.35)
+    ax.set_aspect("equal")
     ax.set_xlim([-1.0, 1.0])
     ax.set_ylim([-1.0, 1.0])
     plt.show()
@@ -171,14 +169,13 @@ def example_intersect():
 
     # generate mesh
     bbox = [[-2, -2], [2, 2]]
-    p, t = distmesh.build(_fd, shape.area_uniform,
-                          pfix=p_fix, bbox=bbox, h0=0.1)
+    p, t = distmesh.build(_fd, shape.area_uniform, pfix=p_fix, bbox=bbox, h0=0.1)
 
     # plot
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
-    ax.plot(p_fix[:, 0], p_fix[:, 1], 'ro')
-    ax.set_aspect('equal')
+    ax.plot(p_fix[:, 0], p_fix[:, 1], "ro")
+    ax.set_aspect("equal")
     ax.set_xlim([-1.5, 1.5])
     ax.set_ylim([-1.2, 1.2])
     plt.show()

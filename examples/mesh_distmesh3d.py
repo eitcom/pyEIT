@@ -14,10 +14,10 @@ bbox = [[-1.2, -1.2, -1.2], [1.2, 1.2, 1.2]]
 ms, el_pos = mesh.create(h0=0.15, bbox=bbox)
 
 # print mesh quality
-p = ms['node']
-t = ms['element']
-print('points =', p.shape)
-print('simplices =', t.shape)
+p = ms["node"]
+t = ms["element"]
+print("points =", p.shape)
+print("simplices =", t.shape)
 
 # plot
 mplot.tetplot(p, t, edge_color=(0.2, 0.2, 1.0, 1.0), alpha=0.01)

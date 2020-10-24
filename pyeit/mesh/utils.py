@@ -27,9 +27,9 @@ def dist(p):
         distances of points to origin
     """
     if p.ndim == 1:
-        d = np.sqrt(np.sum(p**2))
+        d = np.sqrt(np.sum(p ** 2))
     else:
-        d = np.sqrt(np.sum(p**2, axis=1))
+        d = np.sqrt(np.sum(p ** 2, axis=1))
 
     return d
 
@@ -88,10 +88,10 @@ def edge_grad(p, fd, h0=1.0):
 
     # normalize gradient, avoid divide by zero
     g = g_xyz.reshape(-1, ndim)
-    g2 = np.sum(g**2, axis=1)
+    g2 = np.sum(g ** 2, axis=1)
 
     # move unit
-    g_num = g/g2[:, np.newaxis] * d[:, np.newaxis]
+    g_num = g / g2[:, np.newaxis] * d[:, np.newaxis]
 
     return g_num
 
@@ -110,21 +110,21 @@ def edge_list(tri):
     """
     bars = tri[:, [[0, 1], [1, 2], [2, 0]]].reshape((-1, 2))
     bars = np.sort(bars, axis=1)
-    bars = bars.view('i, i')
+    bars = bars.view("i, i")
     n = bars.shape[0]
 
     ix = [True] * n
-    for i in range(n-1):
+    for i in range(n - 1):
         # skip if already marked as duplicated
         if ix[i] is not True:
             continue
         # mark duplicate entries, at most 2-duplicate bars, if found, break
-        for j in range(i+1, n):
+        for j in range(i + 1, n):
             if bars[i] == bars[j]:
                 ix[i], ix[j] = False, False
                 break
 
-    return bars[np.array(ix)].view('i')
+    return bars[np.array(ix)].view("i")
 
 
 def check_order(no2xy, el2no):
@@ -190,7 +190,7 @@ def tri_area(xy):
 def tet_volume(xyz):
     """ calculate the volume of tetrahedron """
     s = xyz[[2, 3, 0]] - xyz[[1, 2, 3]]
-    v_tot = (1./6.) * la.det(s)
+    v_tot = (1.0 / 6.0) * la.det(s)
     return v_tot
 
 
@@ -199,9 +199,9 @@ if __name__ == "__main__":
     def fd_test(p):
         """ unit circle/ball """
         if len(p.shape) == 1:
-            d = np.sqrt(np.sum(p**2)) - 1.
+            d = np.sqrt(np.sum(p ** 2)) - 1.0
         else:
-            d = np.sqrt(np.sum(p**2, axis=1)) - 1.
+            d = np.sqrt(np.sum(p ** 2, axis=1)) - 1.0
 
         return d
 

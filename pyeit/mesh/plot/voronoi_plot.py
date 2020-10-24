@@ -28,15 +28,14 @@ def circumcircle(p1, p2, p3):
     dp1 = p1 - p2
     dp2 = p3 - p1
 
-    mid1 = (p1 + p2) / 2.
-    mid2 = (p3 + p1) / 2.
+    mid1 = (p1 + p2) / 2.0
+    mid2 = (p3 + p1) / 2.0
 
-    a = np.array([[-dp1[1], dp2[1]],
-                  [dp1[0], -dp2[0]]])
+    a = np.array([[-dp1[1], dp2[1]], [dp1[0], -dp2[0]]])
     b = -mid1 + mid2
     s = np.linalg.solve(a, b)
     # extract circumscribed center and radius
-    cpc = mid1 + s[0]*np.array([-dp1[1], dp1[0]])
+    cpc = mid1 + s[0] * np.array([-dp1[1], dp1[0]])
     cr = np.linalg.norm(p1 - cpc)
 
     return cpc[0], cpc[1], cr
@@ -111,7 +110,7 @@ def voronoi(pts, tri, fd=None):
     # Reordering cell points in trigonometric way
     for i, cell in enumerate(cells):
         xy = np.array(cell)
-        angles = np.arctan2(xy[:, 1]-y[i], xy[:, 0]-x[i])
+        angles = np.arctan2(xy[:, 1] - y[i], xy[:, 0] - x[i])
         s = np.argsort(angles)
         cell = xy[s].tolist()
         cell.append(cell[0])
@@ -151,8 +150,7 @@ def voronoi_plot(pts, tri, figsize=(6, 4), val=None, fd=None):
     # map values on nodes to colors
     if val is None:
         val = np.random.rand(pts.shape[0])
-    norm = matplotlib.colors.Normalize(vmin=min(val),
-                                       vmax=max(val), clip=True)
+    norm = matplotlib.colors.Normalize(vmin=min(val), vmax=max(val), clip=True)
     mapper = cm.ScalarMappable(norm=norm, cmap=cm.Greens)
 
     fig, ax = plt.subplots(figsize=figsize)
@@ -162,18 +160,20 @@ def voronoi_plot(pts, tri, figsize=(6, 4), val=None, fd=None):
 
     # draw voronoi tessellation
     for i, cell in enumerate(cells):
-        codes = [matplotlib.path.Path.MOVETO] \
-              + [matplotlib.path.Path.LINETO] * (len(cell)-2) \
-              + [matplotlib.path.Path.CLOSEPOLY]
+        codes = (
+            [matplotlib.path.Path.MOVETO]
+            + [matplotlib.path.Path.LINETO] * (len(cell) - 2)
+            + [matplotlib.path.Path.CLOSEPOLY]
+        )
         path = matplotlib.path.Path(cell, codes)
         # map values on nodes to colormap
         # e.g., color = np.random.uniform(.4, .9, 3)
         color = mapper.to_rgba(val[i])
         # using patches to plot the voronoi of a node
-        patch = matplotlib.patches.PathPatch(path, facecolor=color,
-                                             edgecolor='w', zorder=-1,
-                                             lw=0.4)
+        patch = matplotlib.patches.PathPatch(
+            path, facecolor=color, edgecolor="w", zorder=-1, lw=0.4
+        )
         ax.add_patch(patch)
 
-    ax.set_aspect('equal')
+    ax.set_aspect("equal")
     return fig, ax

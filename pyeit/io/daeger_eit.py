@@ -13,7 +13,7 @@ import struct
 import numpy as np
 
 
-class DAEGER_EIT():
+class DAEGER_EIT:
     """ process daeger pulmovista .eit file """
 
     def __init__(self, fname):
@@ -38,35 +38,33 @@ class DAEGER_EIT():
         """
         self.fname = fname
         self.info = self.read_header(self.fname)
-        self.ft = np.array([.00098242, .00019607])  # estimated AA: 2016-04-07
+        self.ft = np.array([0.00098242, 0.00019607])  # estimated AA: 2016-04-07
 
     @staticmethod
     def read_header(fname, max_lines=50):
         """ read information from header in text format """
         fr = 0
         fmt = 0
-        with open(fname, 'r', encoding="ISO-8859-1") as fd:
+        with open(fname, "r", encoding="ISO-8859-1") as fd:
             data = fd.readlines()
             lines = data[:max_lines]
             for line in lines:
-                if 'Framerate [Hz]' in line:
-                    cell = line.split(':')
+                if "Framerate [Hz]" in line:
+                    cell = line.split(":")
                     fr = int(cell[1])
-                if 'Format:' in line:
-                    cell = line.split(':')
+                if "Format:" in line:
+                    cell = line.split(":")
                     fmt = int(cell[1])
         # failed to find valid parameters
         if fr == 0:
-            print('Frame rate could not be read, setting to 20')
+            print("Frame rate could not be read, setting to 20")
             fr = 20
         if fmt == 0:
-            print('Format could not be read, setting to 51')
+            print("Format could not be read, setting to 51")
             fmt = 51
 
         # find spc: bytes per frame
-        daeger_spc = dict({31: 4112,
-                           32: 3200,
-                           51: 5495})
+        daeger_spc = dict({31: 4112, 32: 3200, 51: 5495})
         if fmt not in daeger_spc.keys():
             print("Error, format version={} not supported".format(fmt))
         spc = daeger_spc[fmt]
@@ -75,40 +73,42 @@ class DAEGER_EIT():
         flen = os.path.getsize(fname)
 
         # get data offset
-        with open(fname, 'rb') as fh:
+        with open(fname, "rb") as fh:
             b = fh.read(16)
-            a = struct.unpack('8H', b)
+            a = struct.unpack("8H", b)
             offset = a[2] + 8
 
         # number of frames
         nframe = int((flen - offset) / spc)
 
         # information in headers
-        par = {'framerate': fr,
-               'format': fmt,
-               'spc': spc,
-               'flen': flen,
-               'offset': offset,
-               'nframe': nframe}
+        par = {
+            "framerate": fr,
+            "format": fmt,
+            "spc": spc,
+            "flen": flen,
+            "offset": offset,
+            "nframe": nframe,
+        }
 
         return par
 
     def read_data(self):
         """ read data frame by frame """
-        nframe = self.info['nframe']
+        nframe = self.info["nframe"]
         data = np.zeros((nframe, 600), dtype=np.double)
-        with open(self.fname, 'rb') as fh:
-            fh.seek(self.info['offset'])
+        with open(self.fname, "rb") as fh:
+            fh.seek(self.info["offset"])
             for i in range(nframe):
-                d = fh.read(self.info['spc'])
-                data[i] = struct.unpack('600d', d[:4800])
+                d = fh.read(self.info["spc"])
+                data[i] = struct.unpack("600d", d[:4800])
 
         return data
 
     def load(self):
         """ convert data in to measurements (voltages) """
         data = self.read_data()
-        vv = self.ft[0]*data[:, :208] - self.ft[1]*data[:, 322:530]
+        vv = self.ft[0] * data[:, :208] - self.ft[1] * data[:, 322:530]
         return vv
 
     def to_df(self):

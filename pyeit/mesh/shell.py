@@ -13,8 +13,7 @@ from .utils import check_order
 from .mesh_circle import MeshCircle
 
 
-def multi_shell(n_fan=8, n_layer=8, n_el=16,
-                r_layer=None, perm_per_layer=None):
+def multi_shell(n_fan=8, n_layer=8, n_el=16, r_layer=None, perm_per_layer=None):
     """
     create simple multi shell mesh
 
@@ -37,32 +36,31 @@ def multi_shell(n_fan=8, n_layer=8, n_el=16,
     (sharp angles, angle of 90, etc.)
     """
     if np.size(r_layer) != np.size(perm_per_layer):
-        raise ValueError('r_layer and perm_per_layer must have same length')
+        raise ValueError("r_layer and perm_per_layer must have same length")
 
     model = MeshCircle(n_fan=n_fan, n_layer=n_layer, n_el=n_el)
     p, e, el_pos = model.create()
 
     # tweak permittivity
-    delta_r = 1. / n_layer
+    delta_r = 1.0 / n_layer
     perm = np.ones(e.shape[0])
 
     t_center = np.mean(p[e], axis=1)
-    r_center = np.sqrt(np.sum(t_center**2, axis=1))
+    r_center = np.sqrt(np.sum(t_center ** 2, axis=1))
     for layer, a in zip(r_layer, perm_per_layer):
-        r0, r1 = delta_r*(layer-1), delta_r*layer
+        r0, r1 = delta_r * (layer - 1), delta_r * layer
         idx = (r0 < r_center) & (r_center < r1)
         perm[idx] = a
 
     # 5. build output structure
-    mesh = {'element': e,
-            'node': p,
-            'perm': perm}
+    mesh = {"element": e, "node": p, "perm": perm}
 
     return mesh, el_pos
 
 
-def multi_circle(r=1., background=1., n_el=16, h0=0.006,
-                 r_layer=None, perm_per_layer=None, ppl=64):
+def multi_circle(
+    r=1.0, background=1.0, n_el=16, h0=0.006, r_layer=None, perm_per_layer=None, ppl=64
+):
     """
     create multi layer circle mesh
 
@@ -91,10 +89,10 @@ def multi_circle(r=1., background=1., n_el=16, h0=0.006,
     """
 
     if np.ndim(perm_per_layer) != 1:
-        raise ValueError('perm_per_layer must be 1-dimension')
+        raise ValueError("perm_per_layer must be 1-dimension")
 
     if np.shape(r_layer)[0] != np.size(perm_per_layer):
-        raise ValueError('r_layer and perm_per_layer must have same length')
+        raise ValueError("r_layer and perm_per_layer must have same length")
 
     def _fd(pts):
         """ shape function """
@@ -102,13 +100,13 @@ def multi_circle(r=1., background=1., n_el=16, h0=0.006,
 
     def _fh(pts):
         """ distance function """
-        r2 = np.sum(pts**2, axis=1)
-        return 0.6*(2.0 - r2)
+        r2 = np.sum(pts ** 2, axis=1)
+        return 0.6 * (2.0 - r2)
 
     # 1. build fix points, may be used as the position for electrodes
     if ppl > n_el:
-        step = np.ceil(ppl/n_el).astype('int')
-        p_fix = fix_points_circle(ppl=step*n_el)
+        step = np.ceil(ppl / n_el).astype("int")
+        p_fix = fix_points_circle(ppl=step * n_el)
         # generate electrodes, the same as p_fix (top n_el)
         el_pos = np.arange(n_el) * step
     else:
@@ -118,7 +116,7 @@ def multi_circle(r=1., background=1., n_el=16, h0=0.006,
     # 2. append fix points on layers
     for layer in r_layer:
         for (i, ri) in enumerate(layer):
-            p_fix_layer = ri * r * fix_points_circle(offset=i/2., ppl=ppl)
+            p_fix_layer = ri * r * fix_points_circle(offset=i / 2.0, ppl=ppl)
             p_fix = np.vstack([p_fix, p_fix_layer])
 
     # 3. build triangle (more frequently control the nodes)
@@ -130,7 +128,7 @@ def multi_circle(r=1., background=1., n_el=16, h0=0.006,
     # 4. init uniform element sigma
     perm = background * np.ones(t.shape[0])
     t_center = np.mean(p[t], axis=1)
-    r_center = np.sqrt(np.sum(t_center**2, axis=1))
+    r_center = np.sqrt(np.sum(t_center ** 2, axis=1))
 
     # update permittivity
     for (layer, a) in zip(r_layer, perm_per_layer):
@@ -139,8 +137,6 @@ def multi_circle(r=1., background=1., n_el=16, h0=0.006,
         perm[idx] = a
 
     # 5. build output structure
-    mesh = {'element': t,
-            'node': p,
-            'perm': perm}
+    mesh = {"element": t, "node": p, "perm": perm}
 
     return mesh, el_pos

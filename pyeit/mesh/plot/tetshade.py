@@ -16,11 +16,18 @@ from vispy.color import Color
 class TetVisual(CompoundVisual):
     """ display a 3D mesh """
 
-    def __init__(self,
-                 vertices=None, simplices=None, vertex_colors=None,
-                 edge_color=None, edge_width=1,
-                 markers=None, marker_colors=None, marker_size=1,
-                 **kwargs):
+    def __init__(
+        self,
+        vertices=None,
+        simplices=None,
+        vertex_colors=None,
+        edge_color=None,
+        edge_width=1,
+        markers=None,
+        marker_colors=None,
+        marker_size=1,
+        **kwargs
+    ):
         """
         a mesh visualization toolkit that can also plot edges or markers
 
@@ -39,16 +46,16 @@ class TetVisual(CompoundVisual):
 
         self._update()
         # initialize visuals
-        CompoundVisual.__init__(self,
-                                [self._mesh, self._edge, self._marker],
-                                **kwargs)
+        CompoundVisual.__init__(self, [self._mesh, self._edge, self._marker], **kwargs)
         # set default state, 'opaque', 'translucent' or 'additive'
-        self._mesh.set_gl_state(preset='translucent',
-                                blend=True,
-                                depth_test=False,
-                                cull_face=False,
-                                polygon_offset_fill=True,
-                                polygon_offset=(1, 1))
+        self._mesh.set_gl_state(
+            preset="translucent",
+            blend=True,
+            depth_test=False,
+            cull_face=False,
+            polygon_offset_fill=True,
+            polygon_offset=(1, 1),
+        )
         # end
         self.freeze()
 

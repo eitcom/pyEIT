@@ -12,14 +12,13 @@ The design priciples of `pyEIT` are **modularity, minimalism, extensibility and 
 
 | Packages       | Optional   | Note                                     |
 | -------------- | ---------- | ---------------------------------------- |
-| **numpy**      |            | tested with `numpy-1.13.3`               |
-| **scipy**      |            | tested with `scipy-0.19.1`               |
-| **matplotlib** |            | tested with `matplotlib-2.1.0`           |
-| **vispy**      | *Optional* | tested with `vispy-git`                  |
-| **pandas**     | *Optional* | tested with `pandas-0.20.3`              |
+| **numpy**      |            | tested with `numpy-1.19.1`               |
+| **scipy**      |            | tested with `scipy-1.5.0`                |
+| **matplotlib** |            | tested with `matplotlib-3.3.2`           |
+| **pandas**     | *Optional* | tested with `pandas-1.1.3`               |
+| **vispy**      | *Optional* | failed with `vispy` in python 3.8        |
 | **xarray**     | *Optional* | for large data analysis                  |
 | **distmesh**   | *Optional* | A build-in module is provided in `pyEIT` |
-| **meshpy**     | *Optional* | An alternate way for creating 2D/3D meshes |
 
 **Q1, Why you choose vispy for 3D visualization?**
 

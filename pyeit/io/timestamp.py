@@ -14,7 +14,7 @@ def timestamp(fstr):
 
     time_start = None
     if t is not None:
-        time_start = t.group('date')
+        time_start = t.group("date")
         # replace DATA2014-12-28-03-06-11 to DATA2014/12/28 03:06:11
         time_start = re.sub(r"-", r"/", time_start, count=2)
         time_start = re.sub(r"-", r" ", time_start, count=1)
