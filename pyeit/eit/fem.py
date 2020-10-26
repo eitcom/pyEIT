@@ -14,7 +14,7 @@ from scipy import sparse
 from .utils import eit_scan_lines
 
 
-class Forward():
+class Forward:
     """ FEM forward computing code """
 
     def __init__(self, mesh, el_pos):
@@ -34,9 +34,9 @@ class Forward():
         the nodes are continuous numbered, the numbering of an element is
         CCW (counter-clock-wise).
         """
-        self.pts = mesh['node']
-        self.tri = mesh['element']
-        self.tri_perm = mesh['perm']
+        self.pts = mesh["node"]
+        self.tri = mesh["element"]
+        self.tri_perm = mesh["perm"]
         self.el_pos = el_pos
 
         # reference electrodes [ref node should not be on electrodes]
@@ -98,8 +98,7 @@ class Forward():
             f_el = f[self.el_pos]
 
             # boundary measurements, subtract_row-voltages on electrodes
-            diff_op = voltage_meter(ex_line, n_el=self.ne, step=step,
-                                    parser=parser)
+            diff_op = voltage_meter(ex_line, n_el=self.ne, step=step, parser=parser)
             v_diff = subtract_row(f_el, diff_op)
             jac_diff = subtract_row(jac_i, diff_op)
 
@@ -115,10 +114,8 @@ class Forward():
             b_matrix.append(b)
 
         # update output, now you can call p.jac, p.v, p.b_matrix
-        pde_result = namedtuple("pde_result", ['jac', 'v', 'b_matrix'])
-        p = pde_result(jac=np.vstack(jac),
-                       v=np.hstack(v),
-                       b_matrix=np.vstack(b_matrix))
+        pde_result = namedtuple("pde_result", ["jac", "v", "b_matrix"])
+        p = pde_result(jac=np.vstack(jac), v=np.hstack(v), b_matrix=np.vstack(b_matrix))
         return p
 
     def solve(self, ex_line, perm, parser):
@@ -182,8 +179,8 @@ class Forward():
 
         # global boundary condition
         b = np.zeros((self.n_pts, 1))
-        b[drv_a_global] = 1.
-        b[drv_b_global] = -1.
+        b[drv_a_global] = 1.0
+        b[drv_b_global] = -1.0
 
         return b
 
@@ -343,13 +340,13 @@ def assemble(ke, tri, perm, n_pts, ref=0):
 
         no = tri[ei, :]
         ij = np.ix_(no, no)
-        k_global[ij] += (k_local * pe)
+        k_global[ij] += k_local * pe
 
     # place reference electrode
     if 0 <= ref < n_pts:
-        k_global[ref, :] = 0.
-        k_global[:, ref] = 0.
-        k_global[ref, ref] = 1.
+        k_global[ref, :] = 0.0
+        k_global[:, ref] = 0.0
+        k_global[ref, ref] = 1.0
 
     return k_global
 
@@ -400,17 +397,16 @@ def assemble_sparse(ke, tri, perm, n_pts, ref=0):
     # data = mask_ref_node(data, row, col, ref)
 
     # for efficient sparse inverse (csc)
-    A = sparse.csr_matrix((data, (row, col)),
-                          shape=(n_pts, n_pts), dtype=perm.dtype)
+    A = sparse.csr_matrix((data, (row, col)), shape=(n_pts, n_pts), dtype=perm.dtype)
 
     # the stiffness matrix may not be sparse
     A = A.toarray()
 
     # place reference electrode
     if 0 <= ref < n_pts:
-        A[ref, :] = 0.
-        A[:, ref] = 0.
-        A[ref, ref] = 1.
+        A[ref, :] = 0.0
+        A[:, ref] = 0.0
+        A[ref, ref] = 1.0
 
     return A
 
@@ -441,7 +437,7 @@ def calculate_ke(pts, tri):
     elif n_vertices == 4:
         _k_local = _k_tetrahedron
     else:
-        raise TypeError('The num of vertices of elements must be 3 or 4')
+        raise TypeError("The num of vertices of elements must be 3 or 4")
 
     # default data types for ke
     ke_array = np.zeros((n_tri, n_vertices, n_vertices))
@@ -483,14 +479,14 @@ def _k_triangle(xy):
     at = 0.5 * det2x2(s[0], s[1])
 
     # (e for element) local stiffness matrix
-    ke_matrix = np.dot(s, s.T) / (4. * at)
+    ke_matrix = np.dot(s, s.T) / (4.0 * at)
 
     return ke_matrix
 
 
 def det2x2(s1, s2):
     """ Calculate the determinant of a 2x2 matrix """
-    return s1[0]*s2[1] - s1[1]*s2[0]
+    return s1[0] * s2[1] - s1[1] * s2[0]
 
 
 def _k_tetrahedron(xy):
@@ -519,16 +515,16 @@ def _k_tetrahedron(xy):
 
     # volume of the tetrahedron, Note abs is removed since version 2020,
     # user must make sure all tetrahedrons are CCW (counter clock wised).
-    vt = 1./6 * la.det(s[[0, 1, 2]])
+    vt = 1.0 / 6 * la.det(s[[0, 1, 2]])
 
     # calculate area (vector) of triangle faces
     # re-normalize using alternative (+,-) signs
     ij_pairs = [[0, 1], [1, 2], [2, 3], [3, 0]]
     signs = [1, -1, 1, -1]
-    a = [sign*np.cross(s[i], s[j]) for (i, j), sign in zip(ij_pairs, signs)]
+    a = [sign * np.cross(s[i], s[j]) for (i, j), sign in zip(ij_pairs, signs)]
     a = np.array(a)
 
     # local (e for element) stiffness matrix
-    ke_matrix = np.dot(a, a.transpose()) / (36. * vt)
+    ke_matrix = np.dot(a, a.transpose()) / (36.0 * vt)
 
     return ke_matrix

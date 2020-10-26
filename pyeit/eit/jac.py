@@ -16,7 +16,7 @@ from .base import EitBase
 class JAC(EitBase):
     """ A sensitivity-based EIT imaging class """
 
-    def setup(self, p=0.20, lamb=0.001, method='kotre'):
+    def setup(self, p=0.20, lamb=0.001, method="kotre"):
         """
         JAC, Jacobian matrix based reconstruction.
 
@@ -28,11 +28,7 @@ class JAC(EitBase):
             regularization methods
         """
         # passing imaging parameters
-        self.params = {
-            'p': p,
-            'lamb': lamb,
-            'method': method
-        }
+        self.params = {"p": p, "lamb": lamb, "method": method}
         # pre-compute H0 for dynamical imaging
         # H = (J.T*J + R)^(-1) * J.T
         self.H = h_matrix(self.J, p, lamb, method)
@@ -57,7 +53,7 @@ class JAC(EitBase):
         if normalize:
             dv = self.normalize(v1, v0)
         else:
-            dv = (v1 - v0)
+            dv = v1 - v0
         # s = -Hv
         ds = -np.dot(self.H, dv)
         if log_scale:
@@ -72,7 +68,7 @@ class JAC(EitBase):
     def solve_gs(self, v1, v0):
         """ solving by weighted frequency """
         a = np.dot(v1, v0) / np.dot(v0, v0)
-        dv = (v1 - a*v0)
+        dv = v1 - a * v0
         ds = -np.dot(self.H, dv)
         # return average epsilon on element
         return ds
@@ -91,15 +87,26 @@ class JAC(EitBase):
         The input (dv) and output (ds) is log-normalized
         """
         if normalize:
-            dv = np.log(np.abs(v1)/np.abs(v0)) * np.sign(v0)
+            dv = np.log(np.abs(v1) / np.abs(v0)) * np.sign(v0)
         else:
-            dv = (v1 - v0)
+            dv = v1 - v0
         # s_r = J^Tv_r
         ds = -np.dot(self.J.conj().T, dv)
         return np.exp(ds) - 1.0
 
-    def gn(self, v, x0=None, maxiter=1, gtol=1e-4, p=None, lamb=None,
-           lamb_decay=1.0, lamb_min=0, method='kotre', verbose=False):
+    def gn(
+        self,
+        v,
+        x0=None,
+        maxiter=1,
+        gtol=1e-4,
+        p=None,
+        lamb=None,
+        lamb_decay=1.0,
+        lamb_min=0,
+        method="kotre",
+        verbose=False,
+    ):
         """
         Gaussian Newton Static Solver
         You can use a different p, lamb other than the default ones in setup
@@ -139,11 +146,11 @@ class JAC(EitBase):
         if x0 is None:
             x0 = self.perm
         if p is None:
-            p = self.params['p']
+            p = self.params["p"]
         if lamb is None:
-            lamb = self.params['lamb']
+            lamb = self.params["lamb"]
         if method is None:
-            method = self.params['method']
+            method = self.params["method"]
 
         # convergence test
         x0_norm = np.linalg.norm(x0)
@@ -151,8 +158,9 @@ class JAC(EitBase):
         for i in range(maxiter):
 
             # forward solver
-            fs = self.fwd.solve_eit(self.ex_mat, step=self.step, perm=x0,
-                                    parser=self.parser)
+            fs = self.fwd.solve_eit(
+                self.ex_mat, step=self.step, perm=x0, parser=self.parser
+            )
             # Residual
             r0 = v - fs.v
             jac = fs.jac
@@ -170,7 +178,7 @@ class JAC(EitBase):
                 break
 
             if verbose:
-                print('iter = %d, lamb = %f, gtol = %f' % (i, lamb, c))
+                print("iter = %d, lamb = %f, gtol = %f" % (i, lamb, c))
 
             # update regularization parameter
             # lambda can be given in user defined decreasing lists
@@ -196,7 +204,7 @@ class JAC(EitBase):
         return np.dot(d_mat, ds)
 
 
-def h_matrix(jac, p, lamb, method='kotre'):
+def h_matrix(jac, p, lamb, method="kotre"):
     """
     JAC method of dynamic EIT solver:
         H = (J.T*J + lamb*R)^(-1) * J.T
@@ -216,13 +224,13 @@ def h_matrix(jac, p, lamb, method='kotre'):
         pseudo-inverse matrix of JAC
     """
     j_w_j = np.dot(jac.transpose(), jac)
-    if method == 'kotre':
+    if method == "kotre":
         # see adler-dai-lionheart-2007
         # p=0   : noise distribute on the boundary ('dgn')
         # p=0.5 : noise distribute on the middle
         # p=1   : noise distribute on the center ('lm')
-        r_mat = np.diag(np.diag(j_w_j))**p
-    elif method == 'lm':
+        r_mat = np.diag(np.diag(j_w_j)) ** p
+    elif method == "lm":
         # Marquardt–Levenberg, 'lm' for short
         # or can be called NOSER, DLS
         r_mat = np.diag(np.diag(j_w_j))
@@ -231,7 +239,7 @@ def h_matrix(jac, p, lamb, method='kotre'):
         r_mat = np.eye(jac.shape[1])
 
     # build H
-    h_mat = np.dot(la.inv(j_w_j + lamb*r_mat), jac.transpose())
+    h_mat = np.dot(la.inv(j_w_j + lamb * r_mat), jac.transpose())
     return h_mat
 
 

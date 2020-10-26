@@ -44,13 +44,13 @@ def ellipse(pts, pc=None, ab=None):
     if pc is None:
         pc = [0, 0]
     if ab is None:
-        ab = [1., 2.]
-    return dist((pts - pc)/ab) - 1.0
+        ab = [1.0, 2.0]
+    return dist((pts - pc) / ab) - 1.0
 
 
 def unit_circle(pts):
     """ unit circle at (0,0) """
-    return circle(pts, r=1.)
+    return circle(pts, r=1.0)
 
 
 def box_circle(pts):
@@ -142,13 +142,13 @@ def rectangle(pts, p1=None, p2=None):
 
     # 1, 2, 3, 4 Quadrant outside-points smooth distance
     ix1 = np.logical_and(ix_right, iy_above)
-    d[ix1] = np.sqrt(d2x[ix1]**2 + d2y[ix1]**2)
+    d[ix1] = np.sqrt(d2x[ix1] ** 2 + d2y[ix1] ** 2)
     ix2 = np.logical_and(ix_left, iy_above)
-    d[ix2] = np.sqrt(d1x[ix2]**2 + d2y[ix2]**2)
+    d[ix2] = np.sqrt(d1x[ix2] ** 2 + d2y[ix2] ** 2)
     ix3 = np.logical_and(ix_left, iy_below)
-    d[ix3] = np.sqrt(d1x[ix3]**2 + d1y[ix3]**2)
+    d[ix3] = np.sqrt(d1x[ix3] ** 2 + d1y[ix3] ** 2)
     ix4 = np.logical_and(ix_right, iy_below)
-    d[ix4] = np.sqrt(d2x[ix4]**2 + d1y[ix4]**2)
+    d[ix4] = np.sqrt(d2x[ix4] ** 2 + d1y[ix4] ** 2)
 
     return d
 
@@ -175,10 +175,10 @@ def fix_points_fd(fd, n_el=16, pc=None):
 
     # initialize points
     r = 10.0
-    theta = 2. * np.pi * np.arange(n_el) / float(n_el)
+    theta = 2.0 * np.pi * np.arange(n_el) / float(n_el)
     # add offset of theta
     # theta += theta[1] / 2.0
-    p_fix = [[-r*np.cos(th), r*np.sin(th)] for th in theta]
+    p_fix = [[-r * np.cos(th), r * np.sin(th)] for th in theta]
     pts = np.array(p_fix) + pc
 
     # project back on edges
@@ -192,7 +192,7 @@ def fix_points_fd(fd, n_el=16, pc=None):
         pts_new = edge_project(pts, fd)
         # project on rays
         r = dist(pts_new)
-        pts_new = [[-ri*np.cos(ti), ri*np.sin(ti)] for ri, ti in zip(r, theta)]
+        pts_new = [[-ri * np.cos(ti), ri * np.sin(ti)] for ri, ti in zip(r, theta)]
         pts_new = np.array(pts_new)
         # check convergence
         c = np.sum(dist(pts_new - pts)) < d_eps or niter > max_iter
@@ -201,7 +201,7 @@ def fix_points_fd(fd, n_el=16, pc=None):
     return pts_new
 
 
-def fix_points_circle(pc=None, offset=0, r=1., ppl=16):
+def fix_points_circle(pc=None, offset=0, r=1.0, ppl=16):
     """
     return fixed and uniformly distributed points on
     a circle with radius r
@@ -222,13 +222,13 @@ def fix_points_circle(pc=None, offset=0, r=1., ppl=16):
     if pc is None:
         pc = [0, 0]
 
-    delta_theta = 2. * np.pi / float(ppl)
+    delta_theta = 2.0 * np.pi / float(ppl)
     theta = np.arange(ppl) * delta_theta + delta_theta * offset
-    p_fix = [[-r*np.cos(th), r*np.sin(th)] for th in theta]
+    p_fix = [[-r * np.cos(th), r * np.sin(th)] for th in theta]
     return np.array(p_fix) + pc
 
 
-def fix_points_ball(pc=None, r=1., z=0., n_el=16):
+def fix_points_ball(pc=None, r=1.0, z=0.0, n_el=16):
     """
     return fixed and uniformly distributed points on
     a circle with radius r
@@ -251,9 +251,9 @@ def fix_points_ball(pc=None, r=1., z=0., n_el=16):
     if pc is None:
         pc = [0, 0, 0]
 
-    ry = np.sqrt(r**2 - z**2)
-    theta = 2. * np.pi * np.arange(n_el) / float(n_el)
-    p_fix = [[ry*np.sin(th), ry*np.cos(th), z] for th in theta]
+    ry = np.sqrt(r ** 2 - z ** 2)
+    theta = 2.0 * np.pi * np.arange(n_el) / float(n_el)
+    p_fix = [[ry * np.sin(th), ry * np.cos(th), z] for th in theta]
     return np.array(p_fix) + pc
 
 

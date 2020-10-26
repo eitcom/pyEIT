@@ -17,8 +17,8 @@ bbox = [[-1, -1, -1], [1, 1, 1]]
 mesh_obj, el_pos = mesh.create(h0=0.15, bbox=bbox)
 
 # report the status of the 2D mesh
-pts = mesh_obj['node']
-tri = mesh_obj['element']
+pts = mesh_obj["node"]
+tri = mesh_obj["element"]
 quality.stats(pts, tri)
 
 """ 1. FEM forward simulations """
@@ -33,9 +33,9 @@ fwd = Forward(mesh_obj, el_pos)
 ex_line = ex_mat[1].ravel()
 
 # change alpha
-anomaly = [{'x': 0.40, 'y': 0.40, 'z': 0.0, 'd': 0.30, 'perm': 100.0}]
+anomaly = [{"x": 0.40, "y": 0.40, "z": 0.0, "d": 0.30, "perm": 100.0}]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
-tri_perm = mesh_new['perm']
+tri_perm = mesh_new["perm"]
 node_perm = sim2pts(pts, tri, np.real(tri_perm))
 
 # solving once using fem

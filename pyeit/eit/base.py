@@ -15,13 +15,21 @@ from .fem import Forward
 from .utils import eit_scan_lines
 
 
-class EitBase():
+class EitBase:
     """
     A base EIT solver.
     """
 
-    def __init__(self, mesh, el_pos, ex_mat=None, step=1, perm=None,
-                 jac_normalized=False, parser='std'):
+    def __init__(
+        self,
+        mesh,
+        el_pos,
+        ex_mat=None,
+        step=1,
+        perm=None,
+        jac_normalized=False,
+        parser="std",
+    ):
         """
         Parameters
         ----------
@@ -48,7 +56,7 @@ class EitBase():
         if ex_mat is None:
             ex_mat = eit_scan_lines(len(el_pos), 8)
         if perm is None:
-            perm = mesh['perm']
+            perm = mesh["perm"]
 
         # build forward solver
         fwd = Forward(mesh, el_pos)
@@ -56,8 +64,8 @@ class EitBase():
 
         # solving mesh structure
         self.mesh = mesh
-        self.pts = mesh['node']
-        self.tri = mesh['element']
+        self.pts = mesh["node"]
+        self.tri = mesh["element"]
 
         # shape of the mesh
         self.no_num, self.n_dim = self.pts.shape
@@ -76,8 +84,7 @@ class EitBase():
         self.step = step
 
         # solving Jacobian using uniform sigma distribution
-        res = fwd.solve_eit(ex_mat, step=step, perm=self.perm,
-                            parser=self.parser)
+        res = fwd.solve_eit(ex_mat, step=step, perm=self.perm, parser=self.parser)
         self.J, self.v0, self.B = res.jac, res.v, res.b_matrix
 
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])

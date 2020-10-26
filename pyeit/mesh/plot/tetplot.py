@@ -48,9 +48,15 @@ void main()
 class TetPlotVisual(Visual):
     """ template """
 
-    def __init__(self, points, simplices, vertex_color=None,
-                 mask_color=None, alpha=1.0,
-                 mode='triangles'):
+    def __init__(
+        self,
+        points,
+        simplices,
+        vertex_color=None,
+        mask_color=None,
+        alpha=1.0,
+        mode="triangles",
+    ):
         """ initialize tetrahedra face plot
 
         Parameters
@@ -67,7 +73,7 @@ class TetPlotVisual(Visual):
         Visual.__init__(self, vcode=vert, fcode=frag)
 
         # set data
-        self.shared_program.vert['position'] = gloo.VertexBuffer(points)
+        self.shared_program.vert["position"] = gloo.VertexBuffer(points)
         if vertex_color is None:
             vertex_color = np.ones((points.shape[0], 4), dtype=np.float32)
         else:
@@ -78,29 +84,31 @@ class TetPlotVisual(Visual):
                 v = np.repeat(f, 4, axis=1)
                 v[:, -1] = 1.0
                 vertex_color = v.astype(np.float32)
-        self.shared_program['a_color'] = vertex_color
+        self.shared_program["a_color"] = vertex_color
 
         # mask colors, alpha channel is not used when mask_color is given.
         if mask_color is None:
             mask_color = [1.0, 1.0, 1.0, alpha]
-        self.shared_program['u_color'] = mask_color
+        self.shared_program["u_color"] = mask_color
 
         # build buffer
-        if mode == 'triangles':
+        if mode == "triangles":
             vbo = sim2tri(simplices)
-        elif mode == 'lines':
+        elif mode == "lines":
             vbo = sim2edge(simplices)
         else:
-            raise ValueError('Drawing mode = ' + mode + ' not supported')
+            raise ValueError("Drawing mode = " + mode + " not supported")
         self._index_buffer = gloo.IndexBuffer(vbo)
 
         # config OpenGL, 'translucent' or 'additive'
-        self.set_gl_state('additive',
-                          blend=True,
-                          depth_test=False,
-                          cull_face=False,
-                          polygon_offset_fill=False,
-                          polygon_offset=(1, 1))
+        self.set_gl_state(
+            "additive",
+            blend=True,
+            depth_test=False,
+            cull_face=False,
+            polygon_offset_fill=False,
+            polygon_offset=(1, 1),
+        )
         self._draw_mode = mode
 
     @staticmethod
@@ -111,12 +119,13 @@ class TetPlotVisual(Visual):
         # have to sort the mesh triangles back-to-front before each draw.
         tr = view.transforms
         view_vert = view.view_program.vert
-        view_vert['visual_to_doc'] = tr.get_transform('visual', 'document')
-        view_vert['doc_to_render'] = tr.get_transform('document', 'render')
+        view_vert["visual_to_doc"] = tr.get_transform("visual", "document")
+        view_vert["doc_to_render"] = tr.get_transform("document", "render")
 
 
-def tetplot(points, simplices, vertex_color=None,
-            edge_color=None, alpha=1.0, axis=True):
+def tetplot(
+    points, simplices, vertex_color=None, edge_color=None, alpha=1.0, axis=True
+):
     """ main function for tetplot """
     TetPlot = scene.visuals.create_visual_node(TetPlotVisual)
 
@@ -126,11 +135,11 @@ def tetplot(points, simplices, vertex_color=None,
 
     # The real-things : plot using scene
     # build canvas
-    canvas = scene.SceneCanvas(keys='interactive', show=True)
+    canvas = scene.SceneCanvas(keys="interactive", show=True)
 
     # Add a ViewBox to let the user zoom/rotate
     view = canvas.central_widget.add_view()
-    view.camera = 'turntable'
+    view.camera = "turntable"
     view.camera.fov = 50
     view.camera.distance = 3
 
@@ -140,18 +149,30 @@ def tetplot(points, simplices, vertex_color=None,
     # drawing only triangles
     # 1. turn off mask_color, default = [1.0, 1.0, 1.0, alpha]
     # 2. mode = 'triangles'
-    TetPlot(pts_float32, sim_uint32, vertex_color,
-            mask_color=None, alpha=alpha, mode='triangles',
-            parent=view.scene)
+    TetPlot(
+        pts_float32,
+        sim_uint32,
+        vertex_color,
+        mask_color=None,
+        alpha=alpha,
+        mode="triangles",
+        parent=view.scene,
+    )
 
     # drawing only lines
     # 1. turn off vertex_color, default = [[1.0, 1.0, 1.0, 1.0]*N]
     # 2. mode = 'lines'
     # 3. alpha channel is specified instead of mask_color
     if edge_color is not None:
-        TetPlot(pts_float32, sim_uint32, vertex_color=None,
-                mask_color=edge_color, alpha=alpha, mode='lines',
-                parent=view.scene)
+        TetPlot(
+            pts_float32,
+            sim_uint32,
+            vertex_color=None,
+            mask_color=edge_color,
+            alpha=alpha,
+            mode="lines",
+            parent=view.scene,
+        )
 
     # show axis
     if axis:
@@ -164,23 +185,22 @@ def tetplot(points, simplices, vertex_color=None,
 def blue_red_colormap(f):
     """ mapping vector to blue (-) red (+) color map """
     # convert vertex_color
-    cdict1 = {'red':   ((0.0, 0.0, 0.0),
-                        (0.5, 0.0, 0.1),
-                        (1.0, 1.0, 1.0)),
-              'green': ((0.0, 0.0, 0.0),
-                        (1.0, 0.0, 0.0)),
-              'blue':  ((0.0, 1.0, 1.0),
-                        (0.5, 0.1, 0.0),
-                        (1.0, 0.0, 0.0))}
-    cdict1['alpha'] = ((0.00, 1.0, 1.0),
-                       (0.25, 0.6, 0.6),
-                       (0.50, 0.0, 0.0),
-                       (0.75, 0.6, 0.6),
-                       (1.00, 1.0, 1.0))
+    cdict1 = {
+        "red": ((0.0, 0.0, 0.0), (0.5, 0.0, 0.1), (1.0, 1.0, 1.0)),
+        "green": ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0)),
+        "blue": ((0.0, 1.0, 1.0), (0.5, 0.1, 0.0), (1.0, 0.0, 0.0)),
+    }
+    cdict1["alpha"] = (
+        (0.00, 1.0, 1.0),
+        (0.25, 0.6, 0.6),
+        (0.50, 0.0, 0.0),
+        (0.75, 0.6, 0.6),
+        (1.00, 1.0, 1.0),
+    )
 
     def blue_red():
         """ interpolate blue red color """
-        return LinearSegmentedColormap('BlueRed', cdict1)
+        return LinearSegmentedColormap("BlueRed", cdict1)
 
     # map vector to RGBA
     maxima = np.max(np.abs(f))
@@ -193,19 +213,22 @@ def blue_red_colormap(f):
 
 
 # demo
-if __name__ == '__main__':
+if __name__ == "__main__":
     if sys.flags.interactive != 1:
         # location of points
-        pts = np.array([(0.0, 0.0, 0.0),
-                        (1.0, 0.0, 0.0),
-                        (0.0, 1.0, 0.0),
-                        (0.0, 0.0, 1.0),
-                        (1.0, 1.0, 1.0)], dtype=np.float32)
+        pts = np.array(
+            [
+                (0.0, 0.0, 0.0),
+                (1.0, 0.0, 0.0),
+                (0.0, 1.0, 0.0),
+                (0.0, 0.0, 1.0),
+                (1.0, 1.0, 1.0),
+            ],
+            dtype=np.float32,
+        )
 
         # connectivity of two tetrahedrons
-        sim = np.array([(0, 1, 2, 3),
-                        (1, 3, 2, 4)], dtype=np.uint32)
+        sim = np.array([(0, 1, 2, 3), (1, 3, 2, 4)], dtype=np.uint32)
 
         # plot
-        tetplot(pts, sim, edge_color=[0.2, 0.2, 1.0, 0.2],
-                alpha=0.1, axis=False)
+        tetplot(pts, sim, edge_color=[0.2, 0.2, 1.0, 0.2], alpha=0.1, axis=False)

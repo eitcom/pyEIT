@@ -3,8 +3,8 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - pylint
   - pytest
+  - pytest-cov
   - numpy
   - scipy
   - pandas
