@@ -37,20 +37,19 @@ def fmmu_index(n_el=16, dist=8, step=1):
     left_el = [13, 14, 15, 0, 1, 2, 3, 4]
     right_el = [5, 6, 7, 8, 9, 10, 11, 12]
 
-
     m_array = []
     for a in range(n_el):
         b = (a + dist) % n_el
-        for j in range(a, a+n_el):
+        for j in range(a, a + n_el):
             m = j % n_el
-            n = (j+step) % n_el
+            n = (j + step) % n_el
             if not (m in [a, b] or n in [a, b]):
-                diff_pair = [n, m] # v_n - v_m
+                diff_pair = [n, m]  # v_n - v_m
                 m_array.append(diff_pair)
 
     m_array = np.array(m_array)
     N = m_array.shape[0]
-    left_sel = np.zeros(N, dtype=np.bool) # 192
+    left_sel = np.zeros(N, dtype=np.bool)  # 192
     right_sel = np.zeros(N, dtype=np.bool)
     for i, nm in enumerate(m_array):
         n = nm[0]

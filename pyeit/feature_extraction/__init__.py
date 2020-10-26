@@ -7,8 +7,4 @@ EIT dynamic images and static properties.
 from .static_r import ati, fmmu_index, ati_lr, ati_df
 from .mesh_geometry import SimpleMeshGeometry
 
-__all__ = ['ati',
-           'fmmu_index',
-           'ati_lr',
-           'ati_df',
-           'SimpleMeshGeometry']
+__all__ = ["ati", "fmmu_index", "ati_lr", "ati_df", "SimpleMeshGeometry"]

@@ -13,7 +13,7 @@ import pkg_resources
 from pyeit.io import mes
 
 
-class SimpleMeshGeometry():
+class SimpleMeshGeometry:
     """
     extract segments from meshes using:
     5-13 as the line for left and right hemisphere
@@ -26,7 +26,7 @@ class SimpleMeshGeometry():
     """
 
     # constructor
-    def __init__(self, mesh, el_pos, method='element'):
+    def __init__(self, mesh, el_pos, method="element"):
         """
         Parameters
         ----------
@@ -37,16 +37,16 @@ class SimpleMeshGeometry():
         method : string
             'element', 'node'
         """
-        if method not in ['element', 'node']:
-            raise TypeError('method do not recognized.')
-        if method == 'element':
+        if method not in ["element", "node"]:
+            raise TypeError("method do not recognized.")
+        if method == "element":
             # find the center of elements
             self.ts = self._tri_centers(mesh)
         else:
-            self.ts = mesh['node']
+            self.ts = mesh["node"]
 
         # vertical cut (from 5->13)
-        pts = mesh['node']
+        pts = mesh["node"]
         vert = np.array([pts[el_pos[12]], pts[el_pos[4]]])
         self.vert_vec = vert[1] - vert[0]
 
@@ -109,8 +109,8 @@ class SimpleMeshGeometry():
         """
         calculate centers (x,y) of each triangles
         """
-        el2no = mesh['element']
-        no2xy = mesh['node']
+        el2no = mesh["element"]
+        no2xy = mesh["node"]
         ts = np.mean(no2xy[el2no], axis=1)
         return ts
 
@@ -127,11 +127,11 @@ class SimpleMeshGeometry():
 
         find whether a pts is on the left of a line
         """
-        proj = vline[0]*vpoint[1] - vline[1]*vpoint[0]
+        proj = vline[0] * vpoint[1] - vline[1] * vpoint[0]
         return proj >= 0
 
 
-class FitEllipse():
+class FitEllipse:
     """
     find the enclosing ellipse of a set of points
 
@@ -178,7 +178,7 @@ class FitEllipse():
         """
         x = x[:, np.newaxis]
         y = y[:, np.newaxis]
-        D = np.hstack((x*x, x*y, y*y, x, y, np.ones_like(x)))
+        D = np.hstack((x * x, x * y, y * y, x, y, np.ones_like(x)))
         S = np.dot(D.T, D)
         C = np.zeros([6, 6])
         C[0, 2] = C[2, 0] = 2
@@ -195,10 +195,10 @@ class FitEllipse():
         -------
         x_center, y_center
         """
-        b, c, d, f, a = a[1]/2, a[2], a[3]/2, a[4]/2, a[0]
-        num = b*b - a*c
-        x0 = (c*d-b*f)/num
-        y0 = (a*f-b*d)/num
+        b, c, d, f, a = a[1] / 2, a[2], a[3] / 2, a[4] / 2, a[0]
+        num = b * b - a * c
+        x0 = (c * d - b * f) / num
+        y0 = (a * f - b * d) / num
         return np.array([x0, y0])
 
     @staticmethod
@@ -208,12 +208,16 @@ class FitEllipse():
         -------
         semiminor, semimajor axis length
         """
-        b, c, d, f, g, a = a[1]/2, a[2], a[3]/2, a[4]/2, a[5], a[0]
-        up = 2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g)
-        down1 = (b*b-a*c)*((c-a)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
-        down2 = (b*b-a*c)*((a-c)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
-        res1 = np.sqrt(up/down1)
-        res2 = np.sqrt(up/down2)
+        b, c, d, f, g, a = a[1] / 2, a[2], a[3] / 2, a[4] / 2, a[5], a[0]
+        up = 2 * (a * f * f + c * d * d + g * b * b - 2 * b * d * f - a * c * g)
+        down1 = (b * b - a * c) * (
+            (c - a) * np.sqrt(1 + 4 * b * b / ((a - c) * (a - c))) - (c + a)
+        )
+        down2 = (b * b - a * c) * (
+            (a - c) * np.sqrt(1 + 4 * b * b / ((a - c) * (a - c))) - (c + a)
+        )
+        res1 = np.sqrt(up / down1)
+        res2 = np.sqrt(up / down2)
         return np.array([res1, res2])
 
     @staticmethod
@@ -223,8 +227,8 @@ class FitEllipse():
         -------
         ellipse angle in radius
         """
-        b, c, a = a[1]/2, a[2], a[0]
-        return 0.5*np.arctan(2*b/(a-c))
+        b, c, a = a[1] / 2, a[2], a[0]
+        return 0.5 * np.arctan(2 * b / (a - c))
 
     @staticmethod
     def ellipse_angle_of_rotation2(a):
@@ -232,23 +236,22 @@ class FitEllipse():
         see:
         [1] http://mathworld.wolfram.com/Ellipse.html
         """
-        b, c, a = a[1]/2, a[2], a[0]
+        b, c, a = a[1] / 2, a[2], a[0]
         if b == 0:
             if a > c:
                 phi = 0
             else:
-                phi = np.pi/2
+                phi = np.pi / 2
         else:
             if a > c:
-                phi = np.arctan(2*b/(a-c))/2
+                phi = np.arctan(2 * b / (a - c)) / 2
             else:
-                phi = np.pi/2 + np.arctan(2*b/(a-c))/2
+                phi = np.pi / 2 + np.arctan(2 * b / (a - c)) / 2
 
         return phi
 
 
-def ellipse_points(x_cent=0, y_cent=0, semimaj=1, semimin=1, phi=0,
-                   theta_num=1e3):
+def ellipse_points(x_cent=0, y_cent=0, semimaj=1, semimin=1, phi=0, theta_num=1e3):
     """
     see:
     https://casper.berkeley.edu/astrobaki/index.php/Plotting_Ellipses_in_Python
@@ -281,14 +284,13 @@ def ellipse_points(x_cent=0, y_cent=0, semimaj=1, semimin=1, phi=0,
 
     """
     # Generate data for ellipse structure
-    theta = np.linspace(0, 2*np.pi, np.int(theta_num))
-    r = 1 / np.sqrt((np.cos(theta))**2 + (np.sin(theta))**2)
-    x = r*np.cos(theta)
-    y = r*np.sin(theta)
+    theta = np.linspace(0, 2 * np.pi, np.int(theta_num))
+    r = 1 / np.sqrt((np.cos(theta)) ** 2 + (np.sin(theta)) ** 2)
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
     data = np.array([x, y])
     S = np.array([[semimaj, 0], [0, semimin]])
-    R = np.array([[np.cos(phi), -np.sin(phi)],
-                  [np.sin(phi), np.cos(phi)]])
+    R = np.array([[np.cos(phi), -np.sin(phi)], [np.sin(phi), np.cos(phi)]])
     T = np.dot(R, S)
     data = np.dot(T, data)
     data[0] += x_cent
@@ -300,13 +302,13 @@ def ellipse_points(x_cent=0, y_cent=0, semimaj=1, semimin=1, phi=0,
 def demo():
     """demos"""
     # load package mesh data from pyEIT (data/model/*.mes)
-    mstr = pkg_resources.resource_filename('pyeit', 'data/model/DLS2.mes')
+    mstr = pkg_resources.resource_filename("pyeit", "data/model/DLS2.mes")
     print(mstr)
 
     # load mesh
     mesh, el_pos = mes.load(mstr)
-    pts = mesh['node']
-    tri = mesh['element']
+    pts = mesh["node"]
+    tri = mesh["element"]
     x, y = pts[:, 0], pts[:, 1]
 
     # 1. demo using ellipse fit
@@ -323,36 +325,35 @@ def demo():
 
     # plot mesh
     fig, ax = plt.subplots(figsize=(9, 6))
-    mesh_image = mstr.replace('mes', 'bmp')
+    mesh_image = mstr.replace("mes", "bmp")
     im = plt.imread(mesh_image)
     ax.imshow(im)
-    ax.triplot(x, y, tri, 'g-', lw=1.0, alpha=0.5)
-    ax.set_aspect('equal')
+    ax.triplot(x, y, tri, "g-", lw=1.0, alpha=0.5)
+    ax.set_aspect("equal")
     # plot convex hulls of mesh
-    ax.plot(cvx, cvy, 'go')
-    ax.plot(epts[:, 0], epts[:, 1], 'b-', lw=2.0)
+    ax.plot(cvx, cvy, "go")
+    ax.plot(epts[:, 0], epts[:, 1], "b-", lw=2.0)
     # plot electrodes and its numbering
-    ax.plot(pts[el_pos, 0], pts[el_pos, 1], 'bo')
+    ax.plot(pts[el_pos, 0], pts[el_pos, 1], "bo")
     for i, e in enumerate(el_pos):
-        ax.text(pts[e, 0], pts[e, 1], np.str(i+1), color='r')
+        ax.text(pts[e, 0], pts[e, 1], np.str(i + 1), color="r")
 
     # 2. demo using simple fit
     mg = SimpleMeshGeometry(mesh, el_pos)
     perm = np.zeros(tri.shape[0])
     fig, ax = plt.subplots(figsize=(9, 6))
-    mesh_image = mstr.replace('mes', 'bmp')
+    mesh_image = mstr.replace("mes", "bmp")
     im = plt.imread(mesh_image)
     ax.imshow(im)
     # plot regions
     perm[mg.left()] = 1.0
     perm[mg.down_right()] = 2.0
-    img = ax.tripcolor(pts[:, 0], pts[:, 1], tri, perm,
-                       shading='flat', alpha=0.50)
+    img = ax.tripcolor(pts[:, 0], pts[:, 1], tri, perm, shading="flat", alpha=0.50)
     # plot electrodes and its numbering
-    ax.plot(pts[el_pos, 0], pts[el_pos, 1], 'bo')
-    ax.set_title('left = 1.0, down right = 2.0')
+    ax.plot(pts[el_pos, 0], pts[el_pos, 1], "bo")
+    ax.set_title("left = 1.0, down right = 2.0")
     for i, e in enumerate(el_pos):
-        ax.text(pts[e, 0], pts[e, 1], np.str(i+1), color='r', size=12)
+        ax.text(pts[e, 0], pts[e, 1], np.str(i + 1), color="r", size=12)
     fig.colorbar(img)
 
     plt.show()

@@ -50,7 +50,7 @@ class Forward:
         self.n_tri, self.n_vertices = self.tri.shape
         self.ne = el_pos.size
 
-    def solve_eit(self, ex_mat=None, step=1, perm=None, parser='std'):
+    def solve_eit(self, ex_mat=None, step=1, perm=None, parser="std"):
         """
         EIT simulation, generate perturbation matrix and forward v
 
@@ -152,7 +152,7 @@ class Forward:
         r_el = r_matrix[self.el_pos]
 
         # 4. solving nodes potential using boundary conditions
-        if parser == 'mit_utron':
+        if parser == "mit_utron":
             b = self._natural_boundary_mit(ex_line)
         else:
             b = self._natural_boundary(ex_line)
@@ -188,7 +188,7 @@ class Forward:
         """ MIT has only one drive coil """
         drv_coil = self.el_pos[ex_line]
         b = np.zeros((self.n_pts, 1))
-        b[drv_coil] = 1.
+        b[drv_coil] = 1.0
 
         return b
 
@@ -279,14 +279,14 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None):
     v: NDArray
         (N-1)*2 arrays of subtract_row pairs
     """
-    if parser == 'mit_utron':
+    if parser == "mit_utron":
         diff = [[m, ex_line] for m in range(n_el) if m != ex_line]
         diff_pairs = np.array(diff)
     else:
         # local node
         drv_a = ex_line[0]
         drv_b = ex_line[1]
-        i0 = drv_a if parser in ('fmmu', 'rotate_meas') else 0
+        i0 = drv_a if parser in ("fmmu", "rotate_meas") else 0
 
         # build differential pairs
         v = []
@@ -294,7 +294,7 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None):
             m = a % n_el
             n = (m + step) % n_el
             # if any of the electrodes is the stimulation electrodes
-            if not(m == drv_a or m == drv_b or n == drv_a or n == drv_b):
+            if not (m == drv_a or m == drv_b or n == drv_a or n == drv_b):
                 # the order of m, n matters
                 v.append([n, m])
 

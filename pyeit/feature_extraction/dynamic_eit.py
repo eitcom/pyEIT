@@ -9,19 +9,20 @@ from pyeit.eit import bp
 from pyeit.eit import jac
 
 
-class DynamicEIT():
+class DynamicEIT:
     """ dynamic eit imaging """
 
-    def __init__(self, mesh=None, el_pos=None, parser='et3',
-                 solver='jac', p=0.20, lamb=0.001):
+    def __init__(
+        self, mesh=None, el_pos=None, parser="et3", solver="jac", p=0.20, lamb=0.001
+    ):
         """ initialize """
-        if solver == 'jac':
-            dyna_eit = jac.JAC(mesh, el_pos, perm=1., parser=parser)
-            dyna_eit.setup(p=p, lamb=lamb, method='kotre')
+        if solver == "jac":
+            dyna_eit = jac.JAC(mesh, el_pos, perm=1.0, parser=parser)
+            dyna_eit.setup(p=p, lamb=lamb, method="kotre")
         else:
             # default: 'bp'
-            dyna_eit = bp.BP(mesh, el_pos, parser='fmmu', step=1)
-            dyna_eit.setup(weight='simple')
+            dyna_eit = bp.BP(mesh, el_pos, parser="fmmu", step=1)
+            dyna_eit.setup(weight="simple")
 
         self.dyna_eit = dyna_eit
 

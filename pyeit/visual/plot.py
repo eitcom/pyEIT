@@ -11,21 +11,30 @@ import matplotlib.pyplot as plt
 from matplotlib import dates
 
 
-def mesh_plot(mesh, el_pos, mstr='', figsize=(9, 6),
-              alpha=0.5, offset_ratio=0.075,
-              show_image=False, show_mesh=False,
-              show_electrode=True, show_number=False, show_text=True):
+def mesh_plot(
+    mesh,
+    el_pos,
+    mstr="",
+    figsize=(9, 6),
+    alpha=0.5,
+    offset_ratio=0.075,
+    show_image=False,
+    show_mesh=False,
+    show_electrode=True,
+    show_number=False,
+    show_text=True,
+):
     """plot mesh structure (base layout)"""
     # load mesh structure
-    pts = mesh['node']
-    tri = mesh['element']
+    pts = mesh["node"]
+    tri = mesh["element"]
     fig, ax = plt.subplots(figsize=figsize)
-    ax.set_facecolor('black')
-    ax.set_aspect('equal')
+    ax.set_facecolor("black")
+    ax.set_aspect("equal")
 
     # load background
     if show_image and os.path.exists(mstr):
-        image_name = mstr.replace('mes', 'bmp')
+        image_name = mstr.replace("mes", "bmp")
         im = plt.imread(image_name)
         ax.imshow(im)
     else:
@@ -38,12 +47,12 @@ def mesh_plot(mesh, el_pos, mstr='', figsize=(9, 6),
 
     # show electrodes markers
     if show_electrode:
-        ax.plot(pts[el_pos, 0], pts[el_pos, 1], 'yo')
+        ax.plot(pts[el_pos, 0], pts[el_pos, 1], "yo")
 
     # annotate electrodes numbering
     if show_number:
         for i, e in enumerate(el_pos):
-            ax.text(pts[e, 0], pts[e, 1], np.str(i+1), color='r', size=12)
+            ax.text(pts[e, 0], pts[e, 1], np.str(i + 1), color="r", size=12)
 
     # annotate (L) at offset_ratio*d beside node 0
     if show_text:
@@ -51,12 +60,12 @@ def mesh_plot(mesh, el_pos, mstr='', figsize=(9, 6),
         d = np.abs(xa - xb)
         offset = d * offset_ratio
         x, y = xa + offset, pts[el_pos[0], 1]
-        ax.text(x, y, 'L', size=20, color='w')
+        ax.text(x, y, "L", size=20, color="w")
         # enlarge the right of axes if using annotation
-        ax.set_xlim([xb - offset, xa + 2*offset])
+        ax.set_xlim([xb - offset, xa + 2 * offset])
 
     # clean up axis
-    ax.grid('off')
+    ax.grid("off")
     plt.setp(ax.get_xticklines(), visible=False)
     plt.setp(ax.get_xticklabels(), visible=False)
     plt.setp(ax.get_yticklines(), visible=False)
@@ -65,19 +74,18 @@ def mesh_plot(mesh, el_pos, mstr='', figsize=(9, 6),
     return fig, ax
 
 
-def ts_plot(ts, figsize=(6, 4), ylabel='ATI (Ohm)', ylim=None,
-            xdate_format=True):
+def ts_plot(ts, figsize=(6, 4), ylabel="ATI (Ohm)", ylim=None, xdate_format=True):
     """plot time series data"""
     fig, ax = plt.subplots(figsize=figsize)
     ax.plot(ts)
-    ax.grid('on')
+    ax.grid("on")
     ax.set_ylabel(ylabel)
     if ylim is not None:
         assert len(ylim) == 2
         ax.set_ylim(ylim)
     # for better xticklabels
     if xdate_format:
-        axis_format = dates.DateFormatter('%m/%d %H:%M')
+        axis_format = dates.DateFormatter("%m/%d %H:%M")
         ax.xaxis.set_major_formatter(axis_format)
         fig.autofmt_xdate()
 
