@@ -61,7 +61,7 @@ class ET3:
 
         # load data (RAW data are complex-valued) and build datetime
         time_array, self.data, self.adc_array = self.load()
-        self.ts = self.build_time(time_array)
+        self.ts = self.build_ts(time_array)
 
     def load(self):
         """load a frame of data (header + data)"""
@@ -98,8 +98,8 @@ class ET3:
 
         return time_array, data, adc_array
 
-    def build_time(self, time_array):
-        """convert timestamp to datetime"""
+    def build_ts(self, time_array):
+        """convert delta time (seconds) to datetime series"""
         if self.version <= 3:  # .et0, .et3
             rel_date = "1899/12/30"  # excel format
             d_seconds = time_array * 86400  # convert days to seconds
@@ -132,6 +132,7 @@ class ET3:
         # left ear, right ear, Nasopharyngeal, rectal
         columns = ["tle", "tre", "tn", "tr", "c4", "c5", "c6", "c7"]
         dp = pd.DataFrame(self.adc_array, index=self.ts, columns=columns)
+        dp = dp[~dp.index.duplicated()]
 
         if adc_filter:
             # filter auxillary sampled data
@@ -146,7 +147,6 @@ class ET3:
             dp.tn = med_outlier(dp.tn)
             dp.tr = med_outlier(dp.tr)
 
-        dp = dp[~dp.index.duplicated()]
         return dp
 
     def to_csv(self):
@@ -371,10 +371,7 @@ def get_date_from_folder(file_str):
 
 
 if __name__ == "__main__":
-    # file_name = "/data/dhca/dut/DATA.et3"
-    # file_name = "/data/dhca/subj086/data/DATA2017-06-14-18-33-57/RAWDATA.et0"
-    # file_name = "/data/dhca/subj162/data/DATA2018-07-05-13-59-51/RAWDATA.et0"
-    file_name = "/data/dhca/eh001case/data300/2020-10-29-15-36-05/EitRaw.ERD"
+    file_name = "/data/dhca/dut/DATA.et3"
 
     # 1. using raw interface:
     #    averaged transfer impedance from raw data
@@ -400,7 +397,7 @@ if __name__ == "__main__":
     ax.plot(dp.index, dp["tn"])
     axt.plot(dp.index, dp["ati"])
     ax.grid(True)
-    ax.legend(["left", "right", "nt"])
+    ax.legend(["Left ear", "Right ear", "Nasopharyngeal"])
 
     hfmt = dates.DateFormatter("%y/%m/%d %H:%M")
     ax.xaxis.set_major_formatter(hfmt)
