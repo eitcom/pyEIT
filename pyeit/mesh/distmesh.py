@@ -33,7 +33,7 @@ class DISTMESH:
         Fscale=1.2,
         verbose=False,
     ):
-        """ initial distmesh class
+        """initial distmesh class
 
         Parameters
         ----------
@@ -316,7 +316,7 @@ def bbox3d_init(h0, bbox):
 
 
 def remove_duplicate_nodes(p, pfix, geps):
-    """ remove duplicate points in p who are closed to pfix. 3D, ND compatible
+    """remove duplicate points in p who are closed to pfix. 3D, ND compatible
 
     Parameters
     ----------
@@ -342,7 +342,7 @@ def remove_duplicate_nodes(p, pfix, geps):
 def build(
     fd, fh, pfix=None, bbox=None, h0=0.1, densityctrlfreq=10, maxiter=500, verbose=False
 ):
-    """ main function for distmesh
+    """main function for distmesh
 
     See Also
     --------

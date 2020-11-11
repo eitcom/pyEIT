@@ -57,7 +57,7 @@ class TetPlotVisual(Visual):
         alpha=1.0,
         mode="triangles",
     ):
-        """ initialize tetrahedra face plot
+        """initialize tetrahedra face plot
 
         Parameters
         ----------
@@ -113,8 +113,8 @@ class TetPlotVisual(Visual):
 
     @staticmethod
     def _prepare_transforms(view):
-        """ This method is called when the user or the scenegraph has assigned
-        new transforms to this visual """
+        """This method is called when the user or the scenegraph has assigned
+        new transforms to this visual"""
         # Note we use the "additive" GL blending settings so that we do not
         # have to sort the mesh triangles back-to-front before each draw.
         tr = view.transforms

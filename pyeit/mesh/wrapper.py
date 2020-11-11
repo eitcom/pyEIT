@@ -67,7 +67,7 @@ def create(n_el=16, fd=circle, fh=area_uniform, h0=0.1, p_fix=None, bbox=None):
 
 
 def set_perm(mesh, anomaly=None, background=None):
-    """ wrapper for pyEIT interface
+    """wrapper for pyEIT interface
 
     Note
     ----
