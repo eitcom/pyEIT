@@ -38,7 +38,7 @@ def circle(pts, pc=None, r=1.0):
 
 
 def ellipse(pts, pc=None, ab=None):
-    """ Distance function for the ellipse
+    """Distance function for the ellipse
     centered at pc = [xc, yc], with a, b = [a, b]
     """
     if pc is None:
@@ -258,7 +258,7 @@ def fix_points_ball(pc=None, r=1.0, z=0.0, n_el=16):
 
 
 def dist_diff(d1, d2):
-    """ Distance function for the difference of two sets.
+    """Distance function for the difference of two sets.
 
     Parameters
     ----------
@@ -280,7 +280,7 @@ def dist_diff(d1, d2):
 
 
 def dist_intersect(d1, d2):
-    """ Distance function for the intersection of two sets.
+    """Distance function for the intersection of two sets.
 
     Parameters
     ----------
@@ -301,7 +301,7 @@ def dist_intersect(d1, d2):
 
 
 def dist_union(d1, d2):
-    """ Distance function for the union of two sets.
+    """Distance function for the union of two sets.
 
     Parameters
     ----------
@@ -322,7 +322,7 @@ def dist_union(d1, d2):
 
 
 def area_uniform(p):
-    """ uniform mesh distribution
+    """uniform mesh distribution
 
     Parameters
     ----------

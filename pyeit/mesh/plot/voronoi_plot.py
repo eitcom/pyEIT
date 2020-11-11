@@ -120,7 +120,7 @@ def voronoi(pts, tri, fd=None):
 
 
 def voronoi_plot(pts, tri, figsize=(6, 4), val=None, fd=None):
-    """ plot voronoi diagrams on bounded shape
+    """plot voronoi diagrams on bounded shape
 
     Parameters
     ----------

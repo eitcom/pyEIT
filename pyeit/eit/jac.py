@@ -34,7 +34,7 @@ class JAC(EitBase):
         self.H = h_matrix(self.J, p, lamb, method)
 
     def solve(self, v1, v0, normalize=False, log_scale=False):
-        """ dynamic imaging
+        """dynamic imaging
 
         Parameters
         ----------
@@ -189,7 +189,7 @@ class JAC(EitBase):
         return x0
 
     def project(self, ds):
-        """ project ds using spatial difference filter (deprecated)
+        """project ds using spatial difference filter (deprecated)
 
         Parameters
         ----------

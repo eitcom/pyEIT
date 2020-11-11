@@ -10,7 +10,7 @@ import scipy.linalg as la
 
 
 def dist(p):
-    """ distances to origin of nodes. '3D', 'ND' compatible
+    """distances to origin of nodes. '3D', 'ND' compatible
 
     Parameters
     ----------
