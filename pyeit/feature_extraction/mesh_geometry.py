@@ -302,7 +302,7 @@ def ellipse_points(x_cent=0, y_cent=0, semimaj=1, semimin=1, phi=0, theta_num=1e
 def demo():
     """demos"""
     # load package mesh data from pyEIT (data/model/*.mes)
-    mstr = pkg_resources.resource_filename("pyeit", "data/model/DLS2.mes")
+    mstr = pkg_resources.resource_filename("pyeit-models", "data/model/DLS2.mes")
     print(mstr)
 
     # load mesh

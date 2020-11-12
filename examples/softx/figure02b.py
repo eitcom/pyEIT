@@ -22,8 +22,8 @@ from pyeit.eit.utils import eit_scan_lines
 mesh_obj, el_pos = mesh.create(h0=0.05)
 
 # extract node, element, alpha
-pts = mesh_obj['node']
-tri = mesh_obj['element']
+pts = mesh_obj["node"]
+tri = mesh_obj["element"]
 x, y = pts[:, 0], pts[:, 1]
 quality.stats(pts, tri)
 
@@ -34,7 +34,7 @@ def calc_sens(fwd, ex_mat):
     Electrical Impedance Tomography: Tissue Properties to Image Measures
     """
     # solving EIT problem
-    p = fwd.solve_eit(ex_mat=ex_mat, parser='fmmu')
+    p = fwd.solve_eit(ex_mat=ex_mat, parser="fmmu")
     v0 = p.v
     # normalized jacobian (note: normalize affect sensitivity)
     v0 = v0[:, np.newaxis]
@@ -43,7 +43,7 @@ def calc_sens(fwd, ex_mat):
     s = np.linalg.norm(jac, axis=0)
     ae = tri_area(pts, tri)
     s = np.sqrt(s) / ae
-    assert(any(s >= 0))
+    assert any(s >= 0)
 
     se = np.log10(s)
     sn = sim2pts(pts, tri, se)
@@ -66,7 +66,7 @@ for ex_dist in ex_list:
 """ 2. Plot (elements) sensitivity """
 vmax = np.max(s)
 # vmin = np.min(s)
-vmin = vmax - vmax*0.5
+vmin = vmax - vmax * 0.5
 fig = plt.figure(figsize=(9, 3))
 gs = gridspec.GridSpec(1, N)
 ax_array = []
@@ -78,21 +78,30 @@ for ix in range(N):
     # statistics, it seems like ex_dist=4 yields the minimal std
     std = sp.std(sn)
     print("std (ex_dist=%d) = %f" % (ex_dist, std))
-    im = ax.tripcolor(x, y, tri, sn,
-                      edgecolors='none', shading='gouraud', cmap=plt.cm.Reds,
-                      antialiased=True, vmin=vmin, vmax=vmax)
+    im = ax.tripcolor(
+        x,
+        y,
+        tri,
+        sn,
+        edgecolors="none",
+        shading="gouraud",
+        cmap=plt.cm.Reds,
+        antialiased=True,
+        vmin=vmin,
+        vmax=vmax,
+    )
     # annotate
-    ax.set_title('skip=' + str(ex_dist-1))
-    ax.set_aspect('equal')
+    ax.set_title("skip=" + str(ex_dist - 1))
+    ax.set_aspect("equal")
     ax.set_ylim([-1.2, 1.2])
     ax.set_xlim([-1.2, 1.2])
-    ax.axis('off')
+    ax.axis("off")
 
-plt.colorbar(im, ax=ax_array, orientation='horizontal', shrink=0.7)
+plt.colorbar(im, ax=ax_array, orientation="horizontal", shrink=0.7)
 
 # fig.savefig('demo_sens.png', dpi=96)
 # fig.set_size_inches(5, 5)
 # fig.tight_layout()
 fig.subplots_adjust(top=0.975, bottom=0.275, left=0.01, right=0.975)
-fig.savefig('figure02b.pdf', dpi=300)
+fig.savefig("figure02b.pdf", dpi=300)
 plt.show()
