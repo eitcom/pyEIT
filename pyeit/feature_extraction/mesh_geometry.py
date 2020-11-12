@@ -9,7 +9,7 @@ from numpy.linalg import eig, inv
 from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
 
-import pkg_resources
+from pkg_resources import resource_filename
 from pyeit.io import mes
 
 
@@ -299,10 +299,9 @@ def ellipse_points(x_cent=0, y_cent=0, semimaj=1, semimin=1, phi=0, theta_num=1e
     return data.transpose()
 
 
-def demo():
-    """demos"""
+if __name__ == "__main__":
     # load package mesh data from pyEIT (data/model/*.mes)
-    mstr = pkg_resources.resource_filename("pyeit", "data/model/DLS2.mes")
+    mstr = resource_filename("pyeit-models", "data/model/DLS2.mes")
     print(mstr)
 
     # load mesh
@@ -357,7 +356,3 @@ def demo():
     fig.colorbar(img)
 
     plt.show()
-
-
-if __name__ == "__main__":
-    demo()
