@@ -14,7 +14,7 @@ import ctypes
 import struct
 import numpy as np
 import matplotlib.pyplot as plt
-import pkg_resources
+from pkg_resources import resource_filename
 
 
 def load(fstr, mirror=False):
@@ -160,7 +160,7 @@ def extract_el(fh):
 
 if __name__ == "__main__":
     # How to load and use a .mes file (github.com/liubenyuan/pyeit-models)
-    mstr = pkg_resources.resource_filename("pyeit-models", "data/model/DLS2.mes")
+    mstr = resource_filename("pyeit-models", "data/model/DLS2.mes")
     mesh_obj, el_pos = load(fstr=mstr)
 
     # print the size
