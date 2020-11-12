@@ -12,7 +12,6 @@ Please cite the following paper if you are using et3 in your research:
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from os.path import splitext
-import re
 from struct import unpack
 
 import numpy as np
@@ -353,21 +352,6 @@ def trim_pattern():
         idx[j + 7] = False
 
     return idx
-
-
-def get_date_from_folder(file_str):
-    """
-    get datetime from file folder of et3, i.e., 'DATA2015-01-29-16-57-30/'
-    """
-    f = file_str.strip()
-    f = f[:-1]  # remove trailing '/'
-    f = f.replace("DATA", "")
-    # replace the 3rd occurrence of '-'
-    w = [m.start() for m in re.finditer(r"-", f)][2]
-    # before w do not change, after w, '-' -> ':'
-    f = f[:w] + " " + f[w + 1 :].replace("-", ":")
-    # now f becomes '2015-01-29 16:57:30'
-    return pd.to_datetime(f)
 
 
 if __name__ == "__main__":
