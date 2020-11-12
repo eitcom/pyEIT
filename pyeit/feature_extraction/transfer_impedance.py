@@ -25,6 +25,11 @@ def ati(x):
     return v
 
 
+def ati_df(x):
+    """ ati of DataFrame """
+    return x.abs().sum(skipna=False) / 192.0
+
+
 def fmmu_index(n_el=16, dist=8, step=1):
     """
     generate FMMU patterns and left, right index
@@ -66,11 +71,6 @@ def ati_lr(x, sel):
     x_sel = np.nanmean(np.abs(x[sel]))
 
     return x_sel
-
-
-def ati_df(x):
-    """ ati of DataFrame """
-    return x.abs().sum(skipna=False) / 192.0
 
 
 def rchannel(x, offset=0):

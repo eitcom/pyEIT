@@ -14,9 +14,7 @@ import ctypes
 import struct
 import numpy as np
 import matplotlib.pyplot as plt
-
-# import pkg_resources
-# mstr = pkg_resources.resource_filename('pyeit', 'data/model/DLS2.mes')
+import pkg_resources
 
 
 def load(fstr, mirror=False):
@@ -160,11 +158,10 @@ def extract_el(fh):
     return el_pos
 
 
-def demo():
-    """demo for mes"""
-    # a demo on how to load a .mes file
-    mesh_file = "../data/model/DLS2.mes"
-    mesh_obj, el_pos = load(fstr=mesh_file)
+if __name__ == "__main__":
+    # How to load and use a .mes file (github.com/liubenyuan/pyeit-models)
+    mstr = pkg_resources.resource_filename("pyeit-models", "data/model/DLS2.mes")
+    mesh_obj, el_pos = load(fstr=mstr)
 
     # print the size
     e, pts = mesh_obj["element"], mesh_obj["node"]
@@ -182,8 +179,8 @@ def demo():
 
     # bmp and mesh overlay
     fig, ax = plt.subplots(figsize=(6, 6))
-    image_name = mesh_file.replace("mes", "bmp")
-    im = plt.imread(image_name)
+    imstr = mstr.replace("mes", "bmp")
+    im = plt.imread(imstr)
     ax.imshow(im)
     ax.set_aspect("equal")
 
@@ -194,10 +191,3 @@ def demo():
         ax.text(pts[el, 0], pts[el, 1], str(i + 1), color="r")
     ax.axis("off")
     plt.show()
-
-    return fig, ax
-
-
-# demo
-if __name__ == "__main__":
-    demo()

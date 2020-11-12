@@ -13,7 +13,7 @@ class DynamicEIT:
     """ dynamic eit imaging """
 
     def __init__(
-        self, mesh=None, el_pos=None, parser="et3", solver="jac", p=0.20, lamb=0.001
+        self, mesh=None, el_pos=None, parser="fmmu", solver="jac", p=0.20, lamb=0.001
     ):
         """ initialize """
         if solver == "jac":
