@@ -21,47 +21,19 @@ class BP(EitBase):
             weights = self.simple_weight(self.B.shape[0])
             self.H = weights * self.B
 
-    def solve(self, v1, v0=None, normalize=True):
-        """
-        back projection : mapping boundary data on element
-        (note) normalize method affect the shape (resolution) of bp
-
-        Parameters
-        ----------
-        v1: NDArray
-            current frame
-        v0: NDArray, optional
-            referenced frame, d = H(v1 - v0)
-        normalize: Boolean
-            true for conducting normalization
-
-        Returns
-        -------
-        ds: NDArray
-            real-valued NDArray, changes of conductivities
-        """
-        # without specifying any reference frame
-        if v0 is None:
-            v0 = self.v0
-        # choose normalize method, we use sign by default
-        if normalize:
-            vn = -(v1 - v0) / np.sign(self.v0)
-        else:
-            vn = v1 - v0
-        # smearing
-        ds = np.dot(self.H.transpose(), vn)
-        return np.real(ds)
+        # BP: H is the smear matrix B, which must be transposed for node imaging.
+        self.H = self.H.T
 
     def map(self, v):
         """ return Hx """
-        x = -v / np.sign(self.v0)
-        return np.dot(self.H.transpose(), x)
+        x = -v / self.v0_sign
+        return np.dot(self.H, x)
 
     def solve_gs(self, v1, v0):
         """ solving using gram-schmidt """
         a = np.dot(v1, v0) / np.dot(v0, v0)
-        vn = -(v1 - a * v0) / np.sign(self.v0)
-        ds = np.dot(self.H.transpose(), vn)
+        vn = -(v1 - a * v0) / self.v0_sign
+        ds = np.dot(self.H, vn)
         return ds
 
     def simple_weight(self, num_voltages):

@@ -33,34 +33,6 @@ class JAC(EitBase):
         # H = (J.T*J + R)^(-1) * J.T
         self.H = h_matrix(self.J, p, lamb, method)
 
-    def solve(self, v1, v0, normalize=False, log_scale=False):
-        """dynamic imaging
-
-        Parameters
-        ----------
-        v1: NDArray
-            current frame
-        v0: NDArray, optional
-            referenced frame, d = H(v1 - v0)
-        normalize: Boolean
-            true for conducting normalization
-
-        Returns
-        -------
-        ds: NDArray
-            complex-valued NDArray, changes of conductivities
-        """
-        if normalize:
-            dv = self.normalize(v1, v0)
-        else:
-            dv = v1 - v0
-        # s = -Hv
-        ds = -np.dot(self.H, dv)
-        if log_scale:
-            ds = np.exp(ds) - 1.0
-
-        return ds
-
     def map(self, v):
         """ return Hv """
         return -np.dot(self.H, v)
@@ -87,7 +59,7 @@ class JAC(EitBase):
         The input (dv) and output (ds) is log-normalized
         """
         if normalize:
-            dv = np.log(np.abs(v1) / np.abs(v0)) * np.sign(v0)
+            dv = np.log(np.abs(v1) / np.abs(v0)) * self.v0_sign
         else:
             dv = v1 - v0
         # s_r = J^Tv_r
