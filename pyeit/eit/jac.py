@@ -33,9 +33,9 @@ class JAC(EitBase):
         # H = (J.T*J + R)^(-1) * J.T
         self.H = h_matrix(self.J, p, lamb, method)
 
-    def map(self, v):
+    def map(self, dv):
         """ return Hv """
-        return -np.dot(self.H, v)
+        return -np.dot(self.H, dv)
 
     def solve_gs(self, v1, v0):
         """ solving by weighted frequency """

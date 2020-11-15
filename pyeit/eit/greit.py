@@ -63,9 +63,9 @@ class GREIT(EitBase):
         else:
             raise ValueError("method " + method + " not supported yet")
 
-    def map(self, v):
+    def map(self, dv):
         """ return H*v """
-        return -np.dot(self.H, v)
+        return -np.dot(self.H, dv)
 
     def _build_dist(self, w_mat):
         """ generate R using distribution method. """

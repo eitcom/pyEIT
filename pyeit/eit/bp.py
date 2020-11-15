@@ -24,9 +24,9 @@ class BP(EitBase):
         # BP: H is the smear matrix B, which must be transposed for node imaging.
         self.H = self.H.T
 
-    def map(self, v):
+    def map(self, dv):
         """ return Hx """
-        x = -v / self.v0_sign
+        x = -dv / self.v0_sign
         return np.dot(self.H, x)
 
     def solve_gs(self, v1, v0):

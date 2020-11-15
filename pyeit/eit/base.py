@@ -108,7 +108,7 @@ class EitBase:
 
     def solve(self, v1, v0, normalize=False, log_scale=False):
         """
-        dynamic imaging
+        dynamic imaging (conductivities imaging)
 
         Parameters
         ----------
@@ -148,7 +148,14 @@ class EitBase:
         np.real(v), or the absolute values of v, np.abs(v).
         The use of self.v0_sign is compatible in both scenarios, self.v0_sign
         is from Forward solve and is not equal to sign(v0) in abs mode.
+
+        Parameters
+        ----------
+        v1: NDArray
+            current frame, can be a Nx192 matrix where N is the number of frames
+        v0: NDArray
+            referenced frame, which is a row vector
         """
-        dv = (v1 - v0) / v0 * self.v0_sign
+        dv = (v1 - v0) / (v0 * self.v0_sign)
 
         return dv
