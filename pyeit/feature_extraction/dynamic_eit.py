@@ -13,21 +13,20 @@ class DynamicEIT:
     """ dynamic eit imaging """
 
     def __init__(
-        self, mesh=None, el_pos=None, parser="fmmu", solver="jac", p=0.20, lamb=0.001
+        self, mesh=None, el_pos=None, parser="fmmu", algo="jac", p=0.20, lamb=0.001
     ):
         """ initialize """
-        if solver == "jac":
-            dyna_eit = jac.JAC(mesh, el_pos, perm=1.0, parser=parser)
-            dyna_eit.setup(p=p, lamb=lamb, method="kotre")
+        if algo == "jac":
+            solver = jac.JAC(mesh, el_pos, perm=1.0, parser=parser)
+            solver.setup(p=p, lamb=lamb, method="kotre")
         else:
             # default: 'bp'
-            dyna_eit = bp.BP(mesh, el_pos, parser="fmmu", step=1)
-            dyna_eit.setup(weight="simple")
+            solver = bp.BP(mesh, el_pos, parser="fmmu", step=1)
+            solver.setup(weight="simple")
 
-        self.dyna_eit = dyna_eit
+        self.solver = solver
 
-    @staticmethod
-    def normalize(v, ref):
+    def normalize(self, v1, v0):
         """ normalize according to ref frame """
         raise NotImplementedError
 

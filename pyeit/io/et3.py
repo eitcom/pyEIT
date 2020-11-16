@@ -11,7 +11,7 @@ Please cite the following paper if you are using et3 in your research:
 """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from os.path import splitext
+import os
 from struct import unpack
 
 import numpy as np
@@ -29,118 +29,197 @@ class ET3:
         data_type="auto",
         rel_date=None,
         fps=1,
-        trim=True,
+        reindex=False,
+        trim=False,
         verbose=False,
     ):
-        """initialize file handler (supports .et0, .et3, .erd)"""
+        """
+        initialize file handler (supports .et0, .et3, .erd)
+
+        Parameters
+        ----------
+        file_name : String
+            file path for EIT data.
+        data_type : String, optional
+            manually set data type i.e., "et0". The default is "auto".
+        rel_date : Datetime, optional
+            Datetime, i.e., "2014/01/25". If specified, the time information
+            in header is ignored. The default is None.
+        fps : Int, optional
+            Frame per second, valid when rel_date specified. The default is 1.
+        reindex : Bool, optional
+            reindex ERD data order to ET3 format (RALP -> LARP) before trim.
+        trim : Bool, optional
+            Measurements on current carry electrodes are discarded.
+        verbose : Bool, optional
+            Print debuging information. The default is False.
+        """
         self.file_name = file_name
-        self.ext = splitext(file_name)[1][1:].lower()
-        self.data_type = data_type
+        self.ext = os.path.splitext(file_name)[1][1:].lower()
         self.rel_date = rel_date
         self.fps = fps
+        self.reindex = reindex
         self.trim = trim
         self.verbose = verbose
 
-        # version info: et3 [<=3], erd [4]
-        self.params = et_info(file_name, data_type)
-        self.version = self.params["version"]
-        self.rescale = self.params["rescale"]
-        self.offset = self.params["offset"]
-        self.nframe = self.params["nframe"]
-        self.nadc = 8  # number of maximum ADC channels
-
         # frame = frame header + 2x256 (Re, Im) doubles frame data
         self.header_size = 1024  # Bytes
-        self.data_num = 2 * 256  # doubles
-        self.data_size = self.data_num * 8  # Bytes
+        self.n_data = 2 * 256  # doubles
+        self.data_size = self.n_data * 8  # Bytes
         self.frame_size = self.header_size + self.data_size  # Bytes
+        self.nadc = 8  # number of maximum ADC channels
 
-        if verbose:
-            print(self.ext, self.data_type, self.version)
+        file_size = os.path.getsize(file_name)
+        offset = file_size % self.frame_size
+        # 'deprecated' file type has an extra file header (4096 Bytes)
+        # 'et' : each frame is 5120 Bytes, no extra file header
+        # 5120 = 1024 Bytes frame header + 256x2 Double frame data (4096 Bytes)
+        if not ((offset == 0) or (offset == 4096)):
+            raise ValueError("Wrong File Offset = {}".format(offset))
+        n_frame = int((file_size - offset) / self.frame_size)
+        self.offset = offset
+        self.n_frame = n_frame
 
+        # extract system configuration
+        self.p = self.setup(data_type)
         # load data (RAW data are complex-valued) and build datetime
         time_array, self.data, self.adc_array = self.load()
         self.ts = self.build_ts(time_array)
 
-    def load(self):
-        """load a frame of data (header + data)"""
-        time_array = np.zeros(self.nframe)
-        x = np.zeros((self.nframe, self.data_num), dtype=np.double)
-        adc_array = np.zeros((self.nframe, self.nadc), dtype=np.double)
+    def setup(self, data_type):
+        """
+        Infer file-type and header information
+        """
+        # parse header
+        parser = parse_header_et0 if data_type == "et0" else parse_header
+        with open(self.file_name, "rb") as fh:
+            fh.read(self.offset)  # skip offset
+            d = fh.read(self.header_size)
+            p = parser(d)  # extract information from frame header
 
+        # default et3: version <= 3 and ext in ["et0", "et3"]
+        data_format = "et"
+        date0 = "1899/12/30"  # excel format
+        ts_scale = 86400  # convert days to seconds
+        ts_offset = 0
+        scale = 1.0
+        # other formats
+        if data_type == "et0":  # et0: convert voltage to Ohm
+            scale = gain_table(p["gain"], p["current"])
+        if p["version"] == 4 and self.ext == "erd":
+            data_format = "erd"
+            date0 = "1970/01/01"  # erd: posix format
+            ts_scale = 0.001
+            ts_offset = 8 * 3600
+            scale = 4096 / 65536 / 29.9 * 1000 / 1250  # fixed gain
+
+        p_new = {
+            "data_format": data_format,
+            "date0": date0,
+            "ts_scale": ts_scale,
+            "ts_offset": ts_offset,
+            "scale": scale,
+        }
+        p.update(p_new)
+
+        return p
+
+    @staticmethod
+    def erd2et():
+        """
+        CT scans RALP, Starting at the 9 o’clock position and moving clockwise
+        in 90 degree intervals, we are looking at the
+        Right, Anterior, Left and Posterior aspects of the patient.
+
+        ERD electrodes: 0 (R) 4 (A) 8 (L) 12 (P)
+        ET electrodes : 0 (L) 4 (A) 8 (R) 12 (P)
+
+        These systems are using opposition stimulation (a, b) = (0-8), (1-9), ..
+        and rotate measurements a + (1-0, 2-1, .., 15-14).
+        """
+        erd_electrodes = np.arange(16)  # 0 .. 15
+        et3_electrodes = np.hstack([np.arange(9, 0, -1), np.arange(16, 9, -1)]) - 1
+        row_swap = [np.where(i == et3_electrodes)[0][0] for i in erd_electrodes]
+        ind = np.arange(256).reshape(16, -1)
+        reind = np.fliplr(ind[row_swap, :]).reshape(-1)  # CCW to CW
+        return reind
+
+    def load(self):
+        """load frames (header + data)"""
+        time_array = np.zeros(self.n_frame)
+        x = np.zeros((self.n_frame, self.n_data), dtype=np.double)
+        adc_array = np.zeros((self.n_frame, self.nadc), dtype=np.double)
         with open(self.file_name, "rb") as fh:
             fh.read(self.offset)
-
-            for i in range(self.nframe):
-                # get a frame
+            for i in range(self.n_frame):
+                # get a whole frame
                 d = fh.read(self.frame_size)
-                # get time ticks
+                # extract time ticks
                 time_array[i] = unpack("d", d[8:16])[0]
-                # get ADC samples
+                # extract ADC samples
                 dp = d[960 : self.header_size]
                 adc_array[i] = np.array(unpack("8d", dp))
-                # get demodulated I,Q data
+                # extract demodulated I,Q data
                 x[i] = np.array(unpack("512d", d[self.header_size :]))
 
-        # convert Re, Im to complex numbers
-        raw_data = x[:, :256] + 1j * x[:, 256:]
+        # build complex-valued data from Re, Im measurements
+        data = x[:, :256] + 1j * x[:, 256:]
 
-        # remove all zeros columns in raw_data if trim is True
+        # reindex ERD format to FMMU ET format
+        if self.p["data_format"] == "erd" and self.reindex is True:
+            ind = self.erd2et()
+            data = data[:, ind]
+
+        # remove all measurements on current carring electrodes
         if self.trim:
             idx = trim_pattern()
-            data = raw_data[:, idx]
-        else:
-            data = raw_data
+            data = data[:, idx]
 
-        # rescale if needed
-        data = data * self.rescale
+        # rescale data to Ohms
+        data = data * self.p["scale"]
 
         return time_array, data, adc_array
 
     def build_ts(self, time_array):
         """convert delta time (seconds) to datetime series"""
-        if self.version <= 3:  # .et0, .et3
-            rel_date = "1899/12/30"  # excel format
-            d_seconds = time_array * 86400  # convert days to seconds
-        elif self.version == 4:  # .erd
-            rel_date = "1970/01/01"  # posix format
-            d_seconds = time_array / 1000 + 8 * 3600
-
-        if self.rel_date is not None:  # mannual force datetime
+        if self.rel_date is not None:  # user sets datetime
             rel_date = self.rel_date
-            d_seconds = np.arange(self.nframe) * 1.0 / self.fps
+            d_seconds = np.arange(self.n_frame) * 1.0 / self.fps
+        else:
+            rel_date = self.p["date0"]
+            d_seconds = time_array * self.p["ts_scale"] + self.p["ts_offset"]
 
-        d_seconds = np.round(d_seconds * 10.0) / 10.0
+        d_seconds = np.round(d_seconds * 1000.0) / 1000.0  # 1 ms resolution
         ts = pd.to_datetime(rel_date) + pd.to_timedelta(d_seconds, "s")
 
         # check duplicated
         if any(ts.duplicated()):
-            print("{}: duplicated index, dropped".format(self.file_name))
+            print("{}: duplicated datetime:".format(self.file_name))
             print(ts[ts.duplicated()])
 
         return ts
 
     def to_df(self):
-        """convert raw data to DataFrame"""
+        """convert raw EIT data to DataFrame"""
         df = pd.DataFrame(self.data, index=self.ts)
         df = df[~df.index.duplicated()]
         return df
 
     def to_dp(self, adc_filter=False):
-        """convert raw 6 ADC channels data to DataFrame"""
+        """convert raw ADC data to DataFrame"""
         # left ear, right ear, Nasopharyngeal, rectal
         columns = ["tle", "tre", "tn", "tr", "c4", "c5", "c6", "c7"]
         dp = pd.DataFrame(self.adc_array, index=self.ts, columns=columns)
         dp = dp[~dp.index.duplicated()]
 
         if adc_filter:
-            # filter auxillary sampled data
             # correct temperature (temperature can accidently be 0)
             dp.loc[dp["tle"] == 0, "tle"] = np.nan
             dp.loc[dp["tre"] == 0, "tre"] = np.nan
             dp.loc[dp["tn"] == 0, "tn"] = np.nan
             dp.loc[dp["tr"] == 0, "tr"] = np.nan
 
+            # filter auxillary sampled data
             dp.tle = med_outlier(dp.tle)
             dp.tre = med_outlier(dp.tre)
             dp.tn = med_outlier(dp.tn)
@@ -166,33 +245,6 @@ def med_outlier(d, window=17):
     # replace med with d for outlier removal
     df = med[(d <= med + 3 * std) & (d >= med - 3 * std)]
     return df
-
-
-def et_info(file_name, data_type):
-    """
-    Infer file-type and header information
-    """
-    with open(file_name, "rb") as fh:
-        # move the cursor to the end (2) of the file
-        fh.seek(0, 2)
-        et3_len = fh.tell()
-
-    # 'deprecated' version has extra file header (4096 Bytes)
-    # 'new' : each frame is 5120 Bytes, no extra file header
-    # 5120 = 1024 Bytes frame header + 256x2 Double frame data (4096 Bytes)
-    is_header = (et3_len % 5120) != 0
-    offset = 4096 if is_header else 0
-    nframe = int((et3_len - offset) / 5120)
-
-    parser = parse_header_et0 if data_type == "et0" else parse_header
-    with open(file_name, "rb") as fh:
-        fh.read(offset)  # skip offset
-        d = fh.read(1024)  # get file info (header)
-        params = parser(d)
-    params["offset"] = offset
-    params["nframe"] = nframe
-
-    return params
 
 
 def parse_header(d):
@@ -239,20 +291,14 @@ def parse_header(d):
     frequency = h[4]
     current = h[5]
     gain = h[6]
-    if version == 4:
-        rescale = 4096 / 65536 / 29.9 * 1000 / 1250
-    else:
-        rescale = 1.0
 
-    params = {
+    p = {
         "version": version,
         "frequency": frequency,
         "current": current,
         "gain": gain,
-        "rescale": rescale,
     }
-
-    return params
+    return p
 
 
 def parse_header_et0(d):
@@ -284,16 +330,14 @@ def parse_header_et0(d):
     frequency = np.int(h[1])
     current = np.int(h[3])
     gain = np.int(h[5])
-    rescale = gain_table(gain, current)  # convert voltage to Ohm
 
-    params = {
+    p = {
         "version": 0,  # .et0
         "frequency": frequency,
         "current": current,
         "gain": gain,
-        "rescale": rescale,
     }
-    return params
+    return p
 
 
 def gain_table(gain, current_in_ua):
@@ -338,10 +382,8 @@ def gain_table(gain, current_in_ua):
 
 def trim_pattern():
     """
-    Generate trim array (fixed)
-    where idx is the indices of 0s
-
-    0......0 0......0 0......0 etc.,
+    Generate trim array (masked value, 0) on rotating measurements,
+    0......00......0 0......00......0 .. 0......00......0
     """
     idx = np.ones(256, dtype=np.bool)
 
@@ -366,7 +408,7 @@ if __name__ == "__main__":
     # 2. using DataFrame interface:
     #    's' is seconds (default)
     #    'T' is minute
-    et3 = ET3(file_name, verbose=False)
+    et3 = ET3(file_name, trim=True, verbose=False)
     df = et3.to_df()  # rel_date='2019/01/10'
     dp = et3.to_dp()
     dp["ati"] = np.abs(df).sum(axis=1) / 192.0

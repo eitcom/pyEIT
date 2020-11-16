@@ -63,18 +63,9 @@ class GREIT(EitBase):
         else:
             raise ValueError("method " + method + " not supported yet")
 
-    def solve(self, v1, v0, normalize=False):
-        """ solving and interpolating (psf convolve) on grids. """
-        if normalize:
-            dv = self.normalize(v1, v0)
-        else:
-            dv = v1 - v0
-
-        return -np.dot(self.H, dv)
-
-    def map(self, v):
+    def map(self, dv):
         """ return H*v """
-        return -np.dot(self.H, v)
+        return -np.dot(self.H, dv)
 
     def _build_dist(self, w_mat):
         """ generate R using distribution method. """

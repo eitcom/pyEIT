@@ -31,8 +31,12 @@ class Forward:
 
         Note
         ----
-        the nodes are continuous numbered, the numbering of an element is
+        1, The nodes are continuous numbered, the numbering of an element is
         CCW (counter-clock-wise).
+        2, The Jacobian and the boundary voltages used the SIGN information,
+        for example, V56 = V6 - V5 = -V65. If you are using absolute boundary
+        voltages for imaging, you MUST normalize it with the signs of v0
+        under each current-injecting pattern.
         """
         self.pts = mesh["node"]
         self.tri = mesh["element"]

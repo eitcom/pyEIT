@@ -39,10 +39,10 @@ f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new["perm"])
 
 """ 3. JAC solver """
 # Note: if the jac and the real-problem are generated using the same mesh,
-# then, jac_normalized in JAC and data normalization in solve are not needed.
+# then, data normalization in solve are not needed.
 # However, when you generate jac from a known mesh, but in real-problem
 # (mostly) the shape and the electrode positions are not exactly the same
-# as in mesh generating the jac, then JAC and data must be normalized.
+# as in mesh generating the jac, then data must be normalized.
 eit = svd.SVD(mesh_obj, el_pos, ex_mat=ex_mat, step=step, perm=1.0, parser="std")
 eit.setup(n=35, method="svd")
 ds = eit.solve(f1.v, f0.v, normalize=True)
