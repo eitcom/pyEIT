@@ -31,14 +31,15 @@ tri = mesh_obj["element"]
 perm = mesh_new["perm"]
 
 # show
-fig, ax = plt.subplots(figsize=(6, 4))
+fig, axes = plt.subplots(1,2, constrained_layout=True)
+fig.set_size_inches(6, 4)
+
+ax = axes[0]
 im = ax.tripcolor(
     pts[:, 0], pts[:, 1], tri, np.real(perm), shading="flat", cmap=plt.cm.viridis
 )
-fig.colorbar(im)
 ax.axis("equal")
 ax.set_title(r"$\Delta$ Conductivities")
-plt.show()
 
 """ 2. calculate simulated data """
 el_dist, step = 1, 1
@@ -54,7 +55,7 @@ eit.setup(p=0.25, lamb=1.0, method="lm")
 ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
 
 # plot
-fig, ax = plt.subplots(figsize=(6, 4))
+ax = axes[1]
 im = ax.tripcolor(
     pts[:, 0],
     pts[:, 1],
@@ -64,8 +65,9 @@ im = ax.tripcolor(
     alpha=1.0,
     cmap=plt.cm.viridis,
 )
-fig.colorbar(im)
 ax.axis("equal")
 ax.set_title("Conductivities Reconstructed")
-# fig.savefig('../figs/demo_static.png', dpi=96)
+
+fig.colorbar(im, ax=axes.ravel().tolist())
+#fig.savefig('../doc/images/demo_static.png', dpi=96)
 plt.show()
