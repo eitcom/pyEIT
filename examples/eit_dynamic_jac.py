@@ -67,10 +67,10 @@ ax.set_aspect("equal")
 # plot EIT reconstruction
 ax = axes[1]
 im = ax.tripcolor(x, y, tri, ds_n, shading="flat")
-for i, e in enumerate(el_pos):
-    ax.annotate(str(i + 1), xy=(x[e], y[e]), color="r")
+# for i, e in enumerate(el_pos):
+#     ax.annotate(str(i + 1), xy=(x[e], y[e]), color="r")
 ax.set_aspect("equal")
 
 fig.colorbar(im, ax=axes.ravel().tolist())
-# plt.savefig('../figs/demo_jac.png', dpi=96)
+#plt.savefig('../doc/images/demo_jac.png', dpi=96)
 plt.show()
