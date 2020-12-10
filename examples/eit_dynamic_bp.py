@@ -25,6 +25,7 @@ mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 
 # draw
 fig, axes = plt.subplots(2,1, constrained_layout=True)
+fig.set_size_inches(6, 4)
 
 ax = axes[0]
 ax.axis("equal")
@@ -34,7 +35,6 @@ delta_perm = np.real(mesh_new["perm"] - mesh_obj["perm"])
 im = ax.tripcolor(
     pts[:, 0], pts[:, 1], tri, delta_perm, shading="flat", cmap=plt.cm.viridis
 )
-fig.colorbar(im)
 # fig.savefig('demo_bp_0.png', dpi=96)
 
 """ 2. FEM forward simulations """
@@ -60,8 +60,7 @@ ax1 = axes[1]
 im = ax1.tripcolor(pts[:, 0], pts[:, 1], tri, ds, cmap=plt.cm.viridis)
 ax1.set_title(r"Reconstituted $\Delta$ Conductivities")
 ax1.axis("equal")
-fig.colorbar(im)
+fig.colorbar(im, ax=axes.ravel().tolist())
 """ for production figures, use dpi=300 or render pdf """
-fig.set_size_inches(6, 4)
-# fig.savefig('../figs/demo_bp.png', dpi=96)
+#fig.savefig('../doc/images/demo_bp.png', dpi=96)
 plt.show()
