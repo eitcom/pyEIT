@@ -56,19 +56,21 @@ ds = eit.solve(f1.v, f0.v, normalize=True)
 ds_n = sim2pts(pts, tri, np.real(ds))
 
 # plot ground truth
-fig, ax = plt.subplots(figsize=(6, 4))
+fig, axes = plt.subplots(1,2, constrained_layout=True)
+fig.set_size_inches(6, 4)
+
+ax = axes[0]
 delta_perm = mesh_new["perm"] - mesh_obj["perm"]
 im = ax.tripcolor(x, y, tri, np.real(delta_perm), shading="flat")
-fig.colorbar(im)
 ax.set_aspect("equal")
 
 # plot EIT reconstruction
-fig, ax = plt.subplots(figsize=(6, 4))
+ax = axes[1]
 im = ax.tripcolor(x, y, tri, ds_n, shading="flat")
 for i, e in enumerate(el_pos):
     ax.annotate(str(i + 1), xy=(x[e], y[e]), color="r")
-fig.colorbar(im)
 ax.set_aspect("equal")
-# fig.set_size_inches(6, 4)
+
+fig.colorbar(im, ax=axes.ravel().tolist())
 # plt.savefig('../figs/demo_jac.png', dpi=96)
 plt.show()
