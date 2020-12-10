@@ -73,19 +73,19 @@ From the example folder, pick one demo and run!
 
 ### 3.1 (2D) forward and inverse computing
 
-**Using** `examples/demo_dynamic_bp.py`
+**Using** `examples/eit_dynamic_bp.py`
 
 ![demo_bp](doc/images/demo_bp.png)
 
-**Using** `examples/demo_dynamic_greit.py`
+**Using** `examples/eit_dynamic_greit.py`
 
 ![demo_greit](doc/images/demo_greit.png)
 
-**Using** `examples/demo_dynamic_jac.py`
+**Using** `examples/eit_dynamic_jac.py`
 
 ![demo_greit](doc/images/demo_jac.png)
 
-**Using** `examples/demo_static_jac.py`
+**Using** `examples/eit_static_jac.py`
 
 ![demo_static](doc/images/demo_static.png)
 
