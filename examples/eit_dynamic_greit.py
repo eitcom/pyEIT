@@ -35,11 +35,12 @@ delta_perm = np.real(mesh_new["perm"] - mesh_obj["perm"])
 
 # show alpha
 fig, axes = plt.subplots(2,1, constrained_layout=True)
+fig.set_size_inches(6, 4)
+
 ax = axes[0]
 im = ax.tripcolor(
     pts[:, 0], pts[:, 1], tri, delta_perm, shading="flat", cmap=plt.cm.viridis
 )
-fig.colorbar(im)
 ax.axis("equal")
 ax.set_xlim([-1.2, 1.2])
 ax.set_ylim([-1.2, 1.2])
@@ -74,8 +75,8 @@ plt.imshow(np.real(ds), interpolation='nearest', cmap=cmap)
 """
 ax = axes[1]
 im = ax.imshow(np.real(ds), interpolation="none", cmap=plt.cm.viridis)
-fig.colorbar(im)
 ax.axis("equal")
-# fig.set_size_inches(6, 4)
-# fig.savefig('../figs/demo_greit.png', dpi=96)
+
+fig.colorbar(im, ax=axes.ravel().tolist())
+#fig.savefig('../doc/images/demo_greit.png', dpi=96)
 plt.show()
