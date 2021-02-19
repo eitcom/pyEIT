@@ -34,7 +34,7 @@ mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 delta_perm = np.real(mesh_new["perm"] - mesh_obj["perm"])
 
 # show alpha
-fig, axes = plt.subplots(2,1, constrained_layout=True)
+fig, axes = plt.subplots(2, 1, constrained_layout=True)
 fig.set_size_inches(6, 4)
 
 ax = axes[0]
@@ -78,5 +78,5 @@ im = ax.imshow(np.real(ds), interpolation="none", cmap=plt.cm.viridis)
 ax.axis("equal")
 
 fig.colorbar(im, ax=axes.ravel().tolist())
-#fig.savefig('../doc/images/demo_greit.png', dpi=96)
+# fig.savefig('../doc/images/demo_greit.png', dpi=96)
 plt.show()

@@ -31,7 +31,7 @@ tri = mesh_obj["element"]
 perm = mesh_new["perm"]
 
 # show
-fig, axes = plt.subplots(1,2, constrained_layout=True)
+fig, axes = plt.subplots(1, 2, constrained_layout=True)
 fig.set_size_inches(6, 4)
 
 ax = axes[0]
@@ -69,5 +69,5 @@ ax.axis("equal")
 ax.set_title("Conductivities Reconstructed")
 
 fig.colorbar(im, ax=axes.ravel().tolist())
-#fig.savefig('../doc/images/demo_static.png', dpi=96)
+# fig.savefig('../doc/images/demo_static.png', dpi=96)
 plt.show()

@@ -24,7 +24,7 @@ anomaly = [{"x": 0.5, "y": 0.5, "d": 0.1, "perm": 10.0}]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 
 # draw
-fig, axes = plt.subplots(2,1, constrained_layout=True)
+fig, axes = plt.subplots(2, 1, constrained_layout=True)
 fig.set_size_inches(6, 4)
 
 ax = axes[0]
@@ -62,5 +62,5 @@ ax1.set_title(r"Reconstituted $\Delta$ Conductivities")
 ax1.axis("equal")
 fig.colorbar(im, ax=axes.ravel().tolist())
 """ for production figures, use dpi=300 or render pdf """
-#fig.savefig('../doc/images/demo_bp.png', dpi=96)
+# fig.savefig('../doc/images/demo_bp.png', dpi=96)
 plt.show()

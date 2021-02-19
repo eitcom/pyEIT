@@ -56,7 +56,7 @@ ds = eit.solve(f1.v, f0.v, normalize=True)
 ds_n = sim2pts(pts, tri, np.real(ds))
 
 # plot ground truth
-fig, axes = plt.subplots(1,2, constrained_layout=True)
+fig, axes = plt.subplots(1, 2, constrained_layout=True)
 fig.set_size_inches(6, 4)
 
 ax = axes[0]
@@ -72,5 +72,5 @@ im = ax.tripcolor(x, y, tri, ds_n, shading="flat")
 ax.set_aspect("equal")
 
 fig.colorbar(im, ax=axes.ravel().tolist())
-#plt.savefig('../doc/images/demo_jac.png', dpi=96)
+# plt.savefig('../doc/images/demo_jac.png', dpi=96)
 plt.show()
