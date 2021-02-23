@@ -24,7 +24,7 @@ The design priciples of `pyEIT` are **modularity, minimalism, extensibility and 
 
 `pyEIT` uses `vispy` for visualizing 3D meshes (tetrahedron), and this module is not required if you are using 2D EIT only. `vispy` has minimal system dependencies and it is purely python. All you need is a decent graphical card with `OpenGL` support. It supports fast rendering, which I think is more superior to `vtk` or `mayavi` and it also has decent support for python 3. Please go to the website [vispy.org](http://vispy.org/) or github repository [vispy.github](https://github.com/vispy/vispy) for more details. Installation of vispy is simple by typing `python setup.py install`. We are also considering `mayavi` for a future version of `pyEIT`.
 
-**Q2, How to contribute ?** 
+**Q2, How to contribute ?**
 
 Interested users can contribute **(create a PR! any type of improvement is welcome)** FEM forward simulations, inverse solving (EIT imaging) algorithms as well as their models. We will setup a wiki page dedicated to this topic.
 
@@ -65,35 +65,35 @@ export PYTHONPATH=/path/to/pyEIT
 
 Under windows, you may set `PYTHONPATH` as a system wide environment. If you are using `spyder`, or `pyCharm`, you may also set `PYTHONPATH` locally per project in the IDE, which is more convenient. Please refer to a specific tool for detailed information.
 
-## 3. Run the demo
+## 3. Run the example codes
 
-Enter the demo folder, pick one demo and run!
+From the example folder, pick one demo and run!
 
 **Note:** the following images may be outdated due to that the parameters of a EIT algorithm may be changed in different versions of `pyEIT`. And it is there in the code, so just run the demo.
 
 ### 3.1 (2D) forward and inverse computing
 
-**Using** `demo/demo_dynamic_bp.py`
+**Using** `examples/eit_dynamic_bp.py`
 
 ![demo_bp](doc/images/demo_bp.png)
 
-**Using** `demo/demo_dynamic_greit.py`
+**Using** `examples/eit_dynamic_greit.py`
 
 ![demo_greit](doc/images/demo_greit.png)
 
-**Using** `demo/demo_dynamic_jac.py`
+**Using** `examples/eit_dynamic_jac.py`
 
 ![demo_greit](doc/images/demo_jac.png)
 
-**Using** `demo/demo_static_jac.py`
+**Using** `examples/eit_static_jac.py`
 
 ![demo_static](doc/images/demo_static.png)
 
 ### 3.2 (3D) forward and inverse computing
 
-**Using** `demo/demo_forward3d.py`
+**Using** `examples/demo_forward3d.py`
 
-**Using** `demo/demo_dynamic_jac3d.py`
+**Using** `examples/demo_dynamic_jac3d.py`
 
 **Notes:**
 
@@ -106,7 +106,7 @@ Give `pyEIT` a **star**, **fork** this project and commit a pull request **(PR)*
 
 ## 5. Cite our work.
 
-`pyEIT` was published at the 17th International Conference on Electrical Impedance Tomography, 2016. It is now officially published at `softwareX`, vol (7), 2018. 
+`pyEIT` was published at the 17th International Conference on Electrical Impedance Tomography, 2016. It is now officially published at `softwareX`, vol (7), 2018.
 
 **If you find `pyEIT` useful, please cite our work!**
 
