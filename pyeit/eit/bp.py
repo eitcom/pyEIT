@@ -24,6 +24,11 @@ class BP(EitBase):
         # BP: H is the smear matrix B, which must be transposed for node imaging.
         self.H = self.H.T
 
+    def normalize(self, v1, v0):
+        """redefine normalize for BP (without amplitude normalization)"""
+        dv = (v1 - v0) / self.v0_sign
+        return dv
+
     def map(self, dv):
         """ return Hx """
         x = -dv / self.v0_sign

@@ -53,7 +53,7 @@ f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new["perm"])
 """
 eit = bp.BP(mesh_obj, el_pos, ex_mat=ex_mat, step=1, parser="std")
 eit.setup(weight="none")
-ds = 192.0 * eit.solve(f1.v, f0.v)
+ds = 192.0 * eit.solve(f1.v, f0.v, normalize=False)
 
 # plot
 ax1 = axes[1]
