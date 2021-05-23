@@ -15,6 +15,7 @@ from scipy.sparse import csr_matrix
 
 from .utils import dist, edge_project
 
+from .shape import thorax
 
 class DISTMESH:
     """ class for distmesh """
@@ -99,8 +100,15 @@ class DISTMESH:
         self.num_density = 0
         self.num_move = 0
 
-        # keep points inside (minus distance) with a small gap (geps)
-        p = p[fd(p) < self.geps]  # pylint: disable=E1136
+        '''
+        keep points that are inside the thorax shape using a function that returns a matrix containing
+        True if the corresponing point is inside the shape, False if not . 
+        '''
+        if (fd==thorax):
+            p = p[fd(p)]
+        else:
+            # keep points inside (minus distance) with a small gap (geps)
+            p = p[fd(p) < self.geps]  # pylint: disable=E1136
 
         # rejection points by sampling on fh
         r0 = 1.0 / fh(p) ** self.n_dim
@@ -119,6 +127,9 @@ class DISTMESH:
             p = remove_duplicate_nodes(p, p_fix, self.geps)
             p = np.vstack([p_fix, p])
 
+        if (fd==thorax):
+            p = np.reshape(p, (-1, 2))  # convert boolean array to 2D to be compatible with Delaunay pts paramater (must be 2D)  
+  
         # store p and N
         self.N = p.shape[0]
         self.p = p
@@ -145,10 +156,22 @@ class DISTMESH:
         self.pold = self.p.copy()
 
         # triangles where the points are arranged counterclockwise
-        tri = Delaunay(self.p).simplices
+        if (self.fd!=thorax):
+             tri = Delaunay(self.p).simplices
+        else : 
+             tri = Delaunay(self.p,qhull_options="QJ").simplices #QJ parameter so tuples don't exceed boundary
+
         pmid = np.mean(self.p[tri], axis=1)
-        # keeps only interior points
-        t = tri[self.fd(pmid) < -self.geps]
+
+        if (self.fd!=thorax):  
+            # keeps only interior points
+            t = tri[self.fd(pmid) < -self.geps]
+        else : 
+            #adapting returned triangles matrix with the thorax integrated fd
+            tri_pmid = [ p[0] for p in self.fd(pmid) ]
+            tri_pmid = np.array(tri_pmid)
+            t = tri[ tri_pmid ]
+
 
         # extract edges (bars)
         bars = t[:, self.edge_combinations].reshape((-1, 2))
@@ -429,11 +452,14 @@ def build(
         # calculate bar forces
         Ftot = dm.bar_force(L, L0, barvec)
 
-        # update p
-        converge = dm.move_p(Ftot)
+        if ( fd!=thorax): 
+            # update p
+            converge = dm.move_p(Ftot)
 
-        # the stopping ctriterion (movements interior are small)
-        if converge:
+            # the stopping ctriterion (movements interior are small)
+            if converge:
+                break
+        else:            #Thorax mesh is created so far without iteration process (to be updated)
             break
 
     # at the end of iteration, (p - pold) is small, so we recreate delaunay

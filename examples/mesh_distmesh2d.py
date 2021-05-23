@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from pyeit.mesh import shape
 from pyeit.mesh import distmesh
 from pyeit.mesh.plot import voronoi_plot
-
+from pyeit.mesh.shape import circle,ellipse,rectangle0,rectangle,box_circle,thorax,area_uniform
 
 def example1():
     """ unit circle mesh """
@@ -137,6 +137,27 @@ def example5():
     plt.show()
 
 
+def example6():
+    """ Thorax mesh """
+
+    # build fix points, may be used as the position for electrodes
+    num = 16
+
+    el_pos = np.arange(num)
+
+    # build triangles
+    p, t = distmesh.build(thorax, fh=area_uniform , h0=0.05)
+    # plot
+    fig, ax = plt.subplots()
+    ax.triplot(p[:, 0], p[:, 1], t)
+    ax.plot(p[el_pos, 0], p[el_pos, 1], "ro")
+    ax.set_aspect("equal")
+    ax.set_xlim([-1.5, 1.5])
+    ax.set_ylim([-1.1, 1.1])
+    ax.set_title("Thorax mesh")
+    plt.show()
+
+
 def example_voronoi_plot():
     """draw voronoi plots for triangle elements"""
 
@@ -182,10 +203,11 @@ def example_intersect():
 
 
 if __name__ == "__main__":
-    example1()
-    # example2()
-    # example3()
-    # example4()
-    # example5()
-    # example_voronoi_plot()
-    # example_intersect()
+    #example1()
+    #example2()
+    #example3()
+    #example4()
+    #example5()
+    example6()
+    #example_voronoi_plot()
+    #example_intersect()

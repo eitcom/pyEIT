@@ -11,9 +11,12 @@ import matplotlib.pyplot as plt
 import pyeit.mesh as mesh
 from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
+
+from pyeit.mesh.shape import circle,ellipse,rectangle0,rectangle,box_circle,thorax,L_shaped
 import pyeit.eit.jac as jac
 
 """ 1. setup """
+# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax (thorax imaging is still under construction), Default :fd=circle
 mesh_obj, el_pos = mesh.create(16)
 
 # test function for altering the permittivity in mesh
@@ -65,3 +68,4 @@ fig.colorbar(im)
 ax.set_aspect("equal")
 ax.set_title(r"$\Delta$ Permittivity Reconstructed")
 # plt.savefig('quasi-demo-eit.pdf')
+plt.show()

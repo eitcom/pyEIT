@@ -10,11 +10,11 @@ import numpy as np
 from .distmesh import build
 from .mesh_circle import MeshCircle
 from .utils import check_order
-from .shape import circle, area_uniform
+from .shape import circle, area_uniform, ball, thorax,L_shaped
 from .shape import fix_points_fd, fix_points_ball
 
 
-def create(n_el=16, fd=circle, fh=area_uniform, h0=0.1, p_fix=None, bbox=None):
+def create(n_el=16, fd=None, fh=area_uniform, h0=0.1, p_fix=None, bbox=None):
     """
     Generating 2D/3D meshes using distmesh (pyEIT built-in)
 
@@ -38,20 +38,51 @@ def create(n_el=16, fd=circle, fh=area_uniform, h0=0.1, p_fix=None, bbox=None):
     mesh_obj: dict
         {'element', 'node', 'perm'}
     """
-    # infer dim
+
+   # test conditions if fd or/and bbox are none
+
     if bbox is None:
-        bbox = np.array([[-1, -1], [1, 1]])
-    n_dim = bbox.shape[1]
+        if fd!=ball:
+             bbox = np.array([[-1, -1], [1, 1]])
+        else : 
+             bbox = [[-1.2, -1.2, -1.2], [1.2, 1.2, 1.2]]
+
+    bbox = np.array(bbox)  # list is converted to Numpy array so we can use it then (calling shape method..)
+    n_dim = bbox.shape[1]  # bring dimension 
+
+    # infer dim
+    if fd is None:
+        if n_dim==2:
+             fd=circle
+        elif n_dim==3:
+             fd=ball
+
+
+    #-------
+
     if n_dim not in [2, 3]:
         raise TypeError("distmesh only supports 2D or 3D")
     if bbox.shape[0] != 2:
         raise TypeError("please specify lower and upper bound of bbox")
 
-    if p_fix is None:
+    if p_fix is None:                 
         if n_dim == 2:
-            p_fix = fix_points_fd(fd, n_el=n_el)
+           
+            if fd==thorax:
+                #thorax shape is generated so far without fixed points (to be updated later)
+                p_fix = None
+    
+            elif fd==L_shaped:
+                    p_fix = [[1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [0, 0]] #values brought from distmesh2D L shaped mesh example
+                    p_fix = np.array(p_fix)
+                    h0=0.15
+
+            else:
+                p_fix = fix_points_fd(fd, n_el=n_el)
+
         elif n_dim == 3:
             p_fix = fix_points_ball(n_el=n_el)
+
 
     # 1. build mesh
     p, t = build(fd, fh, pfix=p_fix, bbox=bbox, h0=h0)

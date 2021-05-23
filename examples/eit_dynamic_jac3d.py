@@ -12,13 +12,15 @@ import pyeit.mesh.plot as mplot
 from pyeit.eit.fem import Forward
 from pyeit.eit.interp2d import sim2pts
 from pyeit.eit.utils import eit_scan_lines
+from pyeit.mesh.shape import circle,ball
 import pyeit.eit.jac as jac
 
 # build tetrahedron
 # 3D tetrahedron must have a bbox
 bbox = [[-1, -1, -1], [1, 1, 1]]
 # save calling convention as distmesh 2D
-mesh_obj, el_pos = mesh.create(h0=0.2, bbox=bbox)
+# 3D Mesh shape is specified with fd parameter in the instantiation, e.g : fd=ball , Default in 3D :fd=ball
+mesh_obj, el_pos = mesh.create(h0=0.2,bbox=bbox)
 
 pts = mesh_obj["node"]
 tri = mesh_obj["element"]

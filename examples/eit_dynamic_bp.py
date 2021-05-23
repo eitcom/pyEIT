@@ -10,9 +10,11 @@ import matplotlib.pyplot as plt
 import pyeit.mesh as mesh
 from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
+from pyeit.mesh.shape import circle,ellipse,rectangle0,rectangle,box_circle,thorax,L_shaped
 import pyeit.eit.bp as bp
 
 """ 0. build mesh """
+# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
 mesh_obj, el_pos = mesh.create(16, h0=0.1)
 
 # extract node, element, alpha
