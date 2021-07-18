@@ -11,6 +11,7 @@ from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 from mpl_toolkits import mplot3d
 
@@ -136,7 +137,36 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
     
     
     
-    
+    def overlay_grid_plot(ax):
+        # draw mesh structure
+        ax.tripcolor(
+            x,
+            y,
+            tri,
+            np.real(perm),
+            edgecolors="k",
+            shading="flat",
+            alpha=0.2,
+            cmap=plt.cm.Greys,
+        )
+        # draw electrodes
+        ax.plot(x[el_pos], y[el_pos], "ko")
+        for i in range(n_el):
+            e = el_pos[i]
+            ax1.text(x[e], y[e]-5e-6, str(i), size=8, horizontalalignment='center', verticalalignment='top')
+        ax.set_title("equi-potential lines")
+        # clean up
+        ax.set_aspect("equal")
+        ax.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
+        ax.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
+        scale_x,scale_y = 1e-6,1e-6
+        ticks_x = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_x))
+        ax.xaxis.set_major_formatter(ticks_x)        
+        ticks_y = ticker.FuncFormatter(lambda y, pos: '{0:g}'.format(y/scale_y))
+        ax.yaxis.set_major_formatter(ticks_y)      
+        ax.set_xlabel('microns')
+        ax.set_ylabel('microns (height)')
+        
     
     
     """ 2. plot """
@@ -145,27 +175,7 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
     # draw equi-potential lines
     vf = np.linspace(min(f), max(f), 32)   # list of contour voltages
     ax1.tricontour(x, y, tri, f, vf, cmap=plt.cm.inferno)
-    # draw mesh structure
-    ax1.tripcolor(
-        x,
-        y,
-        tri,
-        np.real(perm),
-        edgecolors="k",
-        shading="flat",
-        alpha=0.2,
-        cmap=plt.cm.Greys,
-    )
-    # draw electrodes
-    ax1.plot(x[el_pos], y[el_pos], "ko")
-    for i in range(n_el):
-        e = el_pos[i]
-        ax1.text(x[e], y[e]-5e-6, str(i + 1), size=8, horizontalalignment='center', verticalalignment='top')
-    ax1.set_title("equi-potential lines")
-    # clean up
-    ax1.set_aspect("equal")
-    ax1.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
-    ax1.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
+    overlay_grid_plot(ax1)
     
     
     ax2 = fig.add_subplot(222)
@@ -175,27 +185,7 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
     color = 2 * np.log(np.hypot(Ex, Ey))
     ax2.streamplot(x_rgrid,y_rgrid, Ex, Ey, color=color, linewidth=1, cmap=plt.cm.inferno,
               density=1, arrowstyle='->', arrowsize=1.5)
-    # draw mesh structure
-    ax2.tripcolor(
-        x,
-        y,
-        tri,
-        np.real(perm),
-        edgecolors="k",
-        shading="flat",
-        alpha=0.2,
-        cmap=plt.cm.Greys,
-    )
-    # draw electrodes
-    ax2.plot(x[el_pos], y[el_pos], "ko")
-    for i in range(n_el):
-        e = el_pos[i]
-        ax2.text(x[e], y[e]-5e-6, str(i + 1), size=8, horizontalalignment='center', verticalalignment='top')
-    ax2.set_title("estimated electric field lines")
-    # clean up
-    ax2.set_aspect("equal")
-    ax2.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
-    ax2.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
+    overlay_grid_plot(ax2)
     
     
     # fig.savefig('demo_bp.png', dpi=96)
@@ -217,18 +207,8 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
         vmin=np.min(sensitivity),
         vmax=np.max(sensitivity)
     )
-    # draw electrodes
-    ax3.plot(x[el_pos], y[el_pos], "ko")
-    for i in range(n_el):
-        e = el_pos[i]
-        ax3.text(x[e], y[e]-5e-6, str(i + 1), size=8, horizontalalignment='center', verticalalignment='top')
-    ax3.set_title("sensitivity (log scale)")
-    # clean up
-    ax3.set_aspect("equal")
-    ax3.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
-    ax3.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
     fig.colorbar(im,ax=ax3,orientation='horizontal')
-    
+    overlay_grid_plot(ax3)    
     
     
 #    ax4 = fig.add_subplot(224,projection='3d')    
@@ -255,17 +235,8 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
         vmin=np.min(E_norm),
         vmax=np.max(E_norm)
     )
-    # draw electrodes
-    ax4.plot(x[el_pos], y[el_pos], "ko")
-    for i in range(n_el):
-        e = el_pos[i]
-        ax4.text(x[e], y[e]-5e-6, str(i + 1), size=8, horizontalalignment='center', verticalalignment='top')
-    ax4.set_title("E-field strength")
-    # clean up
-    ax4.set_aspect("equal")
-    ax4.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
-    ax4.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
     fig.colorbar(im,ax=ax4,orientation='horizontal')
+    overlay_grid_plot(ax4)    
 
 
     

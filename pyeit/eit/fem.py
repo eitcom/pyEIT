@@ -109,7 +109,7 @@ class Forward:
             #diff_op = voltage_meter(ex_line, n_el=self.ne, step=step, parser=parser)
             # MODIFY: only measure the voltage between two active electrodes
             diff_op = ex_mat
-            print('diff_op',diff_op,type(diff_op))
+            #print('diff_op',diff_op,type(diff_op))
             v_diff = subtract_row(f_el, diff_op)
             #print('v_diff',v_diff)
             jac_diff = subtract_row(jac_i, diff_op)
@@ -160,13 +160,13 @@ class Forward:
         """
         # 1. calculate local stiffness matrix (on each element)
         ke = calculate_ke(self.pts, self.tri)
-        print('ke',ke.shape)
+        #print('ke',ke.shape)
         #for x in range(10):
         #    print(ke[x,:,:])
 
         # 2. assemble to global K
         kg = assemble_sparse(ke, self.tri, perm, self.n_pts, ref=self.ref)
-        print('kg',kg.shape)
+        #print('kg',kg.shape)
         
         # apply dirichlet (constant voltage) constraints
         # remove dependence on other elements
@@ -180,22 +180,22 @@ class Forward:
         # 3. calculate electrode impedance matrix R = K^{-1}
         r_matrix = la.inv(kg)
         r_el = r_matrix[self.el_pos]
-        print('r_matrix',r_matrix.shape)
-        print('r_el',r_el.shape)
+        #print('r_matrix',r_matrix.shape)
+        #print('r_el',r_el.shape)
 
         # 4. solving nodes potential using boundary conditions
         b = self._natural_boundary(ex_line)
-        print('b',b.shape)
+        #print('b',b.shape)
         #print(b)
-        import matplotlib.pyplot as plt
+        #import matplotlib.pyplot as plt
         #plt.plot(b,'.')
         #plt.show()
         f = np.dot(r_matrix, b).ravel()
-        print('f',f.shape)
+        #print('f',f.shape)
         #print(f)
-        plt.plot(f[:500],'.')
-        plt.title('solved potential on nodes 0:500')
-        plt.show()
+        #plt.plot(f[:500],'.')
+        #plt.title('solved potential on nodes 0:500')
+        #plt.show()
         
         # 5. build Jacobian matrix column wise (element wise)
         #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
