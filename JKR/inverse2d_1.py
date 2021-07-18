@@ -12,6 +12,8 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import imageio
+
 
 from mpl_toolkits import mplot3d
 
@@ -60,16 +62,6 @@ tri = mesh_obj["element"]
 x, y = pts[:, 0], pts[:, 1]
 quality.stats(pts, tri)
 
-# add object
-bead_diameter = 30e-6
-bead_height = 20e-6
-print('bead diameter',bead_diameter)
-print('bead height',bead_height)
-anomaly = [{"x": 10e-6, "y": bead_height, "d": bead_diameter/2, "perm": 0.25}]
-mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
-perm = mesh_new["perm"]
-
-
 
 
 def overlay_grid_plot(ax,solidmesh=True):
@@ -108,56 +100,95 @@ def overlay_grid_plot(ax,solidmesh=True):
 
 
 
-###################
-# INVERSE SOLVER
 
-print('setting up inverse problem')
+myframes=[]
+
+# add object
+bead_diameter = 50e-6
+bead_height = 50e-6
+
+for bead_height in np.arange(30e-6,110e-6,10e-6):
+    print('bead diameter',bead_diameter)
+    print('bead height',bead_height)
+    anomaly = [{"x": 10e-6, "y": bead_height, "d": bead_diameter/2, "perm": 0.25}]
+    mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
+    perm = mesh_new["perm"]
+    
+    
+    ###################
+    # INVERSE SOLVER
+    
+    print('setting up inverse problem')
+    
+    
+    # define the measurement matrix    
+    ex_mat = np.array( [ [x,x+1] for x in range(0,10) ] )
+    ex_mat = np.append( ex_mat, np.array( [ [x,x+2] for x in range(0,9) ] ), axis=0 )
+    ex_mat = np.append( ex_mat, np.array( [ [x,x+3] for x in range(0,8) ] ), axis=0 )
+    ex_mat = np.append( ex_mat, np.array( [ [x,x+4] for x in range(0,7) ] ), axis=0 )
+    ex_mat = np.append( ex_mat, np.array( [ [x,x+5] for x in range(0,6) ] ), axis=0 )
+    
+    """ 2. calculate simulated data """    
+    fwd = Forward(mesh_obj, el_pos)
+    f1 = fwd.solve_eit(ex_mat, perm=mesh_new["perm"], parser="std")
+    #print('simulated measurements',f1)
+    
+    
+    """ 3. solve_eit using gaussian-newton (with regularization) """
+    # number of stimulation lines/patterns
+    eit = jac.JAC(mesh_obj, el_pos, ex_mat, perm=1.0, parser="std")
+    eit.setup(p=0.25, lamb=1.0, method="lm")
+    # lamb = lamb * lamb_decay
+    ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
+    
+    
+    # plot results
+    fig = plt.figure()
+    ax1 = fig.add_subplot(121)
+    overlay_grid_plot(ax1)  
+    ax1.set_title('original')
+    
+    ax2 = fig.add_subplot(122)
+    im = ax2.tripcolor(
+        x,
+        y,
+        tri,
+        np.real(ds),
+        cmap=plt.cm.Reds,
+        antialiased=True,
+        #vmin=np.min(ds),
+        #vmax=np.max(ds)
+    )
+    #fig.colorbar(im,ax=ax2,orientation='horizontal')
+    overlay_grid_plot(ax2,solidmesh=False)  
+    ax2.set_title('reconstruction')
+    
+    fig.set_size_inches(8, 8)
+    
+    
+    
+    
+    # add to frames for animation
+    fig.canvas.draw()       # draw the canvas, cache the renderer
+    im = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
+    im  = im.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    myframes.append(im)
+    
+    
+    
+    
+    
+    plt.show()
 
 
-# define the measurement matrix    
-ex_mat = np.array( [ [x,x+1] for x in range(0,10) ] )
-ex_mat = np.append( ex_mat, np.array( [ [x,x+2] for x in range(0,9) ] ), axis=0 )
-ex_mat = np.append( ex_mat, np.array( [ [x,x+3] for x in range(0,8) ] ), axis=0 )
-ex_mat = np.append( ex_mat, np.array( [ [x,x+4] for x in range(0,7) ] ), axis=0 )
-ex_mat = np.append( ex_mat, np.array( [ [x,x+5] for x in range(0,6) ] ), axis=0 )
+if 0:
+    # create .mp4 video file
+    imageio.mimsave('EIT_test_1a.mp4', 
+                    myframes, 
+                    fps=5)
 
-""" 2. calculate simulated data """    
-fwd = Forward(mesh_obj, el_pos)
-f1 = fwd.solve_eit(ex_mat, perm=mesh_new["perm"], parser="std")
-#print('simulated measurements',f1)
-
-
-""" 3. solve_eit using gaussian-newton (with regularization) """
-# number of stimulation lines/patterns
-eit = jac.JAC(mesh_obj, el_pos, ex_mat, perm=1.0, parser="std")
-eit.setup(p=0.25, lamb=1.0, method="lm")
-# lamb = lamb * lamb_decay
-ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
-
-
-# plot results
-fig = plt.figure()
-ax1 = fig.add_subplot(121)
-overlay_grid_plot(ax1)  
-ax1.set_title('original')
-
-ax2 = fig.add_subplot(122)
-im = ax2.tripcolor(
-    x,
-    y,
-    tri,
-    np.real(ds),
-    cmap=plt.cm.Reds,
-    antialiased=True,
-    #vmin=np.min(ds),
-    #vmax=np.max(ds)
-)
-#fig.colorbar(im,ax=ax2,orientation='horizontal')
-overlay_grid_plot(ax2,solidmesh=False)  
-ax2.set_title('reconstruction')
-
-fig.set_size_inches(8, 8)
-
-plt.show()
-
-
+if 0:
+    # create animated .gif
+    imageio.mimsave('EIT_test_1a.gif', 
+                    myframes, 
+                    fps=5)
