@@ -62,7 +62,7 @@ quality.stats(pts, tri)
 
 # add object
 bead_diameter = 30e-6
-bead_height = 40e-6
+bead_height = 20e-6
 print('bead diameter',bead_diameter)
 print('bead height',bead_height)
 anomaly = [{"x": 10e-6, "y": bead_height, "d": bead_diameter/2, "perm": 0.25}]
@@ -71,225 +71,39 @@ perm = mesh_new["perm"]
 
 
 
-def calc_sens(fwd, ex_mat):
-    """
-    see Adler2017 on IEEE TBME, pp 5, figure 6,
-    Electrical Impedance Tomography: Tissue Properties to Image Measures
-    """
-    # solving EIT problem
-    p = fwd.solve_eit(ex_mat=ex_mat, parser="fmmu", dirichlet=dirichlet)
-    v0 = p.v
-    # normalized jacobian (note: normalize affect sensitivity)
-    v0 = v0[:, np.newaxis]
-    jac = p.jac / v0
-    # calculate sensitivity matrix
-    s = np.linalg.norm(jac, axis=0)
-    ae = tri_area(pts, tri)
-    s = np.sqrt(s) / ae
-    assert any(s >= 0)
 
-    se = np.log10(s)
-    sn = sim2pts(pts, tri, se)   # log scale
-    #sn = sim2pts(pts, tri, s)   # linear scale
-    return sn
-
-
-
-
-################################################
-# plot forward solution for one     
-
-#for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
-for elec_sep in [3,]:
-
-    print('elec_sep',elec_sep)
-    
-    """ 1. FEM forward simulations """
-    # setup EIT scan conditions
-    #ex_dist, step = 1, 3
-    #ex_mat = eit_scan_lines(16, ex_dist)
-    #ex_mat = np.array( [ [0,5],
-    #                     [1,5],                     
-    #                     [2,5],
-    #                     [3,5],
-    #                     [4,5],
-    #                     [5,5],
-    #                     [7,5],
-    #                     [8,5],
-    #                     [9,5],
-    #                     [10,5]
-    #                     ] )
-    ex_mat = np.array( [ [5+elec_sep,5], ] )
-    ex_line = ex_mat[0].ravel()
-    
-    #perm = mesh_obj["perm"]
-    
-    # calculate simulated data using FEM
-    fwd = Forward(mesh_obj, el_pos)
-    f, _ = fwd.solve(ex_line,perm=perm, dirichlet=dirichlet)
-    f = np.real(f)
-    
-    print('solved potential min=%4.4f  max=%4.4f  ' % (np.min(f),np.max(f)))
-    
-    
-    # calculate the gradient to plot electric field lines
-    from matplotlib.tri import (
-        Triangulation, CubicTriInterpolator)
-    triang = Triangulation(x, y, triangles=tri)
-    tci = CubicTriInterpolator(triang, -f)
-    # Gradient requested here at the mesh nodes but could be anywhere else:
-    #(Ex, Ey) = tci.gradient(triang.x, triang.y)
-    
-    # get gradient on a rectangular mesh for plotting
-    (Ex, Ey) = tci.gradient(x_rgrid,y_rgrid)
-    E_norm = np.sqrt(Ex**2 + Ey**2)
-    
-    
-    
-    
-    # calculate sensitivity 
-    sensitivity = calc_sens(fwd, ex_mat)
-    
-    
-    
-    def overlay_grid_plot(ax,solidmesh=True):
-        if(solidmesh):
-            # draw mesh structure
-            ax.tripcolor(
-                x,
-                y,
-                tri,
-                np.real(perm),
-                edgecolors="k",
-                shading="flat",
-                alpha=0.2,
-                cmap=plt.cm.Greys,
-            )
-        else:
-            plt.triplot(triang,'-',color='0.9',alpha=0.2,)
-        # draw electrodes
-        ax.plot(x[el_pos], y[el_pos], "ko")
-        for i in range(n_el):
-            e = el_pos[i]
-            ax1.text(x[e], y[e]-5e-6, str(i), size=8, horizontalalignment='center', verticalalignment='top')
-        ax.set_title("equi-potential lines")
-        # clean up
-        ax.set_aspect("equal")
-        ax.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
-        ax.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
-        scale_x,scale_y = 1e-6,1e-6
-        ticks_x = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_x))
-        ax.xaxis.set_major_formatter(ticks_x)        
-        ticks_y = ticker.FuncFormatter(lambda y, pos: '{0:g}'.format(y/scale_y))
-        ax.yaxis.set_major_formatter(ticks_y)      
-        ax.set_xlabel('microns')
-        ax.set_ylabel('microns (height)')
-        
-    
-    
-    """ 2. plot """
-    fig = plt.figure()
-    ax1 = fig.add_subplot(221)
-    # draw equi-potential lines
-    vf = np.linspace(min(f), max(f), 32)   # list of contour voltages
-    ax1.tricontour(x, y, tri, f, vf, cmap=plt.cm.inferno)
-    overlay_grid_plot(ax1)
-    
-    
-    ax2 = fig.add_subplot(222)
-    # draw electric field vectors
-    #E_norm_list = np.linspace(min(E_norm), max(E_norm), 32)   # list of contour voltages
-    #ax2.tricontour(x, y, tri, E_norm, E_norm_list, cmap=plt.cm.Reds_r)
-    color = 2 * np.log(np.hypot(Ex, Ey))
-    ax2.streamplot(x_rgrid,y_rgrid, Ex, Ey, color=color, linewidth=1, cmap=plt.cm.inferno,
-              density=1, arrowstyle='->', arrowsize=1.5)
-    overlay_grid_plot(ax2)
-    
-    
-    # fig.savefig('demo_bp.png', dpi=96)
-    #plt.show()
-    
-    
-    
-    ax3 = fig.add_subplot(223)
-    
-    im = ax3.tripcolor(
-        x,
-        y,
-        tri,
-        sensitivity,
-        edgecolors="none",
-        shading="gouraud",
-        cmap=plt.cm.Reds,
-        antialiased=True,
-        vmin=np.min(sensitivity),
-        vmax=np.max(sensitivity)
-    )
-    fig.colorbar(im,ax=ax3,orientation='horizontal')
-    overlay_grid_plot(ax3)    
-    
-    
-#    ax4 = fig.add_subplot(224,projection='3d')    
-##    ax = plt.axes(projection='3d')
-#    ax4.scatter3D(x, y, sensitivity, c=sensitivity, cmap=plt.cm.Reds);
-#    ax4.set_title('surface of sensitivity');
-#
-
-    # recalculate Efield on triangular mesh points
-    (Ex, Ey) = tci.gradient(triang.x, triang.y)
-    E_norm = np.sqrt(Ex**2 + Ey**2)
-    
-    ax4 = fig.add_subplot(224)
-    
-    im = ax4.tripcolor(
-        x,
-        y,
-        tri,
-        E_norm,
-        edgecolors="none",
-        shading="gouraud",
-        cmap=plt.cm.Reds,
-        antialiased=True,
-        vmin=np.min(E_norm),
-        vmax=np.max(E_norm)
-    )
-    fig.colorbar(im,ax=ax4,orientation='horizontal')
-    overlay_grid_plot(ax4)    
-
-
-    
-    fig.set_size_inches(12, 12)
-    
-    
-    
-    plt.show()
-
-
-
-    # plotting electric field strength
-    (Ex, Ey) = tci.gradient(triang.x, triang.y)
-    E_norm = np.sqrt(Ex**2 + Ey**2)
-    fig=plt.figure()
-    ax = fig.add_subplot(221,projection='3d')
-    ax.scatter3D(x, y, E_norm, c=E_norm, cmap=plt.cm.bwr);
-    ax.set_title('surface of E_norm');
-    ax = fig.add_subplot(222)
-    ax.plot(E_norm)
-    ax.set_title('E_norm of all nodes')
-    ax = fig.add_subplot(223)
-    ax.semilogy(np.hypot(x,y),E_norm,'.')
-    ax.set_title('distance vs E_norm')    
-    fig.set_size_inches(8, 8)
-    plt.show()
-    
-
-#singlefig_ax1.tricontour(x, y, tri, f, vf, cmap=singlefig_cms[j])
-#singlefig_ax1.tricontour(x, y, tri, E_norm, E_norm_list, cmap=plt.cm.Reds_r)
-
-
-
-
-
+def overlay_grid_plot(ax,solidmesh=True):
+    if(solidmesh):
+        # draw mesh structure
+        ax.tripcolor(
+            x,
+            y,
+            tri,
+            np.real(perm),
+            edgecolors="k",
+            shading="flat",
+            alpha=0.2,
+            cmap=plt.cm.Greys,
+        )
+    else:
+        plt.triplot(x,y,tri,'-',color='0.9',alpha=0.2,)
+    # draw electrodes
+    ax.plot(x[el_pos], y[el_pos], "ko")
+    for i in range(n_el):
+        e = el_pos[i]
+        ax1.text(x[e], y[e]-5e-6, str(i), size=8, horizontalalignment='center', verticalalignment='top')
+    ax.set_title("equi-potential lines")
+    # clean up
+    ax.set_aspect("equal")
+    ax.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
+    ax.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
+    scale_x,scale_y = 1e-6,1e-6
+    ticks_x = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_x))
+    ax.xaxis.set_major_formatter(ticks_x)        
+    ticks_y = ticker.FuncFormatter(lambda y, pos: '{0:g}'.format(y/scale_y))
+    ax.yaxis.set_major_formatter(ticks_y)      
+    ax.set_xlabel('microns')
+    ax.set_ylabel('microns (height)')
 
 
 
@@ -301,17 +115,11 @@ print('setting up inverse problem')
 
 
 # define the measurement matrix    
-ex_mat = np.array( [ [0,5],
-                     [1,5],                     
-                     [2,5],
-                     [3,5],
-                     [4,5],
-                     [5,5],
-                     [7,5],
-                     [8,5],
-                     [9,5],
-                     [10,5]
-                     ] )
+ex_mat = np.array( [ [x,x+1] for x in range(0,10) ] )
+ex_mat = np.append( ex_mat, np.array( [ [x,x+2] for x in range(0,9) ] ), axis=0 )
+ex_mat = np.append( ex_mat, np.array( [ [x,x+3] for x in range(0,8) ] ), axis=0 )
+ex_mat = np.append( ex_mat, np.array( [ [x,x+4] for x in range(0,7) ] ), axis=0 )
+ex_mat = np.append( ex_mat, np.array( [ [x,x+5] for x in range(0,6) ] ), axis=0 )
 
 """ 2. calculate simulated data """    
 fwd = Forward(mesh_obj, el_pos)
@@ -327,7 +135,7 @@ eit.setup(p=0.25, lamb=1.0, method="lm")
 ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
 
 
-
+# plot results
 fig = plt.figure()
 ax1 = fig.add_subplot(121)
 overlay_grid_plot(ax1)  

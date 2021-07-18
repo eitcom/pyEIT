@@ -108,12 +108,12 @@ class Forward:
             # boundary measurements, subtract_row-voltages on electrodes
             #diff_op = voltage_meter(ex_line, n_el=self.ne, step=step, parser=parser)
             # MODIFY: only measure the voltage between two active electrodes
-            diff_op = ex_mat
+            diff_op = ex_mat[i:i+1]
             #print('diff_op',diff_op,type(diff_op))
             v_diff = subtract_row(f_el, diff_op)
-            #print('v_diff',v_diff)
+            #print('v_diff',v_diff.shape)
             jac_diff = subtract_row(jac_i, diff_op)
-            
+            #print('jac_diff',jac_diff.shape)            
 
             # build bp projection matrix
             # 1. we can either smear at the center of elements, using
@@ -122,10 +122,12 @@ class Forward:
             b = smear(f, f_el, diff_op)
 
             # append
+            #print('v, jac, b shapes before: ',len(v),len(jac),len(b))
             v.append(v_diff)
             jac.append(jac_diff)
             b_matrix.append(b)
-
+            #print('v, jac, b shapes after: ',len(v),len(jac),len(b))
+            
         # update output, now you can call p.jac, p.v, p.b_matrix
         pde_result = namedtuple("pde_result", ["jac", "v", "b_matrix"])
         p = pde_result(jac=np.vstack(jac), v=np.hstack(v), b_matrix=np.vstack(b_matrix))
