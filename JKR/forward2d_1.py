@@ -84,7 +84,7 @@ for j,bead_diameter in enumerate([0,15e-6,30e-6]):
     from matplotlib.tri import (
         Triangulation, CubicTriInterpolator)
     triang = Triangulation(x, y, triangles=tri)
-    tci = CubicTriInterpolator(triang, -f)
+    tci = CubicTriInterpolator(triang, f)
     # Gradient requested here at the mesh nodes but could be anywhere else:
     #(Ex, Ey) = tci.gradient(triang.x, triang.y)
 

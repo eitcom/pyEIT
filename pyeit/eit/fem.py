@@ -54,7 +54,7 @@ class Forward:
         self.n_tri, self.n_vertices = self.tri.shape
         self.ne = el_pos.size
 
-    def solve_eit(self, ex_mat=None, step=1, perm=None, parser=None):
+    def solve_eit(self, ex_mat=None, step=1, perm=None, parser=None, dirichlet=[]):
         """
         EIT simulation, generate perturbation matrix and forward v
 
@@ -69,6 +69,9 @@ class Forward:
         parser: str
             see voltage_meter for more details.
 
+        dirichlet:   pairs of electrode+voltage for constant 
+            voltage (dirichlet) boundary conditions
+            
         Returns
         -------
         jac: NDArray
@@ -98,13 +101,19 @@ class Forward:
         for i in range(n_lines):
             # FEM solver of one stimulation pattern, a row in ex_mat
             ex_line = ex_mat[i]
-            f, jac_i = self.solve(ex_line, perm0)
+            f, jac_i = self.solve(ex_line, perm0, dirichlet=dirichlet)
             f_el = f[self.el_pos]
+            #print('f_el',f_el)
 
             # boundary measurements, subtract_row-voltages on electrodes
-            diff_op = voltage_meter(ex_line, n_el=self.ne, step=step, parser=parser)
+            #diff_op = voltage_meter(ex_line, n_el=self.ne, step=step, parser=parser)
+            # MODIFY: only measure the voltage between two active electrodes
+            diff_op = ex_mat
+            print('diff_op',diff_op,type(diff_op))
             v_diff = subtract_row(f_el, diff_op)
+            #print('v_diff',v_diff)
             jac_diff = subtract_row(jac_i, diff_op)
+            
 
             # build bp projection matrix
             # 1. we can either smear at the center of elements, using
@@ -122,7 +131,7 @@ class Forward:
         p = pde_result(jac=np.vstack(jac), v=np.hstack(v), b_matrix=np.vstack(b_matrix))
         return p
 
-    def solve(self, ex_line, perm):
+    def solve(self, ex_line, perm, dirichlet=[]):
         """
         with one pos (A), neg(B) driven pairs, calculate and
         compute the potential distribution (complex-valued)
@@ -134,9 +143,13 @@ class Forward:
         Parameters
         ----------
         ex_line: NDArray
-            stimulation (scan) patterns/lines
+            current stimulation (scan) patterns/lines
         perm: NDArray
             permittivity on elements (initial)
+
+        dirichlet:   pairs of electrode+voltage for constant 
+            voltage (dirichlet) boundary conditions
+
 
         Returns
         -------
@@ -147,18 +160,43 @@ class Forward:
         """
         # 1. calculate local stiffness matrix (on each element)
         ke = calculate_ke(self.pts, self.tri)
+        print('ke',ke.shape)
+        #for x in range(10):
+        #    print(ke[x,:,:])
 
         # 2. assemble to global K
         kg = assemble_sparse(ke, self.tri, perm, self.n_pts, ref=self.ref)
-
+        print('kg',kg.shape)
+        
+        # apply dirichlet (constant voltage) constraints
+        # remove dependence on other elements
+        for (d_node,d_value) in dirichlet:
+            kg[:,d_node] = 0.00001
+            #kg[d_node,:] = 0.00001            
+            kg[d_node,d_node] = 1
+        
+        
+        
         # 3. calculate electrode impedance matrix R = K^{-1}
         r_matrix = la.inv(kg)
         r_el = r_matrix[self.el_pos]
+        print('r_matrix',r_matrix.shape)
+        print('r_el',r_el.shape)
 
         # 4. solving nodes potential using boundary conditions
         b = self._natural_boundary(ex_line)
+        print('b',b.shape)
+        #print(b)
+        import matplotlib.pyplot as plt
+        #plt.plot(b,'.')
+        #plt.show()
         f = np.dot(r_matrix, b).ravel()
-
+        print('f',f.shape)
+        #print(f)
+        plt.plot(f[:500],'.')
+        plt.title('solved potential on nodes 0:500')
+        plt.show()
+        
         # 5. build Jacobian matrix column wise (element wise)
         #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
         jac = np.zeros((self.ne, self.n_tri), dtype=perm.dtype)

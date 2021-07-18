@@ -31,15 +31,23 @@ elec_spacing = 10e-6
 """ 0. build mesh """
 def myrectangle(pts):
     return mesh.shape.rectangle(pts,p1=[-meshwidth/2,0],p2=[meshwidth/2,meshwidth])
-p_fix = np.array([[x,0] for x in np.arange(-(n_el//2*elec_spacing),(n_el//2+1)*elec_spacing,elec_spacing)])
-mesh_obj, el_pos = mesh.create(n_el, 
+p_fix = np.array([[x,0] for x in np.arange(-(n_el//2*elec_spacing),(n_el//2+1)*elec_spacing,elec_spacing)])  # electrodes
+p_fix = np.append(p_fix, np.array([[x,meshwidth] for x in np.arange(-meshwidth/2,meshwidth/2,meshsize)]), axis=0)   # dirichlet nodes (const voltage)
+mesh_obj, el_pos = mesh.create(len(p_fix), 
                                fd=myrectangle, 
                                p_fix=p_fix, 
                                h0=meshsize,
                                bbox = np.array([[-meshwidth/2, 0], [meshwidth/2, meshwidth]]))
 
 # rectangular grid when needed
-x_rgrid,y_rgrid = np.meshgrid(np.linspace(-meshwidth/2,meshwidth/2,100),np.linspace(0,meshwidth,100))
+x_rgrid,y_rgrid = np.meshgrid(np.linspace(-meshwidth/2,meshwidth/2,400),np.linspace(0,meshwidth,400))
+
+# constant voltage boundary conditions
+# applied to all electrodes after n_el
+vbias = 0
+dirichlet = [ [el_pos[x],vbias] for x in range(n_el,len(p_fix)) ]
+#dirichlet = []
+
     
 # extract node, element, alpha
 pts = mesh_obj["node"]
@@ -55,7 +63,7 @@ def calc_sens(fwd, ex_mat):
     Electrical Impedance Tomography: Tissue Properties to Image Measures
     """
     # solving EIT problem
-    p = fwd.solve_eit(ex_mat=ex_mat, parser="fmmu")
+    p = fwd.solve_eit(ex_mat=ex_mat, parser="fmmu", dirichlet=dirichlet)
     v0 = p.v
     # normalized jacobian (note: normalize affect sensitivity)
     v0 = v0[:, np.newaxis]
@@ -67,7 +75,8 @@ def calc_sens(fwd, ex_mat):
     assert any(s >= 0)
 
     se = np.log10(s)
-    sn = sim2pts(pts, tri, se)
+    sn = sim2pts(pts, tri, se)   # log scale
+    #sn = sim2pts(pts, tri, s)   # linear scale
     return sn
 
 
@@ -75,6 +84,7 @@ def calc_sens(fwd, ex_mat):
 
 
 for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
+#for elec_sep in [1,]:
 
     print('elec_sep',elec_sep)
     
@@ -100,7 +110,7 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
     
     # calculate simulated data using FEM
     fwd = Forward(mesh_obj, el_pos)
-    f, _ = fwd.solve(ex_line,perm=perm)
+    f, _ = fwd.solve(ex_line,perm=perm, dirichlet=dirichlet)
     f = np.real(f)
     
     print('solved potential min=%4.4f  max=%4.4f  ' % (np.min(f),np.max(f)))
@@ -116,7 +126,7 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
     
     # get gradient on a rectangular mesh for plotting
     (Ex, Ey) = tci.gradient(x_rgrid,y_rgrid)
-    #E_norm = np.sqrt(Ex**2 + Ey**2)
+    E_norm = np.sqrt(Ex**2 + Ey**2)
     
     
     
@@ -147,13 +157,14 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
         cmap=plt.cm.Greys,
     )
     # draw electrodes
-    ax1.plot(x[el_pos], y[el_pos], "ro")
-    for i, e in enumerate(el_pos):
-        ax1.text(x[e], y[e]-1e-6, str(i + 1), size=12, horizontalalignment='center', verticalalignment='top')
+    ax1.plot(x[el_pos], y[el_pos], "ko")
+    for i in range(n_el):
+        e = el_pos[i]
+        ax1.text(x[e], y[e]-5e-6, str(i + 1), size=8, horizontalalignment='center', verticalalignment='top')
     ax1.set_title("equi-potential lines")
     # clean up
     ax1.set_aspect("equal")
-    ax1.set_ylim([-0.05*meshwidth, 1.05*meshwidth])
+    ax1.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
     ax1.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
     
     
@@ -176,13 +187,14 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
         cmap=plt.cm.Greys,
     )
     # draw electrodes
-    ax2.plot(x[el_pos], y[el_pos], "ro")
-    for i, e in enumerate(el_pos):
-        ax2.text(x[e], y[e]-1e-6, str(i + 1), size=12, horizontalalignment='center', verticalalignment='top')
+    ax2.plot(x[el_pos], y[el_pos], "ko")
+    for i in range(n_el):
+        e = el_pos[i]
+        ax2.text(x[e], y[e]-5e-6, str(i + 1), size=8, horizontalalignment='center', verticalalignment='top')
     ax2.set_title("estimated electric field lines")
     # clean up
     ax2.set_aspect("equal")
-    ax2.set_ylim([-0.05*meshwidth, 1.05*meshwidth])
+    ax2.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
     ax2.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
     
     
@@ -200,29 +212,60 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
         sensitivity,
         edgecolors="none",
         shading="gouraud",
-        cmap=plt.cm.inferno,
+        cmap=plt.cm.Reds,
         antialiased=True,
         vmin=np.min(sensitivity),
         vmax=np.max(sensitivity)
     )
     # draw electrodes
-    ax3.plot(x[el_pos], y[el_pos], "ro")
-    for i, e in enumerate(el_pos):
-        ax3.text(x[e], y[e]-1e-6, str(i + 1), size=12, horizontalalignment='center', verticalalignment='top')
-    ax3.set_title("sensitivity")
+    ax3.plot(x[el_pos], y[el_pos], "ko")
+    for i in range(n_el):
+        e = el_pos[i]
+        ax3.text(x[e], y[e]-5e-6, str(i + 1), size=8, horizontalalignment='center', verticalalignment='top')
+    ax3.set_title("sensitivity (log scale)")
     # clean up
     ax3.set_aspect("equal")
-    ax3.set_ylim([-0.05*meshwidth, 1.05*meshwidth])
+    ax3.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
     ax3.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
     fig.colorbar(im,ax=ax3,orientation='horizontal')
     
     
     
-    ax4 = fig.add_subplot(224,projection='3d')    
-#    ax = plt.axes(projection='3d')
-    ax4.scatter3D(x, y, sensitivity, c=sensitivity, cmap=plt.cm.inferno);
-    ax4.set_title('surface of sensitivity');
+#    ax4 = fig.add_subplot(224,projection='3d')    
+##    ax = plt.axes(projection='3d')
+#    ax4.scatter3D(x, y, sensitivity, c=sensitivity, cmap=plt.cm.Reds);
+#    ax4.set_title('surface of sensitivity');
+#
 
+    # recalculate Efield on triangular mesh points
+    (Ex, Ey) = tci.gradient(triang.x, triang.y)
+    E_norm = np.sqrt(Ex**2 + Ey**2)
+    
+    ax4 = fig.add_subplot(224)
+    
+    im = ax4.tripcolor(
+        x,
+        y,
+        tri,
+        E_norm,
+        edgecolors="none",
+        shading="gouraud",
+        cmap=plt.cm.Reds,
+        antialiased=True,
+        vmin=np.min(E_norm),
+        vmax=np.max(E_norm)
+    )
+    # draw electrodes
+    ax4.plot(x[el_pos], y[el_pos], "ko")
+    for i in range(n_el):
+        e = el_pos[i]
+        ax4.text(x[e], y[e]-5e-6, str(i + 1), size=8, horizontalalignment='center', verticalalignment='top')
+    ax4.set_title("E-field strength")
+    # clean up
+    ax4.set_aspect("equal")
+    ax4.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
+    ax4.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
+    fig.colorbar(im,ax=ax4,orientation='horizontal')
 
 
     
@@ -234,6 +277,22 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
 
 
 
+    # plotting electric field strength
+    (Ex, Ey) = tci.gradient(triang.x, triang.y)
+    E_norm = np.sqrt(Ex**2 + Ey**2)
+    fig=plt.figure()
+    ax = fig.add_subplot(221,projection='3d')
+    ax.scatter3D(x, y, E_norm, c=E_norm, cmap=plt.cm.bwr);
+    ax.set_title('surface of E_norm');
+    ax = fig.add_subplot(222)
+    ax.plot(E_norm)
+    ax.set_title('E_norm of all nodes')
+    ax = fig.add_subplot(223)
+    ax.semilogy(np.hypot(x,y),E_norm,'.')
+    ax.set_title('distance vs E_norm')    
+    fig.set_size_inches(8, 8)
+    plt.show()
+    
 
 #singlefig_ax1.tricontour(x, y, tri, f, vf, cmap=singlefig_cms[j])
 #singlefig_ax1.tricontour(x, y, tri, E_norm, E_norm_list, cmap=plt.cm.Reds_r)
