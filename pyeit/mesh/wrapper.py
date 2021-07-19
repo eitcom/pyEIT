@@ -116,28 +116,40 @@ def set_perm(mesh, anomaly=None, background=None):
     # assign anomaly values (for elements in regions)
     if anomaly is not None:
         for _, attr in enumerate(anomaly):
-            d = attr["d"]
-            # find elements whose distance to (cx,cy) is smaller than d
-            if "z" in attr:
-                index = (
-                    np.sqrt(
-                        (tri_centers[:, 0] - attr["x"]) ** 2
-                        + (tri_centers[:, 1] - attr["y"]) ** 2
-                        + (tri_centers[:, 2] - attr["z"]) ** 2
+            if "d" in attr:
+                d = attr["d"]
+                # find elements whose distance to (cx,cy) is smaller than d
+                if "z" in attr:
+                    index = (
+                        np.sqrt(
+                            (tri_centers[:, 0] - attr["x"]) ** 2
+                            + (tri_centers[:, 1] - attr["y"]) ** 2
+                            + (tri_centers[:, 2] - attr["z"]) ** 2
+                        )
+                        < d
                     )
-                    < d
-                )
-            else:
-                index = (
-                    np.sqrt(
-                        (tri_centers[:, 0] - attr["x"]) ** 2
-                        + (tri_centers[:, 1] - attr["y"]) ** 2
+                else:
+                    index = (
+                        np.sqrt(
+                            (tri_centers[:, 0] - attr["x"]) ** 2
+                            + (tri_centers[:, 1] - attr["y"]) ** 2
+                        )
+                        < d
                     )
-                    < d
-                )
-            # update permittivity within indices
-            perm[index] = attr["perm"]
-
+                # update permittivity within indices
+                perm[index] = attr["perm"]
+            
+            if "bbox" in attr:
+                anomaly_bbox = attr["bbox"]
+                # find elements inside the anomaly_bbox
+                index = tri_centers[:, 0]>anomaly_bbox[0,0]
+                index = np.logical_and(index, tri_centers[:, 0]<anomaly_bbox[1,0])
+                index = np.logical_and(index, tri_centers[:, 1]>anomaly_bbox[0,1])
+                index = np.logical_and(index, tri_centers[:, 1]<anomaly_bbox[1,1])
+                # update permittivity within indices
+                perm[index] = attr["perm"]                
+                
+                
     mesh_new = {"node": tri, "element": pts, "perm": perm}
     return mesh_new
 
