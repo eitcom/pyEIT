@@ -30,24 +30,27 @@ import pyeit.eit.jac as jac
 
 
 meshwidth = 200e-6
-meshsize = meshwidth/25
+meshheight = 200e-6
+meshsize = meshwidth/10
 n_el = 11
 elec_spacing = 10e-6
 
 
 """ 0. build mesh """
 def myrectangle(pts):
-    return mesh.shape.rectangle(pts,p1=[-meshwidth/2,0],p2=[meshwidth/2,meshwidth])
+    return mesh.shape.rectangle(pts,p1=[-meshwidth/2,0],p2=[meshwidth/2,meshheight])
 p_fix = np.array([[x,0] for x in np.arange(-(n_el//2*elec_spacing),(n_el//2+1)*elec_spacing,elec_spacing)])  # electrodes
 p_fix = np.append(p_fix, np.array([[x,meshwidth] for x in np.arange(-meshwidth/2,meshwidth/2,meshsize)]), axis=0)   # dirichlet nodes (const voltage)
 mesh_obj, el_pos = mesh.create(len(p_fix), 
                                fd=myrectangle, 
                                p_fix=p_fix, 
                                h0=meshsize,
-                               bbox = np.array([[-meshwidth/2, 0], [meshwidth/2, meshwidth]]))
+                               bbox = np.array([[-meshwidth/2, 0], [meshwidth/2, meshheight]]),
+                               subdivideregions = [ np.array([[-50e-6, 0], [50e-6, 100e-6]]),
+                                                    np.array([[-50e-6, 0], [50e-6, 100e-6]]) ])
 
 # rectangular grid when needed
-x_rgrid,y_rgrid = np.meshgrid(np.linspace(-meshwidth/2,meshwidth/2,400),np.linspace(0,meshwidth,400))
+x_rgrid,y_rgrid = np.meshgrid(np.linspace(-meshwidth/2,meshwidth/2,400),np.linspace(0,meshheight,400))
 
 # constant voltage boundary conditions
 # applied to all electrodes after n_el
@@ -87,7 +90,7 @@ def overlay_grid_plot(ax,solidmesh=True):
     ax.set_title("equi-potential lines")
     # clean up
     ax.set_aspect("equal")
-    ax.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
+    ax.set_ylim([-0.1*meshheight, 1.05*meshheight])
     ax.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
     scale_x,scale_y = 1e-6,1e-6
     ticks_x = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_x))
@@ -107,7 +110,7 @@ myframes=[]
 bead_diameter = 50e-6
 bead_height = 50e-6
 
-for bead_height in np.arange(30e-6,110e-6,10e-6):
+for bead_height in np.arange(30e-6,150e-6,10e-6):
     print('bead diameter',bead_diameter)
     print('bead height',bead_height)
     anomaly = [{"x": 10e-6, "y": bead_height, "d": bead_diameter/2, "perm": 0.25}]
@@ -189,6 +192,6 @@ if 0:
 
 if 0:
     # create animated .gif
-    imageio.mimsave('EIT_test_1a.gif', 
+    imageio.mimsave('EIT_test_3a.gif', 
                     myframes, 
                     fps=5)

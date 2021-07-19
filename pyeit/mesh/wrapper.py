@@ -14,7 +14,7 @@ from .shape import circle, area_uniform
 from .shape import fix_points_fd, fix_points_ball
 
 
-def create(n_el=16, fd=circle, fh=area_uniform, h0=0.1, p_fix=None, bbox=None):
+def create(n_el=16, fd=circle, fh=area_uniform, h0=0.1, p_fix=None, bbox=None, subdivideregions=[]):
     """
     Generating 2D/3D meshes using distmesh (pyEIT built-in)
 
@@ -54,7 +54,7 @@ def create(n_el=16, fd=circle, fh=area_uniform, h0=0.1, p_fix=None, bbox=None):
             p_fix = fix_points_ball(n_el=n_el)
 
     # 1. build mesh
-    p, t = build(fd, fh, pfix=p_fix, bbox=bbox, h0=h0)
+    p, t = build(fd, fh, pfix=p_fix, bbox=bbox, h0=h0, subdivideregions=subdivideregions)
     # 2. check whether t is counter-clock-wise, otherwise reshape it
     t = check_order(p, t)
     # 3. generate electrodes, the same as p_fix (top n_el)

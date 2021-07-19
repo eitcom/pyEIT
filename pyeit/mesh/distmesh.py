@@ -249,6 +249,22 @@ class DISTMESH:
         """ print debug messages """
         if self.verbose:
             print(*args)
+    
+    
+    def subdivide(self, bbox):
+        # subdivide triangles in a subregion
+        bbox_left = bbox[0,0]
+        bbox_right = bbox[1,0]
+        bbox_bot = bbox[0,1]
+        bbox_top = bbox[1,1]
+        for tri in self.t:
+            x = np.mean(self.p[tri,0])
+            y = np.mean(self.p[tri,1])
+            if(x>bbox_left and x<bbox_right and y>bbox_bot and y<bbox_top):
+                self.p = np.append(self.p,[[x,y],],axis=0)
+                
+        # re-generate triangles
+        self.triangulate()
 
 
 def bbox2d_init(h0, bbox):
@@ -340,7 +356,7 @@ def remove_duplicate_nodes(p, pfix, geps):
 
 
 def build(
-    fd, fh, pfix=None, bbox=None, h0=0.1, densityctrlfreq=10, maxiter=500, verbose=False
+    fd, fh, pfix=None, bbox=None, h0=0.1, densityctrlfreq=10, maxiter=500, verbose=False, subdivideregions=[]
 ):
     """main function for distmesh
 
@@ -438,6 +454,13 @@ def build(
 
     # at the end of iteration, (p - pold) is small, so we recreate delaunay
     dm.triangulate()
+
+
+    # subdivide mesh regions
+    for bbox in subdivideregions:
+        dm.subdivide(bbox)
+
+
 
     # you should remove duplicate nodes and triangles
     return dm.p, dm.t

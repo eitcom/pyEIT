@@ -11,6 +11,11 @@ from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+
+# add path to find pyeit if run directly
+import sys
+sys.path.append('../')  
 
 import pyeit.mesh as mesh
 from pyeit.mesh import quality
@@ -18,30 +23,44 @@ from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
 
 
-
-meshwidth = 100e-6
+meshwidth = 200e-6
+meshheight = 200e-6
 meshsize = meshwidth/50
 n_el = 11
+elec_spacing = 10e-6
 
 
 """ 0. build mesh """
 def myrectangle(pts):
-    return mesh.shape.rectangle(pts,p1=[-meshwidth/2,0],p2=[meshwidth/2,meshwidth/2])
-p_fix = np.array([[x,0] for x in np.arange(meshwidth*(-0.5+0.5/n_el),meshwidth/2,meshwidth/n_el)])
-mesh_obj, el_pos = mesh.create(n_el, 
+    return mesh.shape.rectangle(pts,p1=[-meshwidth/2,0],p2=[meshwidth/2,meshheight])
+p_fix = np.array([[x,0] for x in np.arange(-(n_el//2*elec_spacing),(n_el//2+1)*elec_spacing,elec_spacing)])  # electrodes
+p_fix = np.append(p_fix, np.array([[x,meshwidth] for x in np.arange(-meshwidth/2,meshwidth/2,meshsize)]), axis=0)   # dirichlet nodes (const voltage)
+mesh_obj, el_pos = mesh.create(len(p_fix), 
                                fd=myrectangle, 
                                p_fix=p_fix, 
                                h0=meshsize,
-                               bbox = np.array([[-meshwidth/2, 0], [meshwidth/2, meshwidth/2]]))
+                               bbox = np.array([[-meshwidth/2, 0], [meshwidth/2, meshheight]]),
+                               )
+                               #subdivideregions = [ np.array([[-50e-6, 0], [50e-6, 100e-6]]),
+                               #                     np.array([[-50e-6, 0], [50e-6, 100e-6]]) ])
 
 # rectangular grid when needed
-x_rgrid,y_rgrid = np.meshgrid(np.linspace(-meshwidth/2,meshwidth/2,100),np.linspace(0,meshwidth/2,50))
+x_rgrid,y_rgrid = np.meshgrid(np.linspace(-meshwidth/2,meshwidth/2,400),np.linspace(0,meshheight,400))
+
+# constant voltage boundary conditions
+# applied to all electrodes after n_el
+vbias = 0
+dirichlet = [ [el_pos[x],vbias] for x in range(n_el,len(p_fix)) ]
+#dirichlet = []
+
     
 # extract node, element, alpha
 pts = mesh_obj["node"]
 tri = mesh_obj["element"]
 x, y = pts[:, 0], pts[:, 1]
 quality.stats(pts, tri)
+
+
 
 singlefig = plt.figure()
 singlefig_ax1 = singlefig.add_subplot(111)
@@ -113,13 +132,21 @@ for j,bead_diameter in enumerate([0,15e-6,30e-6]):
     )
     # draw electrodes
     ax1.plot(x[el_pos], y[el_pos], "ro")
-    for i, e in enumerate(el_pos):
+    for i in range(n_el):
+        e = el_pos[i]
         ax1.text(x[e], y[e]-1e-6, str(i + 1), size=12, horizontalalignment='center', verticalalignment='top')
     ax1.set_title("equi-potential lines")
     # clean up
     ax1.set_aspect("equal")
     ax1.set_ylim([-0.05*meshwidth, 0.55*meshwidth])
     ax1.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
+    scale_x,scale_y = 1e-6,1e-6
+    ticks_x = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_x))
+    ax1.xaxis.set_major_formatter(ticks_x)        
+    ticks_y = ticker.FuncFormatter(lambda y, pos: '{0:g}'.format(y/scale_y))
+    ax1.yaxis.set_major_formatter(ticks_y)      
+    ax1.set_xlabel('microns')
+    ax1.set_ylabel('microns (height)')
     
     
     ax2 = fig.add_subplot(122)
@@ -142,13 +169,21 @@ for j,bead_diameter in enumerate([0,15e-6,30e-6]):
     )
     # draw electrodes
     ax2.plot(x[el_pos], y[el_pos], "ro")
-    for i, e in enumerate(el_pos):
+    for i in range(n_el):
+        e = el_pos[i]
         ax2.text(x[e], y[e]-1e-6, str(i + 1), size=12, horizontalalignment='center', verticalalignment='top')
     ax2.set_title("estimated electric field lines")
     # clean up
     ax2.set_aspect("equal")
     ax2.set_ylim([-0.05*meshwidth, 0.55*meshwidth])
     ax2.set_xlim([-0.55*meshwidth, 0.55*meshwidth])
+    scale_x,scale_y = 1e-6,1e-6
+    ticks_x = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_x))
+    ax2.xaxis.set_major_formatter(ticks_x)        
+    ticks_y = ticker.FuncFormatter(lambda y, pos: '{0:g}'.format(y/scale_y))
+    ax2.yaxis.set_major_formatter(ticks_y)      
+    ax2.set_xlabel('microns')
+    ax2.set_ylabel('microns (height)')
     
     fig.set_size_inches(12, 12)
     

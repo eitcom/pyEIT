@@ -15,6 +15,10 @@ import matplotlib.ticker as ticker
 
 from mpl_toolkits import mplot3d
 
+# add path to find pyeit if run directly
+import sys
+sys.path.append('../')  
+
 import pyeit.mesh as mesh
 from pyeit.eit.interp2d import tri_area, sim2pts
 from pyeit.mesh import quality
@@ -84,8 +88,8 @@ def calc_sens(fwd, ex_mat):
 
 
 
-for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
-#for elec_sep in [1,]:
+#for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
+for elec_sep in [3,]:
 
     print('elec_sep',elec_sep)
     
@@ -154,7 +158,6 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
         for i in range(n_el):
             e = el_pos[i]
             ax1.text(x[e], y[e]-5e-6, str(i), size=8, horizontalalignment='center', verticalalignment='top')
-        ax.set_title("equi-potential lines")
         # clean up
         ax.set_aspect("equal")
         ax.set_ylim([-0.1*meshwidth, 1.05*meshwidth])
@@ -176,6 +179,7 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
     vf = np.linspace(min(f), max(f), 32)   # list of contour voltages
     ax1.tricontour(x, y, tri, f, vf, cmap=plt.cm.inferno)
     overlay_grid_plot(ax1)
+    ax1.set_title("equi-potential lines")
     
     
     ax2 = fig.add_subplot(222)
@@ -186,7 +190,7 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
     ax2.streamplot(x_rgrid,y_rgrid, Ex, Ey, color=color, linewidth=1, cmap=plt.cm.inferno,
               density=1, arrowstyle='->', arrowsize=1.5)
     overlay_grid_plot(ax2)
-    
+    ax2.set_title("electric field")
     
     # fig.savefig('demo_bp.png', dpi=96)
     #plt.show()
@@ -209,6 +213,7 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
     )
     fig.colorbar(im,ax=ax3,orientation='horizontal')
     overlay_grid_plot(ax3)    
+    ax3.set_title("log(sensitivity)")
     
     
 #    ax4 = fig.add_subplot(224,projection='3d')    
@@ -217,28 +222,35 @@ for elec_sep in [-5,-4,-3,-2,-1,1,2,3,4,5]:
 #    ax4.set_title('surface of sensitivity');
 #
 
-    # recalculate Efield on triangular mesh points
-    (Ex, Ey) = tci.gradient(triang.x, triang.y)
+    # calculate Efield on rectangular mesh points
+    (Ex, Ey) = tci.gradient(x_rgrid,y_rgrid)
     E_norm = np.sqrt(Ex**2 + Ey**2)
     
     ax4 = fig.add_subplot(224)
     
-    im = ax4.tripcolor(
-        x,
-        y,
-        tri,
-        E_norm,
-        edgecolors="none",
-        shading="gouraud",
-        cmap=plt.cm.Reds,
-        antialiased=True,
-        vmin=np.min(E_norm),
-        vmax=np.max(E_norm)
-    )
-    fig.colorbar(im,ax=ax4,orientation='horizontal')
-    overlay_grid_plot(ax4)    
+#    im = ax4.tripcolor(
+#        x,
+#        y,
+#        tri,
+#        E_norm,
+#        edgecolors="none",
+#        shading="gouraud",
+#        cmap=plt.cm.Reds,
+#        antialiased=True,
+#        vmin=np.min(E_norm),
+#        vmax=np.max(E_norm)
+#    )
+#    fig.colorbar(im,ax=ax4,orientation='horizontal')
+#    overlay_grid_plot(ax4)    
 
-
+    E_norm = np.array(E_norm)
+    E_norm = E_norm / np.mean(E_norm,axis=1)[0]
+    ax4.semilogy(np.linspace(0,meshwidth,400), np.mean(E_norm,axis=1))
+    ax4.set_xlabel('distance from the sensor (microns)')
+    ax4.set_ylabel('mean electric field strength')
+    scale_x,scale_y = 1e-6,1e-6
+    ticks_x = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_x))
+    ax4.xaxis.set_major_formatter(ticks_x)        
     
     fig.set_size_inches(12, 12)
     
