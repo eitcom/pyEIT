@@ -38,7 +38,7 @@ elec_spacing = 10e-6
 
 """ 0. build mesh """
 def myrectangle(pts):
-    return mesh.shape.rectangle(pts,p1=[-meshwidth/2,0],p2=[meshwidth/2,meshheight])
+    return mesh.shape.rectangle(pts,p1=[-meshwidth/2,-10e-6],p2=[meshwidth/2,meshheight])
 p_fix = np.array([[x,0] for x in np.arange(-(n_el//2*elec_spacing),(n_el//2+1)*elec_spacing,elec_spacing)])  # electrodes
 p_fix = np.append(p_fix, np.array([[x,meshwidth] for x in np.arange(-meshwidth/2,meshwidth/2,meshsize)]), axis=0)   # dirichlet nodes (const voltage)
 mesh_obj, el_pos = mesh.create(len(p_fix), 
@@ -113,7 +113,8 @@ bead_height = 30e-6
 for bead_height in np.arange(15e-6,50e-6,10e-6):
     print('bead diameter',bead_diameter)
     print('bead height',bead_height)
-    anomaly = [{"x": 0e-6, "y": bead_height, "d": bead_diameter/2, "perm": 0.25},]
+    anomaly = [{"x": 0e-6, "y": bead_height, "d": bead_diameter/2, "perm": 0.25},
+               {"bbox": np.array([[-meshwidth/2, -10e-6], [meshwidth, 0e-6]]), "perm": 0.5},]
 #               {"x": 0e-6, "y": bead_height, "d": bead_diameter/3, "perm": 1}]
     mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
     perm = mesh_new["perm"]
@@ -143,7 +144,7 @@ for bead_height in np.arange(15e-6,50e-6,10e-6):
     eit = jac.JAC(mesh_obj, el_pos, ex_mat, perm=1.0, parser="std")
     eit.setup(p=0.25, lamb=1.0, method="lm")
     # lamb = lamb * lamb_decay
-    ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=5, verbose=True)
+    ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
     
     
     # plot results
