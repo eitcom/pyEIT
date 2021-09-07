@@ -21,6 +21,10 @@ minerva_data[:,2] = -minerva_data[:,2]
 minerva_data[:,2] = minerva_data[:,2] - minerva_data[0,2]
 minerva_data[:,2] = 1 + 10*minerva_data[:,2]
 
+#minerva_data[:,2] = 1/minerva_data[:,2]
+#minerva_data[:,2] = minerva_data[:,2] - minerva_data[0,2]
+#minerva_data[:,2] = 1.15 + 0.04*minerva_data[:,2]
+
 
 from mpl_toolkits import mplot3d
 
@@ -36,9 +40,9 @@ from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.jac as jac
 
 
-meshwidth = 200e-6
-meshheight = 100e-6
-meshsize = meshwidth/40
+meshwidth = 150e-6
+meshheight = 80e-6
+meshsize = meshwidth/50
 n_el = 11
 elec_spacing = 10e-6
 
@@ -114,10 +118,10 @@ def overlay_grid_plot(ax,solidmesh=True):
 myframes=[]
 
 # add object
-bead_diameter = 30e-6
-bead_height = 30e-6
+bead_diameter = 20e-6
+#bead_height = 30e-6
 
-for bead_height in [16e-6,]:
+for bead_height in [12e-6,]:
     print('bead diameter',bead_diameter)
     print('bead height',bead_height)
     anomaly = [{"x": 0e-6, "y": bead_height, "d": bead_diameter/2, "perm": 0.25},
@@ -139,7 +143,10 @@ for bead_height in [16e-6,]:
 #    ex_mat = np.append( ex_mat, np.array( [ [x,x+3] for x in range(0,n_el-4) ] ), axis=0 )
 #    ex_mat = np.append( ex_mat, np.array( [ [x,x+4] for x in range(0,n_el-5) ] ), axis=0 )
 #    ex_mat = np.append( ex_mat, np.array( [ [x,x+5] for x in range(0,n_el-6) ] ), axis=0 )
+
+    # use the same measurements as the experimental data
     ex_mat = minerva_data[:,:2].astype(np.int)
+
     
     """ 2. calculate simulated data """    
     fwd = Forward(mesh_obj, el_pos)
@@ -152,16 +159,19 @@ for bead_height in [16e-6,]:
     eit = jac.JAC(mesh_obj, el_pos, ex_mat, perm=1.0, parser="std")
     eit.setup(p=0.25, lamb=10.0, method="lm")
     # lamb = lamb * lamb_decay
+    
+    print('solving from simulated data')
     ds_from_sim = eit.gn(f1.v, 
                          lamb_decay=0.1, 
                          lamb_min=1e-5, 
-                         maxiter=10, 
+                         maxiter=5, 
                          verbose=True)
-    
+
+    print('solving from Minerva bead data')    
     ds_from_minerva = eit.gn(minerva_data[:,2], 
                              lamb_decay=0.5, 
                              lamb_min=1e-5, 
-                             maxiter=10, 
+                             maxiter=5, 
                              verbose=True)
     
     
