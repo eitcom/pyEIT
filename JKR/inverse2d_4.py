@@ -121,10 +121,10 @@ myframes=[]
 bead_diameter = 20e-6
 #bead_height = 30e-6
 
-for bead_height in [12e-6,]:
+for bead_height in [11e-6,]:
     print('bead diameter',bead_diameter)
     print('bead height',bead_height)
-    anomaly = [{"x": 0e-6, "y": bead_height, "d": bead_diameter/2, "perm": 0.25},
+    anomaly = [{"x": 0e-6, "y": bead_height, "d": bead_diameter/2, "perm": 0.1},
                {"bbox": np.array([[-meshwidth/2, -10e-6], [meshwidth, 0e-6]]), "perm": 0.5},]
 #               {"x": 0e-6, "y": bead_height, "d": bead_diameter/3, "perm": 1}]
     mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
@@ -153,11 +153,38 @@ for bead_height in [12e-6,]:
     f1 = fwd.solve_eit(ex_mat, perm=mesh_new["perm"], parser="std")
     #print('simulated measurements',f1)
     
+
+    
+    # ~~~~~~~~~~~~~~~~~~
+    meas_mat = np.hstack([ex_mat,f1.v[:,np.newaxis]])
+    plt.figure(figsize=(8,4))    
+    for spacing in range(6):
+        pats = np.where(np.abs(meas_mat[:,1]-meas_mat[:,0])==spacing)[0]
+        if(len(pats)>0):
+            toplot = meas_mat[pats,2]
+            #toplot = toplot - np.min(toplot)
+            #toplot = toplot / np.max(toplot)
+            plt.subplot(1,2,1)
+            plt.plot(spacing + toplot,'.-')
+            plt.title('simulated')
+
+            toplot = minerva_data[pats,2]
+            #toplot = toplot - np.min(toplot)
+            #toplot = toplot / np.max(toplot)
+            plt.subplot(1,2,2)
+            plt.plot(spacing + toplot,'.-')        
+            plt.title('minerva, measured & rescaled')
+    # ~~~~~~~~~~~~~~~~~~    
+    plt.show()
+
+
+
     
     """ 3. solve_eit using gaussian-newton (with regularization) """
     # number of stimulation lines/patterns
     eit = jac.JAC(mesh_obj, el_pos, ex_mat, perm=1.0, parser="std")
     eit.setup(p=0.25, lamb=10.0, method="lm")
+    #eit.setup(p=0.25, lamb=10.0, method="kotre")
     # lamb = lamb * lamb_decay
     
     print('solving from simulated data')
@@ -223,28 +250,7 @@ for bead_height in [12e-6,]:
     im  = im.reshape(fig.canvas.get_width_height()[::-1] + (3,))
     myframes.append(im)
     
-    
-    # ~~~~~~~~~~~~~~~~~~
-    meas_mat = np.hstack([ex_mat,f1.v[:,np.newaxis]])
-    plt.figure(figsize=(8,4))    
-    for spacing in range(6):
-        pats = np.where(np.abs(meas_mat[:,1]-meas_mat[:,0])==spacing)[0]
-        if(len(pats)>0):
-            toplot = meas_mat[pats,2]
-            #toplot = toplot - np.min(toplot)
-            #toplot = toplot / np.max(toplot)
-            plt.subplot(1,2,1)
-            plt.plot(spacing + toplot,'.-')
-            plt.title('simulated')
 
-            toplot = minerva_data[pats,2]
-            #toplot = toplot - np.min(toplot)
-            #toplot = toplot / np.max(toplot)
-            plt.subplot(1,2,2)
-            plt.plot(spacing + toplot,'.-')        
-            plt.title('minerva, measured & rescaled')
-    # ~~~~~~~~~~~~~~~~~~    
-    plt.show()
 
 
 if 0:
