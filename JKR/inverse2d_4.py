@@ -16,7 +16,7 @@ import imageio
 
 
 # MINERVA 
-#minerva_data = np.loadtxt('minerva_output2.txt',delimiter=',')
+minerva_data = np.loadtxt('minerva_output2.txt',delimiter=',')
 #minerva_data[:,2] = -minerva_data[:,2]
 #minerva_data[:,2] = minerva_data[:,2] - minerva_data[0,2]
 #minerva_data[:,2] = 1 + 10*minerva_data[:,2]
