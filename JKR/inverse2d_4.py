@@ -16,10 +16,10 @@ import imageio
 
 
 # MINERVA 
-minerva_data = np.loadtxt('minerva_output2.txt',delimiter=',')
-#minerva_data[:,2] = -minerva_data[:,2]
-#minerva_data[:,2] = minerva_data[:,2] - minerva_data[0,2]
-#minerva_data[:,2] = 1 + 10*minerva_data[:,2]
+minerva_data = np.loadtxt('minerva_output3.txt',delimiter=',')
+# minerva_data[:,2] = -minerva_data[:,2]
+# minerva_data[:,2] = minerva_data[:,2] - minerva_data[0,2]
+# minerva_data[:,2] = 1 + 10*minerva_data[:,2]
 
 #minerva_data[:,2] = 1/minerva_data[:,2]
 #minerva_data[:,2] = minerva_data[:,2] - minerva_data[0,2]
@@ -178,14 +178,23 @@ for bead_height in [11e-6,]:
     plt.show()
 
 
+    ect_gap = minerva_data[:,1] - minerva_data[:,0]
+    for spacing in range(1,6):
+        minerva_data[:,2][ect_gap==spacing] = minerva_data[:,2][ect_gap==spacing] - min(minerva_data[:,2][ect_gap==spacing])
+        minerva_data[:,2][ect_gap==spacing] = minerva_data[:,2][ect_gap==spacing] / (max(minerva_data[:,2][ect_gap==spacing]) - min(minerva_data[:,2][ect_gap==spacing])) * (max(meas_mat[:,2][ect_gap==spacing]) - min(meas_mat[:,2][ect_gap==spacing]))
+        minerva_data[:,2][ect_gap==spacing] = minerva_data[:,2][ect_gap==spacing] + min(meas_mat[:,2][ect_gap==spacing])
+  
 
-    
     """ 3. solve_eit using gaussian-newton (with regularization) """
     # number of stimulation lines/patterns
     eit = jac.JAC(mesh_obj, el_pos, ex_mat, perm=1.0, parser="std")
     eit.setup(p=0.25, lamb=10.0, method="lm")
     #eit.setup(p=0.25, lamb=10.0, method="kotre")
     # lamb = lamb * lamb_decay
+
+    # dump f1.v file
+    print(f1.v)
+
     
     print('solving from simulated data')
     ds_from_sim = eit.gn(f1.v, 
@@ -193,6 +202,8 @@ for bead_height in [11e-6,]:
                          lamb_min=1e-5, 
                          maxiter=10, 
                          verbose=True)
+
+
 
     print('solving from Minerva bead data')    
     ds_from_minerva = eit.gn(minerva_data[:,2], 
