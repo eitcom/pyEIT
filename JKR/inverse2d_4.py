@@ -16,10 +16,10 @@ import imageio
 
 
 # MINERVA 
-minerva_data = np.loadtxt('minerva_output2.txt',delimiter=',')
-minerva_data[:,2] = -minerva_data[:,2]
-minerva_data[:,2] = minerva_data[:,2] - minerva_data[0,2]
-minerva_data[:,2] = 1 + 10*minerva_data[:,2]
+#minerva_data = np.loadtxt('minerva_output2.txt',delimiter=',')
+#minerva_data[:,2] = -minerva_data[:,2]
+#minerva_data[:,2] = minerva_data[:,2] - minerva_data[0,2]
+#minerva_data[:,2] = 1 + 10*minerva_data[:,2]
 
 #minerva_data[:,2] = 1/minerva_data[:,2]
 #minerva_data[:,2] = minerva_data[:,2] - minerva_data[0,2]
@@ -191,14 +191,14 @@ for bead_height in [11e-6,]:
     ds_from_sim = eit.gn(f1.v, 
                          lamb_decay=0.1, 
                          lamb_min=1e-5, 
-                         maxiter=5, 
+                         maxiter=8, 
                          verbose=True)
 
     print('solving from Minerva bead data')    
     ds_from_minerva = eit.gn(minerva_data[:,2], 
                              lamb_decay=0.5, 
                              lamb_min=1e-5, 
-                             maxiter=5, 
+                             maxiter=8, 
                              verbose=True)
     
     
