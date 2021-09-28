@@ -47,8 +47,7 @@ mesh_obj, el_pos = mesh.create(len(p_fix),
                                h0=meshsize,
                                bbox = np.array([[-meshwidth/2, 0], [meshwidth/2, meshheight]]),
                                )
-mesh_new=mesh_obj.copy()
-perm = mesh_new["perm"]
+
 
 # rectangular grid when needed
 rgrid_size=1e-6
@@ -71,11 +70,15 @@ x_tri, y_tri = tri_centers[:, 0], tri_centers[:, 1]
 
 
 
-num_trials = 10
+num_trials = 20
 
 for j in range(num_trials):
-    num_beads = np.random.randint(3)
+    mesh_new=mesh_obj.copy()
+    perm = mesh_new["perm"]
     background=1.0
+    
+    num_beads = np.random.randint(3)
+
     for b in range(num_beads):
         bead_diameter = 30e-6 + 10e-6*np.random.randn()
         bead_diameter = max(bead_diameter,2e-6)
