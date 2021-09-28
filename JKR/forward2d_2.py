@@ -13,7 +13,7 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-from matplotlib.tri import Triangulation, CubicTriInterpolator
+from matplotlib.tri import Triangulation, CubicTriInterpolator, LinearTriInterpolator
 
 import itertools
 import h5py
@@ -109,7 +109,8 @@ for j in range(num_trials):
     # create interpolator for permittivity
     # and get permittivity on a rectangular mesh
     triang = Triangulation(x_tri, y_tri)
-    tci = CubicTriInterpolator(triang, perm)
+    #tci = CubicTriInterpolator(triang, perm)
+    tci = LinearTriInterpolator(triang, perm)
     perm_xy = tci(x_rgrid,y_rgrid)
 
     # plot
