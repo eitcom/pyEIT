@@ -265,10 +265,12 @@ for bead_height in [11e-6,]:
         y,
         tri,
         np.real(ds_from_minerva),
-        cmap=plt.cm.Reds,
-        antialiased=False,
-        vmin=np.mean(np.real(ds_from_minerva)) - 1*np.std(np.real(ds_from_minerva)),
-        vmax=np.mean(np.real(ds_from_minerva)) + 3*np.std(np.real(ds_from_minerva))
+        cmap=plt.cm.autumn,
+        antialiased=True,
+        vmin=0.6,
+        vmax=0.95
+        #vmin=np.mean(np.real(ds_from_minerva)) - 1*np.std(np.real(ds_from_minerva)),
+        #vmax=np.mean(np.real(ds_from_minerva)) + 3*np.std(np.real(ds_from_minerva))
     )
     #fig.colorbar(im,ax=ax2,orientation='horizontal')
     #overlay_grid_plot(ax,solidmesh=False)  
