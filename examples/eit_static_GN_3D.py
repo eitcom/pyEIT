@@ -14,14 +14,12 @@ from pyeit.eit.interp2d import sim2pts
 from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.jac as jac
 
-from pyeit.mesh.shape import circle,ball,ellipse  #added
-
 # build tetrahedron
 # 3D tetrahedron must have a bbox
 bbox = [[-1, -1, -1], [1, 1, 1]]
 # save calling convention as distmesh 2D
 # 3D Mesh shape is specified with fd parameter in the instantiation, e.g : fd=ball , Default in 3D :fd=ball
-mesh_obj, el_pos = mesh.create(h0=0.2,bbox=bbox)  
+mesh_obj, el_pos = mesh.create(h0=0.2, bbox=bbox)
 pts = mesh_obj["node"]
 tri = mesh_obj["element"]
 
@@ -57,13 +55,12 @@ f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new["perm"])
 
 # number of stimulation lines/patterns
 
- 
+
 eit = jac.JAC(mesh_obj, el_pos, ex_mat, step, perm=1.0, parser="std")
 eit.setup(p=0.25, lamb=1.0, method="lm")
 # lamb = lamb * lamb_decay
 ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
 node_ds = sim2pts(pts, tri, np.real(ds))
-
 
 
 # mplot.tetplot(p, t, edge_color=(0.2, 0.2, 1.0, 1.0), alpha=0.01)

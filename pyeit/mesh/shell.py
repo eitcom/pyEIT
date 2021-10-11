@@ -95,11 +95,11 @@ def multi_circle(
         raise ValueError("r_layer and perm_per_layer must have same length")
 
     def _fd(pts):
-        """ shape function """
+        """shape function"""
         return circle(pts, pc=[0, 0], r=r)
 
     def _fh(pts):
-        """ distance function """
+        """distance function"""
         r2 = np.sum(pts ** 2, axis=1)
         return 0.6 * (2.0 - r2)
 

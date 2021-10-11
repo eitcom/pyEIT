@@ -26,7 +26,7 @@ def ati(x):
 
 
 def ati_df(x):
-    """ ati of DataFrame """
+    """ati of DataFrame"""
     return x.abs().sum(skipna=False) / 192.0
 
 
@@ -67,7 +67,7 @@ def fmmu_index(n_el=16, dist=8, step=1):
 
 
 def ati_lr(x, sel):
-    """ extract ATI left, right """
+    """extract ATI left, right"""
     x_sel = np.nanmean(np.abs(x[sel]))
 
     return x_sel

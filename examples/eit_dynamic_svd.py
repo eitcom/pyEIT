@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 import pyeit.mesh as mesh
 from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
-from pyeit.mesh.shape import circle,ellipse,rectangle0,rectangle,box_circle,thorax,L_shaped
+from pyeit.mesh.shape import thorax
 import pyeit.eit.svd as svd
 from pyeit.eit.interp2d import sim2pts
 
 """ 0. construct mesh """
-# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax (thorax imaging is still under construction), Default :fd=circle
-mesh_obj, el_pos = mesh.create(16, h0=0.1)
+# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
+mesh_obj, el_pos = mesh.create(16, h0=0.1, fd=thorax)
 # mesh_obj, el_pos = mesh.layer_circle()
 
 # extract node, element, alpha

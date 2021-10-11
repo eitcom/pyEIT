@@ -15,10 +15,9 @@ from pyeit.eit.interp2d import tri_area, sim2pts
 from pyeit.mesh import quality
 from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
-from pyeit.mesh.shape import circle,ellipse,rectangle0,rectangle,box_circle,thorax,L_shaped
 
 """ 0. build mesh """
-# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax (thorax imaging is still under construction), Default :fd=circle
+# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
 mesh_obj, el_pos = mesh.layer_circle(n_layer=8, n_fan=6)
 # mesh_obj, el_pos = mesh.create()
 

@@ -19,16 +19,22 @@ The design priciples of `pyEIT` are **modularity, minimalism, extensibility and 
 | **vispy**      | *Optional* | failed with `vispy` in python 3.8        |
 | **xarray**     | *Optional* | for large data analysis                  |
 | **distmesh**   | *Optional* | A build-in module is provided in `pyEIT` |
+| **shapely**    | *Optional* | for thorax mesh implementation           |
 
 **Q1, Why you choose vispy for 3D visualization?**
 
 `pyEIT` uses `vispy` for visualizing 3D meshes (tetrahedron), and this module is not required if you are using 2D EIT only. `vispy` has minimal system dependencies and it is purely python. All you need is a decent graphical card with `OpenGL` support. It supports fast rendering, which I think is more superior to `vtk` or `mayavi` and it also has decent support for python 3. Please go to the website [vispy.org](http://vispy.org/) or github repository [vispy.github](https://github.com/vispy/vispy) for more details. Installation of vispy is simple by typing `python setup.py install`. We are also considering `mayavi` for a future version of `pyEIT`.
 
-**Q2, How to contribute ?**
+**Q2, When to use Shapely?**
+
+`pyEIT` uses `Shapely` to build the thorax mesh and reconstruct EIT thoracic images. The thorax mesh shape is considered as a polygon and it is built based on real geometric measures given from a thorax figure simulated by `EIDORS` EIT MATLAB library. The figure in turns is based on a real thorax CT (Computed Tomography) scan.
+To visualize thorax simulations, you should install `Shapely`. To do so, you should simply type `pip install Shapely`. You can visit Shapely official documentation website [shapely.readthedocs.io](https://shapely.readthedocs.io/en/stable/index.html#) for more details or the dependency description at [Shapely.PyPY](https://pypi.org/project/Shapely/).
+
+**Q3, How to contribute ?**
 
 Interested users can contribute **(create a PR! any type of improvement is welcome)** FEM forward simulations, inverse solving (EIT imaging) algorithms as well as their models. We will setup a wiki page dedicated to this topic.
 
-**Q3, Fast setup.**
+**Q4, Fast setup.**
 
 [Anaconda from continuum](https://www.continuum.io/downloads) is highly recommended for this package. PyEIT is purely python and has minimal dependencies.
 

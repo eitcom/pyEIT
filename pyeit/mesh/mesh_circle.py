@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 class MeshCircle:
-    """ create meshes on uniform circle """
+    """create meshes on uniform circle"""
 
     def __init__(self, n_fan=6, n_layer=8, n_el=16):
         """
@@ -40,20 +40,20 @@ class MeshCircle:
         self.index_per_layer = index
 
     def create(self):
-        """ create pts and tri """
+        """create pts and tri"""
         pts = self._spawn_points()
         tri = self._spawn_elements()
         el_pos = self._get_electrodes()
         return pts, tri, el_pos
 
     def update(self, n_fan=8, n_layer=6, n_el=16):
-        """ update parameters """
+        """update parameters"""
         self.n_fan = n_fan
         self.n_layer = n_layer
         self.n_el = n_el
 
     def _get_electrodes(self):
-        """ return the numbering of electrodes """
+        """return the numbering of electrodes"""
         el_start = self.index_per_layer[self.n_layer - 1]
         el_len = self.pts_per_layer[self.n_layer]
 
@@ -69,7 +69,7 @@ class MeshCircle:
         return n
 
     def _spawn_points(self):
-        """ generate points """
+        """generate points"""
         # init points
         p = [0, 0]
 
@@ -88,7 +88,7 @@ class MeshCircle:
 
     @staticmethod
     def _points_on_circle(n, offset=0, offset_enabled=False):
-        """ generate points on unit circle """
+        """generate points on unit circle"""
         fan_angle = 2 * np.pi / n
         a = np.array([i * fan_angle for i in range(n)])
         if offset_enabled:
@@ -98,7 +98,7 @@ class MeshCircle:
         return pts
 
     def _spawn_elements(self):
-        """ connect points fan-by-fan using a fixed pattern """
+        """connect points fan-by-fan using a fixed pattern"""
 
         # element connections
         e = []
@@ -166,7 +166,7 @@ class MeshCircle:
 
 
 def demo():
-    """ demo using unit_circle_mesh """
+    """demo using unit_circle_mesh"""
     model = MeshCircle()
     p, e, el_pos = model.create()
 

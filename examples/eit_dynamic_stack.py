@@ -12,12 +12,12 @@ import pyeit.mesh as mesh
 from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
 
-from pyeit.mesh.shape import circle,ellipse,rectangle0,rectangle,box_circle,thorax,L_shaped
+from pyeit.mesh.shape import thorax
 import pyeit.eit.jac as jac
 
 """ 1. setup """
-# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax (thorax imaging is still under construction), Default :fd=circle
-mesh_obj, el_pos = mesh.create(16)
+# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
+mesh_obj, el_pos = mesh.create(16, fd=thorax)
 
 # test function for altering the permittivity in mesh
 anomaly = [{"x": 0.4, "y": 0.4, "d": 0.2, "perm": 100}]

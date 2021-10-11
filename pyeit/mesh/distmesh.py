@@ -17,8 +17,9 @@ from .utils import dist, edge_project
 
 from .shape import thorax
 
+
 class DISTMESH:
-    """ class for distmesh """
+    """class for distmesh"""
 
     def __init__(
         self,
@@ -100,11 +101,11 @@ class DISTMESH:
         self.num_density = 0
         self.num_move = 0
 
-        '''
+        """
         keep points that are inside the thorax shape using a function that returns a matrix containing
         True if the corresponing point is inside the shape, False if not . 
-        '''
-        if (fd==thorax):
+        """
+        if fd == thorax:
             p = p[fd(p)]
         else:
             # keep points inside (minus distance) with a small gap (geps)
@@ -121,15 +122,21 @@ class DISTMESH:
         self.pfix = p_fix
         self.nfix = len(p_fix)
 
+        # convert boolean array to 2D to be compatible with Delaunay pts paramater (must be 2D)
+        if fd == thorax:
+            p = np.reshape(p, (-1, 2))
+
         # remove duplicated points of p and p_fix
         # avoid overlapping of mesh points
         if self.nfix > 0:
             p = remove_duplicate_nodes(p, p_fix, self.geps)
             p = np.vstack([p_fix, p])
 
-        if (fd==thorax):
-            p = np.reshape(p, (-1, 2))  # convert boolean array to 2D to be compatible with Delaunay pts paramater (must be 2D)  
-  
+        if fd == thorax:
+            p = np.reshape(
+                p, (-1, 2)
+            )  # convert boolean array to 2D to be compatible with Delaunay pts paramater (must be 2D)
+
         # store p and N
         self.N = p.shape[0]
         self.p = p
@@ -145,34 +152,34 @@ class DISTMESH:
         self.triangulate()
 
     def is_retriangulate(self):
-        """ test whether re-triangulate is needed """
+        """test whether re-triangulate is needed"""
         return np.max(dist(self.p - self.pold)) > (self.h0 * self.ttol)
 
     def triangulate(self):
-        """ retriangle by delaunay """
+        """retriangle by delaunay"""
         self.debug("enter triangulate = ", self.num_triangulate)
         self.num_triangulate += 1
         # pnew[:] = pold[:] makes a new copy, not reference
         self.pold = self.p.copy()
 
         # triangles where the points are arranged counterclockwise
-        if (self.fd!=thorax):
-             tri = Delaunay(self.p).simplices
-        else : 
-             tri = Delaunay(self.p,qhull_options="QJ").simplices #QJ parameter so tuples don't exceed boundary
+        if self.fd != thorax:
+            tri = Delaunay(self.p).simplices
+        else:
+            tri = Delaunay(
+                self.p, qhull_options="QJ"
+            ).simplices  # QJ parameter so tuples don't exceed boundary
 
         pmid = np.mean(self.p[tri], axis=1)
 
-        if (self.fd!=thorax):  
+        if self.fd != thorax:
             # keeps only interior points
             t = tri[self.fd(pmid) < -self.geps]
-        else : 
-            #adapting returned triangles matrix with the thorax integrated fd
-            tri_pmid = [ p[0] for p in self.fd(pmid) ]
+        else:
+            # adapting returned triangles matrix with the thorax integrated fd
+            tri_pmid = [p[0] for p in self.fd(pmid)]
             tri_pmid = np.array(tri_pmid)
-            t = tri[ tri_pmid ]
-
-
+            t = tri[tri_pmid]
         # extract edges (bars)
         bars = t[:, self.edge_combinations].reshape((-1, 2))
         # sort and remove duplicated edges, eg (1,2) and (2,1)
@@ -184,7 +191,7 @@ class DISTMESH:
         self.t = t
 
     def bar_length(self):
-        """ the forces of bars (python is by-default row-wise operation) """
+        """the forces of bars (python is by-default row-wise operation)"""
         # two node of a bar
         bars_a, bars_b = self.p[self.bars[:, 0]], self.p[self.bars[:, 1]]
         barvec = bars_a - bars_b
@@ -199,7 +206,7 @@ class DISTMESH:
         return L, L0, barvec
 
     def bar_force(self, L, L0, barvec):
-        """ forces on bars """
+        """forces on bars"""
         # abs(forces)
         F = np.maximum(L0 - L, 0)
         # normalized and vectorized forces
@@ -207,9 +214,9 @@ class DISTMESH:
         # now, we get forces and sum them up on nodes
         # using sparse matrix to perform automatic summation
         # rows : left, left, right, right (2D)
-        #      : left, left, left, right, right, right (3D)
+        # : left, left, left, right, right, right (3D)
         # cols : x, y, x, y (2D)
-        #      : x, y, z, x, y, z (3D)
+        # : x, y, z, x, y, z (3D)
         data = np.hstack([Fvec, -Fvec])
         if self.n_dim == 2:
             rows = self.bars[:, [0, 0, 1, 1]]
@@ -247,7 +254,7 @@ class DISTMESH:
         # print('density control ratio : %f' % (float(N)/Nold))
 
     def move_p(self, Ftot):
-        """ update p """
+        """update p"""
         self.debug("  number of moves = ", self.num_move)
         self.num_move += 1
         # move p along forces
@@ -269,7 +276,7 @@ class DISTMESH:
         return score
 
     def debug(self, *args):
-        """ print debug messages """
+        """print debug messages"""
         if self.verbose:
             print(*args)
 
@@ -452,14 +459,13 @@ def build(
         # calculate bar forces
         Ftot = dm.bar_force(L, L0, barvec)
 
-        if ( fd!=thorax): 
+        if fd != thorax:
             # update p
             converge = dm.move_p(Ftot)
-
             # the stopping ctriterion (movements interior are small)
             if converge:
                 break
-        else:            #Thorax mesh is created so far without iteration process (to be updated)
+        else:  # Thorax mesh is created so far without iteration process (to be updated)
             break
 
     # at the end of iteration, (p - pold) is small, so we recreate delaunay
