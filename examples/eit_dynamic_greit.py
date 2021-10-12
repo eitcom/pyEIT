@@ -67,7 +67,7 @@ x, y, ds = eit.mask_value(ds, mask_value=np.NAN)
 
 # plot
 """
-imshow will automatically set NaN (bad values) to 'w', 
+imshow will automatically set NaN (bad values) to 'w',
 if you want to manually do so
 
 import matplotlib.cm as cm

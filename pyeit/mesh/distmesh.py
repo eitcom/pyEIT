@@ -103,7 +103,7 @@ class DISTMESH:
 
         """
         keep points that are inside the thorax shape using a function that returns a matrix containing
-        True if the corresponing point is inside the shape, False if not . 
+        True if the corresponing point is inside the shape, False if not.
         """
         if fd == thorax:
             p = p[fd(p)]
