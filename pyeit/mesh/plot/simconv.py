@@ -7,7 +7,7 @@ import numpy as np
 
 
 def sim_conv(simplex, n=3):
-    """ simplex to any dimension """
+    """simplex to any dimension"""
     v = [list(combinations(sim, n)) for sim in simplex]
     # change to (num_of_points x n)
     t = np.sort(np.array(v).reshape(-1, n), axis=1)
@@ -17,10 +17,10 @@ def sim_conv(simplex, n=3):
 
 
 def sim2tri(simplex):
-    """ convert simplex of high dimension to indices of triangles """
+    """convert simplex of high dimension to indices of triangles"""
     return sim_conv(simplex, 3)
 
 
 def sim2edge(simplex):
-    """ convert simplex of high dimension to indices of edges """
+    """convert simplex of high dimension to indices of edges"""
     return sim_conv(simplex, 2)

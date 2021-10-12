@@ -62,7 +62,7 @@ def load_csv(fstr, resample=None):
     df = pd.read_csv(fstr)
 
     def f(x):
-        """ f = lambda x: re.sub('/', '-', x) """
+        """f = lambda x: re.sub('/', '-', x)"""
         return re.sub("/", "-", x)
 
     timestr = df["timestmp"].map(f)

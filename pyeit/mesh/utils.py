@@ -188,7 +188,7 @@ def tri_area(xy):
 
 
 def tet_volume(xyz):
-    """ calculate the volume of tetrahedron """
+    """calculate the volume of tetrahedron"""
     s = xyz[[2, 3, 0]] - xyz[[1, 2, 3]]
     v_tot = (1.0 / 6.0) * la.det(s)
     return v_tot
@@ -197,7 +197,7 @@ def tet_volume(xyz):
 if __name__ == "__main__":
     # test 'edge_project'
     def fd_test(p):
-        """ unit circle/ball """
+        """unit circle/ball"""
         if len(p.shape) == 1:
             d = np.sqrt(np.sum(p ** 2)) - 1.0
         else:

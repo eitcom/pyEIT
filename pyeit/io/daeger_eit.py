@@ -14,7 +14,7 @@ import numpy as np
 
 
 class DAEGER_EIT:
-    """ process daeger pulmovista .eit file """
+    """process daeger pulmovista .eit file"""
 
     def __init__(self, fname):
         """
@@ -42,7 +42,7 @@ class DAEGER_EIT:
 
     @staticmethod
     def read_header(fname, max_lines=50):
-        """ read information from header in text format """
+        """read information from header in text format"""
         fr = 0
         fmt = 0
         with open(fname, "r", encoding="ISO-8859-1") as fd:
@@ -94,7 +94,7 @@ class DAEGER_EIT:
         return par
 
     def read_data(self):
-        """ read data frame by frame """
+        """read data frame by frame"""
         nframe = self.info["nframe"]
         data = np.zeros((nframe, 600), dtype=np.double)
         with open(self.fname, "rb") as fh:
@@ -106,7 +106,7 @@ class DAEGER_EIT:
         return data
 
     def load(self):
-        """ convert data in to measurements (voltages) """
+        """convert data in to measurements (voltages)"""
         data = self.read_data()
         vv = self.ft[0] * data[:, :208] - self.ft[1] * data[:, 322:530]
         return vv

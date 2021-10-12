@@ -103,7 +103,7 @@ class EitBase:
         # self.setup()  # user must setup manually
 
     def setup(self):
-        """ setup EIT solver """
+        """setup EIT solver"""
         raise NotImplementedError
 
     def solve(self, v1, v0, normalize=False, log_scale=False):
@@ -138,7 +138,7 @@ class EitBase:
         return ds
 
     def map(self):
-        """ simple mat using projection matrix """
+        """simple mat using projection matrix"""
         raise NotImplementedError
 
     def normalize(self, v1, v0):
