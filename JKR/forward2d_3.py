@@ -1,7 +1,7 @@
 # coding: utf-8
 """ forward 2D """
 
-# JKR July 2021. Based on pyeit/examples/fem_forward2d.py
+# JKR November 2021. Based on pyeit/examples/fem_forward2d.py
 
 
 

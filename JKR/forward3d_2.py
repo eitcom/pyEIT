@@ -1,7 +1,7 @@
 # coding: utf-8
 
 
-# JKR July 2021. Based on pyeit/examples/eit_dynamic_jac3d.py
+# JKR November 2021. Based on pyeit/examples/eit_dynamic_jac3d.py
 
 
 # Copyright (c) Benyuan Liu. All Rights Reserved.
