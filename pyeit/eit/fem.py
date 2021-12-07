@@ -189,7 +189,7 @@ class Forward:
         return b
 
     def _natural_boundary_mit(self, ex_line):
-        """ MIT has only one drive coil """
+        """MIT has only one drive coil"""
         drv_coil = self.el_pos[ex_line]
         b = np.zeros((self.n_pts, 1))
         b[drv_coil] = 1.0
