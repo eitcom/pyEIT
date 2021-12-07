@@ -141,7 +141,7 @@ class FitEllipse:
     """
 
     def __init__(self):
-        """ initialize mesh """
+        """initialize mesh"""
         self.a = np.zeros(6)
         # self.pts = mesh['node']
         # self.tri = mesh['element']

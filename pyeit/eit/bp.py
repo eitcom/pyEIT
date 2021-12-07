@@ -10,10 +10,10 @@ from .base import EitBase
 
 
 class BP(EitBase):
-    """ A naive inversion of (Euclidean) back projection. """
+    """A naive inversion of (Euclidean) back projection."""
 
     def setup(self, weight="none"):
-        """ setup BP """
+        """setup BP"""
         self.params = {"weight": weight}
 
         # build the weighting matrix
@@ -24,13 +24,18 @@ class BP(EitBase):
         # BP: H is the smear matrix B, which must be transposed for node imaging.
         self.H = self.H.T
 
+    def normalize(self, v1, v0):
+        """redefine normalize for BP (without amplitude normalization)"""
+        dv = (v1 - v0) / self.v0_sign
+        return dv
+
     def map(self, dv):
-        """ return Hx """
+        """return Hx"""
         x = -dv / self.v0_sign
         return np.dot(self.H, x)
 
     def solve_gs(self, v1, v0):
-        """ solving using gram-schmidt """
+        """solving using gram-schmidt"""
         a = np.dot(v1, v0) / np.dot(v0, v0)
         vn = -(v1 - a * v0) / self.v0_sign
         ds = np.dot(self.H, vn)

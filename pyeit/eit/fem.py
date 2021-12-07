@@ -15,7 +15,7 @@ from .utils import eit_scan_lines
 
 
 class Forward:
-    """ FEM forward computing code """
+    """FEM forward computing code"""
 
     def __init__(self, mesh, el_pos):
         """
@@ -489,7 +489,7 @@ def _k_triangle(xy):
 
 
 def det2x2(s1, s2):
-    """ Calculate the determinant of a 2x2 matrix """
+    """Calculate the determinant of a 2x2 matrix"""
     return s1[0] * s2[1] - s1[1] * s2[0]
 
 

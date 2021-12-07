@@ -14,7 +14,7 @@ from .base import EitBase
 
 
 class JAC(EitBase):
-    """ A sensitivity-based EIT imaging class """
+    """A sensitivity-based EIT imaging class"""
 
     def setup(self, p=0.20, lamb=0.001, method="kotre"):
         """
@@ -34,11 +34,11 @@ class JAC(EitBase):
         self.H = h_matrix(self.J, p, lamb, method)
 
     def map(self, dv):
-        """ return Hv """
+        """return Hv"""
         return -np.dot(self.H, dv)
 
     def solve_gs(self, v1, v0):
-        """ solving by weighted frequency """
+        """solving by weighted frequency"""
         a = np.dot(v1, v0) / np.dot(v0, v0)
         dv = v1 - a * v0
         ds = -np.dot(self.H, dv)

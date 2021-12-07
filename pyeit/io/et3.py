@@ -238,7 +238,7 @@ class ET3:
 
 
 def med_outlier(d, window=17):
-    """ filter outliers using median filter """
+    """filter outliers using median filter"""
     med = d.rolling(window, center=False).median()
     std = d.rolling(window, center=False).std()
     std[std == np.nan] = 0.0

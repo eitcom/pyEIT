@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 
 class ET4:
-    """.et4 file loader """
+    """.et4 file loader"""
 
     def __init__(
         self, file_name, ex_mtx=None, step=1, compatible=False, output_resistor=False
@@ -137,7 +137,7 @@ class ET4:
 
 
 def et4_tell(fstr):
-    """ check the filetype of et4 """
+    """check the filetype of et4"""
     with open(fstr, "rb") as fh:
         fh.seek(0, 2)  # move the cursor to the end (2) of the file
         file_len = fh.tell()

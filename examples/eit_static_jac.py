@@ -11,12 +11,13 @@ import matplotlib.pyplot as plt
 from pyeit.mesh import create, set_perm
 from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
+from pyeit.mesh.shape import thorax
 import pyeit.eit.jac as jac
 
 """ 1. setup """
 n_el = 16
-mesh_obj, el_pos = create(n_el, h0=0.1)
-
+# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
+mesh_obj, el_pos = create(n_el, h0=0.05, fd=thorax)
 # test function for altering the permittivity in mesh
 anomaly = [
     {"x": 0.4, "y": 0.4, "d": 0.2, "perm": 10},
@@ -31,14 +32,15 @@ tri = mesh_obj["element"]
 perm = mesh_new["perm"]
 
 # show
-fig, ax = plt.subplots(figsize=(6, 4))
+fig, axes = plt.subplots(1, 2, constrained_layout=True)
+fig.set_size_inches(6, 4)
+
+ax = axes[0]
 im = ax.tripcolor(
     pts[:, 0], pts[:, 1], tri, np.real(perm), shading="flat", cmap=plt.cm.viridis
 )
-fig.colorbar(im)
 ax.axis("equal")
 ax.set_title(r"$\Delta$ Conductivities")
-plt.show()
 
 """ 2. calculate simulated data """
 el_dist, step = 1, 1
@@ -54,7 +56,7 @@ eit.setup(p=0.25, lamb=1.0, method="lm")
 ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
 
 # plot
-fig, ax = plt.subplots(figsize=(6, 4))
+ax = axes[1]
 im = ax.tripcolor(
     pts[:, 0],
     pts[:, 1],
@@ -64,8 +66,9 @@ im = ax.tripcolor(
     alpha=1.0,
     cmap=plt.cm.viridis,
 )
-fig.colorbar(im)
 ax.axis("equal")
 ax.set_title("Conductivities Reconstructed")
-# fig.savefig('../figs/demo_static.png', dpi=96)
+
+fig.colorbar(im, ax=axes.ravel().tolist())
+# fig.savefig('../doc/images/demo_static.png', dpi=96)
 plt.show()

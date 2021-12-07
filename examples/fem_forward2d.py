@@ -11,9 +11,11 @@ import pyeit.mesh as mesh
 from pyeit.mesh import quality
 from pyeit.eit.fem import Forward
 from pyeit.eit.utils import eit_scan_lines
+from pyeit.mesh.shape import thorax
 
 """ 0. build mesh """
-mesh_obj, el_pos = mesh.create(16, h0=0.08)
+# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
+mesh_obj, el_pos = mesh.create(16, h0=0.08, fd=thorax)
 
 # extract node, element, alpha
 pts = mesh_obj["node"]
@@ -30,6 +32,7 @@ perm = mesh_new["perm"]
 # setup EIT scan conditions
 ex_dist, step = 7, 1
 ex_mat = eit_scan_lines(16, ex_dist)
+# Define electrode current sink and current source
 ex_line = ex_mat[0].ravel()
 
 # calculate simulated data using FEM
@@ -42,8 +45,11 @@ fig = plt.figure()
 ax1 = fig.add_subplot(111)
 # draw equi-potential lines
 vf = np.linspace(min(f), max(f), 32)
+# Draw contour lines on an unstructured triangular grid.
 ax1.tricontour(x, y, tri, f, vf, cmap=plt.cm.viridis)
+
 # draw mesh structure
+# Create a pseudocolor plot of an unstructured triangular grid
 ax1.tripcolor(
     x,
     y,

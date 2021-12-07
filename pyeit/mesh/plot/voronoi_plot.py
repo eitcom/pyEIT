@@ -72,7 +72,7 @@ def voronoi(pts, tri, fd=None):
         cells.append(list())
 
     def extract_xy(e):
-        """ append center (x,y) of triangle-circumcircle to the cell list """
+        """append center (x,y) of triangle-circumcircle to the cell list"""
         p1, p2, p3 = pts[tri[e]]
         xc, yc, _ = circumcircle(p1, p2, p3)
         return [xc, yc]

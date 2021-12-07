@@ -14,7 +14,7 @@ from vispy.color import Color
 
 # build your visual
 class TetVisual(CompoundVisual):
-    """ display a 3D mesh """
+    """display a 3D mesh"""
 
     def __init__(
         self,
@@ -67,11 +67,11 @@ class TetVisual(CompoundVisual):
 
         @property
         def edge_color(self):
-            """ get """
+            """get"""
             return self._edge_color
 
         @edge_color.setter
         def edge_color(self, edge_color):
-            """ set """
+            """set"""
             self._edge_color = Color(edge_color)
             self._update()

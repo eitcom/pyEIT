@@ -46,7 +46,7 @@ void main()
 
 
 class TetPlotVisual(Visual):
-    """ template """
+    """template"""
 
     def __init__(
         self,
@@ -126,7 +126,7 @@ class TetPlotVisual(Visual):
 def tetplot(
     points, simplices, vertex_color=None, edge_color=None, alpha=1.0, axis=True
 ):
-    """ main function for tetplot """
+    """main function for tetplot"""
     TetPlot = scene.visuals.create_visual_node(TetPlotVisual)
 
     # convert data types for OpenGL
@@ -183,7 +183,7 @@ def tetplot(
 
 
 def blue_red_colormap(f):
-    """ mapping vector to blue (-) red (+) color map """
+    """mapping vector to blue (-) red (+) color map"""
     # convert vertex_color
     cdict1 = {
         "red": ((0.0, 0.0, 0.0), (0.5, 0.0, 0.1), (1.0, 1.0, 1.0)),
@@ -199,7 +199,7 @@ def blue_red_colormap(f):
     )
 
     def blue_red():
-        """ interpolate blue red color """
+        """interpolate blue red color"""
         return LinearSegmentedColormap("BlueRed", cdict1)
 
     # map vector to RGBA

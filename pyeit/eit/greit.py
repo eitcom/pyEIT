@@ -21,7 +21,7 @@ from .interp2d import meshgrid, weight_sigmod
 
 
 class GREIT(EitBase):
-    """ The GREIT algorithm """
+    """The GREIT algorithm"""
 
     def setup(self, method="dist", w=None, p=0.20, lamb=1e-2, n=32, s=20.0, ratio=0.1):
         """
@@ -64,11 +64,11 @@ class GREIT(EitBase):
             raise ValueError("method " + method + " not supported yet")
 
     def map(self, dv):
-        """ return H*v """
+        """return H*v"""
         return -np.dot(self.H, dv)
 
     def _build_dist(self, w_mat):
-        """ generate R using distribution method. """
+        """generate R using distribution method."""
         lamb, p = self.params["lamb"], self.params["p"]
 
         f = self.fwd.solve_eit(
@@ -85,7 +85,7 @@ class GREIT(EitBase):
         return h_mat
 
     def _build_grid(self):
-        """ build grids and mask """
+        """build grids and mask"""
         # initialize grids
         n = self.params["n"]
         xg, yg, mask = meshgrid(self.pts, n=n)
@@ -98,18 +98,18 @@ class GREIT(EitBase):
         return w_mat, xg, yg, mask
 
     def get_grid(self):
-        """ get grids and mask """
+        """get grids and mask"""
         return self.xg, self.yg, self.mask
 
     def mask_value(self, ds, mask_value=0):
-        """ (plot only) mask values on nodes outside 2D mesh. """
+        """(plot only) mask values on nodes outside 2D mesh."""
         ds[self.mask] = mask_value
         ds = ds.reshape(self.xg.shape)
         return self.xg, self.yg, ds
 
     @staticmethod
     def build_set(x, y):
-        """ generate R from a set of training sets (deprecate). """
+        """generate R from a set of training sets (deprecate)."""
         # E_w[yy^T]
         y_y_t = la.inv(np.dot(y, y.transpose()))
         h_matrix = np.dot(np.dot(x, y), y_y_t)

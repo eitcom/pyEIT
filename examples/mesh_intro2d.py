@@ -9,9 +9,11 @@ import matplotlib.pyplot as plt
 
 from pyeit.mesh import wrapper
 from pyeit.eit.interp2d import sim2pts
+from pyeit.mesh.shape import thorax
 
 """ 0. create mesh """
-mesh_obj, el_pos = wrapper.create(16, h0=0.1)
+# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
+mesh_obj, el_pos = wrapper.create(16, h0=0.1, fd=thorax)
 
 # extract nodes and triangles (truss)
 pts = mesh_obj["node"]
@@ -67,8 +69,8 @@ im = ax.tripcolor(
 )
 # 'tricontour' interpolates values on nodes, for example
 # ax.tricontour(pts[:, 0], pts[:, 1], tri, np.real(node_ds),
-#               shading='flat', alpha=1.0, linewidths=1,
-#               cmap=plt.cm.RdBu)
+# shading='flat', alpha=1.0, linewidths=1,
+# cmap=plt.cm.RdBu)
 fig.colorbar(im)
 ax.axis("equal")
 ax.axis([-1.2, 1.2, -1.2, 1.2])

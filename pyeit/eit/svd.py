@@ -11,7 +11,7 @@ from .jac import JAC
 
 
 class SVD(JAC):
-    """ implementing a sensitivity-based EIT imaging class """
+    """implementing a sensitivity-based EIT imaging class"""
 
     def setup(self, n=25, rcond=1e-2, method="svd"):
         """
