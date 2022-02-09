@@ -65,7 +65,7 @@ class GREIT(EitBase):
 
     def map(self, dv):
         """return H*v"""
-        return -np.dot(self.H, dv)
+        return -np.dot(self.H, dv.transpose())
 
     def _build_dist(self, w_mat):
         """generate R using distribution method."""

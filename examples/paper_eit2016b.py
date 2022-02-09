@@ -51,6 +51,7 @@ f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new["perm"])
 
 """ ax2. BP """
 eit = bp.BP(mesh_obj, el_pos, ex_mat=ex_mat, step=1, parser="std")
+eit.setup(weight="none")
 ds = eit.solve(f1.v, f0.v, normalize=True)
 ds_bp = ds
 

@@ -32,13 +32,13 @@ class BP(EitBase):
     def map(self, dv):
         """return Hx"""
         x = -dv / self.v0_sign
-        return np.dot(self.H, x)
+        return np.dot(self.H, x.transpose())
 
     def solve_gs(self, v1, v0):
         """solving using gram-schmidt"""
         a = np.dot(v1, v0) / np.dot(v0, v0)
         vn = -(v1 - a * v0) / self.v0_sign
-        ds = np.dot(self.H, vn)
+        ds = np.dot(self.H, vn.transpose())
         return ds
 
     def simple_weight(self, num_voltages):
