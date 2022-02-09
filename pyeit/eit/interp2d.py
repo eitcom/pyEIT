@@ -179,7 +179,7 @@ def weight_idw(xy, xyi, k=6, p=1.0):
     """
     d_mat = _distance_matrix2d(xy, xyi)
     # weight = 1.0 / d_mat**p
-    weight = 1.0 / d_mat ** p
+    weight = 1.0 / d_mat**p
     # keep only k largest neighbores (nearest)
     for w in weight.T:
         sort_indices = np.argsort(w)

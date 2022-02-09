@@ -63,7 +63,7 @@ class BP(EitBase):
         w: NDArray
             weighting matrix
         """
-        d = np.sqrt(np.sum(self.pts ** 2, axis=1))
+        d = np.sqrt(np.sum(self.pts**2, axis=1))
         r = np.max(d)
         w = (1.01 * r - d) / (1.01 * r)
         # weighting by element-wise multiplication W with B

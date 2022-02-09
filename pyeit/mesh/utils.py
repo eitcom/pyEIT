@@ -27,9 +27,9 @@ def dist(p):
         distances of points to origin
     """
     if p.ndim == 1:
-        d = np.sqrt(np.sum(p ** 2))
+        d = np.sqrt(np.sum(p**2))
     else:
-        d = np.sqrt(np.sum(p ** 2, axis=1))
+        d = np.sqrt(np.sum(p**2, axis=1))
 
     return d
 
@@ -88,7 +88,7 @@ def edge_grad(p, fd, h0=1.0):
 
     # normalize gradient, avoid divide by zero
     g = g_xyz.reshape(-1, ndim)
-    g2 = np.sum(g ** 2, axis=1)
+    g2 = np.sum(g**2, axis=1)
 
     # move unit
     g_num = g / g2[:, np.newaxis] * d[:, np.newaxis]
@@ -199,9 +199,9 @@ if __name__ == "__main__":
     def fd_test(p):
         """unit circle/ball"""
         if len(p.shape) == 1:
-            d = np.sqrt(np.sum(p ** 2)) - 1.0
+            d = np.sqrt(np.sum(p**2)) - 1.0
         else:
-            d = np.sqrt(np.sum(p ** 2, axis=1)) - 1.0
+            d = np.sqrt(np.sum(p**2, axis=1)) - 1.0
 
         return d
 
