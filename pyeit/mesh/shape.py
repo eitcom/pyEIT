@@ -253,7 +253,7 @@ def fix_points_ball(pc=None, r=1.0, z=0.0, n_el=16):
     if pc is None:
         pc = [0, 0, 0]
 
-    ry = np.sqrt(r ** 2 - z ** 2)
+    ry = np.sqrt(r**2 - z**2)
     theta = 2.0 * np.pi * np.arange(n_el) / float(n_el)
     p_fix = [[ry * np.sin(th), ry * np.cos(th), z] for th in theta]
     return np.array(p_fix) + pc

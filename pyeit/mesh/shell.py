@@ -46,7 +46,7 @@ def multi_shell(n_fan=8, n_layer=8, n_el=16, r_layer=None, perm_per_layer=None):
     perm = np.ones(e.shape[0])
 
     t_center = np.mean(p[e], axis=1)
-    r_center = np.sqrt(np.sum(t_center ** 2, axis=1))
+    r_center = np.sqrt(np.sum(t_center**2, axis=1))
     for layer, a in zip(r_layer, perm_per_layer):
         r0, r1 = delta_r * (layer - 1), delta_r * layer
         idx = (r0 < r_center) & (r_center < r1)
@@ -100,7 +100,7 @@ def multi_circle(
 
     def _fh(pts):
         """distance function"""
-        r2 = np.sum(pts ** 2, axis=1)
+        r2 = np.sum(pts**2, axis=1)
         return 0.6 * (2.0 - r2)
 
     # 1. build fix points, may be used as the position for electrodes
@@ -128,7 +128,7 @@ def multi_circle(
     # 4. init uniform element sigma
     perm = background * np.ones(t.shape[0])
     t_center = np.mean(p[t], axis=1)
-    r_center = np.sqrt(np.sum(t_center ** 2, axis=1))
+    r_center = np.sqrt(np.sum(t_center**2, axis=1))
 
     # update permittivity
     for (layer, a) in zip(r_layer, perm_per_layer):

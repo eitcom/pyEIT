@@ -21,10 +21,6 @@ jobs:
       run: |
         $CONDA/bin/conda install flake8
         $CONDA/bin/flake8 pyeit/
-    - name: Lint with black
-      run: |
-        $CONDA/bin/conda install black
-        $CONDA/bin/black --check pyeit/
     - name: Test with pytest
       run: |
         $CONDA/bin/conda install pytest
@@ -34,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
     steps:
     - uses: actions/setup-python@v2
       with:

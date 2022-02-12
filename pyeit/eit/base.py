@@ -100,7 +100,7 @@ class EitBase:
         self.xg = []
         self.yg = []
         self.mask = []
-        # self.setup()  # user must setup manually
+        # self.setup()  # warning: user must run solver.setup() manually
 
     def setup(self):
         """setup EIT solver"""
@@ -131,7 +131,7 @@ class EitBase:
         else:
             dv = v1 - v0
 
-        ds = -np.dot(self.H, dv)  # s = -Hv
+        ds = -np.dot(self.H, dv.transpose())  # s = -Hv
         if log_scale:
             ds = np.exp(ds) - 1.0
 

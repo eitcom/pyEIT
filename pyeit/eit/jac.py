@@ -35,13 +35,13 @@ class JAC(EitBase):
 
     def map(self, dv):
         """return Hv"""
-        return -np.dot(self.H, dv)
+        return -np.dot(self.H, dv.transpose())
 
     def solve_gs(self, v1, v0):
         """solving by weighted frequency"""
         a = np.dot(v1, v0) / np.dot(v0, v0)
         dv = v1 - a * v0
-        ds = -np.dot(self.H, dv)
+        ds = -np.dot(self.H, dv.transpose())
         # return average epsilon on element
         return ds
 
