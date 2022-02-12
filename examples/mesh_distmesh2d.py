@@ -23,7 +23,7 @@ def example1():
 
     def _fh(pts):
         """distance function"""
-        r2 = np.sum(pts ** 2, axis=1)
+        r2 = np.sum(pts**2, axis=1)
         return 0.2 * (2.0 - r2)
 
     # build fix points, may be used as the position for electrodes
