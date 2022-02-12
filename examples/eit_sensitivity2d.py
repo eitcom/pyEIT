@@ -38,7 +38,7 @@ def calc_sens(fwd, ex_mat):
     v0 = p.v
     # normalized jacobian (note: normalize affect sensitivity)
     v0 = v0[:, np.newaxis]
-    jac = p.jac # / v0  # (normalize or not)
+    jac = p.jac  # / v0  # (normalize or not)
     # calculate sensitivity matrix
     s = np.linalg.norm(jac, axis=0)
     ae = tri_area(pts, tri)
