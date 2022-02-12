@@ -17,12 +17,11 @@ class BP(EitBase):
         self.params = {"weight": weight}
 
         # build the weighting matrix
+        # BP: in node imaging, H is the smear matrix (transpose of B)
         if weight == "simple":
             weights = self.simple_weight(self.B.shape[0])
-            self.H = weights * self.B
-
-        # BP: H is the smear matrix B, which must be transposed for node imaging.
-        self.H = self.H.T
+            wb_mat = weights * self.B
+            self.H = wb_mat.T
 
     def normalize(self, v1, v0):
         """redefine normalize for BP (without amplitude normalization)"""

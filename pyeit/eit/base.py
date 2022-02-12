@@ -92,15 +92,16 @@ class EitBase:
         if jac_normalized:
             self.J = self.J / np.abs(self.v0[:, None])
 
-        # mapping matrix
-        self.H = self.B
-
         # initialize other parameters
         self.params = {}
         self.xg = []
         self.yg = []
         self.mask = []
-        # self.setup()  # warning: user must run solver.setup() manually
+
+        # mapping matrix
+        self.H = self.B.T
+        # warning: user must run solver.setup() manually to get correct H
+        # self.setup()
 
     def setup(self):
         """setup EIT solver"""
