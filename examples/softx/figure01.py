@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from pyeit.mesh import create
 from pyeit.mesh import layer_circle
 
-
 mesh0, el_pos0 = create(n_el=16)
 mesh1, el_pos1 = layer_circle(n_el=16, n_fan=8, n_layer=8)
 
