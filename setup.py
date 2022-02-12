@@ -27,7 +27,7 @@ setup(
     keywords="python tools for electrical impedance tomography",
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(exclude=["test"]),
+    packages=find_packages(exclude=["tests", "tests.*"]),
     zip_safe=False,
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
