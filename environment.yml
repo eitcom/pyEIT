@@ -10,3 +10,4 @@ dependencies:
   - pandas
   - matplotlib
   - vispy
+  - shapely
