@@ -1,42 +1,33 @@
-"""
-A setuptools based setup module.
-
-See:
-https://packaging.python.org/en/latest/distributing.html
-https://github.com/pypa/sampleproject
-"""
-
-# Always prefer setuptools over distutils
+import pathlib
 from setuptools import setup, find_packages
 
 
+VERSION = "1.1.2"
+HERE = pathlib.Path(__file__).parent
+README = (HERE / "README.md").read_text()
+
 setup(
     name="pyeit",
-    # Versions should comply with PEP440.  For a discussion on single-sourcing
-    # the version across setup.py and the project code, see
-    # https://packaging.python.org/en/latest/single_source_version.html
-    version="0.0.1",
-    description="A python based framework for EIT",
+    version=VERSION,
+    description="A Python based framework for EIT (Electrical Impedance Tomography)",
+    long_description=README,
+    long_description_content_type="text/markdown",
     url="https://github.com/liubenyuan/pyEIT",
-    # Author details
     author="Benyuan Liu",
-    author_email="liubenyuan@google.com",
-    # Choose your license
-    license="Apache License, Version 2.0",
-    # What does your project relate to?
-    keywords="python tools for electrical impedance tomography",
-    # You can just specify the packages manually here if your project is
-    # simple. Or you can use find_packages().
+    author_email="liubenyuan@gmail.com",
+    license="BSD",
+    classifiers=[
+        "License :: OSI Approved :: BSD License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
+    keywords=["Electrical impedance tomography", "Python", "Unstructural Mesh"],
     packages=find_packages(exclude=["tests", "tests.*"]),
     zip_safe=False,
-    # List run-time dependencies here.  These will be installed by pip when
-    # your project is installed. For an analysis of "install_requires" vs pip's
-    # requirements files see:
-    # https://packaging.python.org/en/latest/requirements.html
     install_requires=["numpy", "scipy", "pandas"],
-    # Although 'package_data' is the preferred approach, in some case you may
-    # need to place data files outside of your packages. See:
-    # http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files # noqa
-    # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
-    # data_files=[('pyeit', ['data/data_file'])],
 )

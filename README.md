@@ -1,4 +1,4 @@
-# ![pyeit](doc/images/logo.png)
+# ![pyeit](https://raw.githubusercontent.com/liubenyuan/pyEIT/master/doc/images/logo.png)
 
 Thank you for the interest in `pyEIT`!
 
@@ -81,19 +81,19 @@ From the example folder, pick one demo and run!
 
 **Using** `examples/eit_dynamic_bp.py`
 
-![demo_bp](doc/images/demo_bp.png)
+![demo_bp](https://raw.githubusercontent.com/liubenyuan/pyEIT/master/doc/images/demo_bp.png)
 
 **Using** `examples/eit_dynamic_greit.py`
 
-![demo_greit](doc/images/demo_greit.png)
+![demo_greit](https://raw.githubusercontent.com/liubenyuan/pyEIT/master/doc/images/demo_greit.png)
 
 **Using** `examples/eit_dynamic_jac.py`
 
-![demo_greit](doc/images/demo_jac.png)
+![demo_greit](https://raw.githubusercontent.com/liubenyuan/pyEIT/master/doc/images/demo_jac.png)
 
 **Using** `examples/eit_static_jac.py`
 
-![demo_static](doc/images/demo_static.png)
+![demo_static](https://raw.githubusercontent.com/liubenyuan/pyEIT/master/doc/images/demo_static.png)
 
 ### 3.2 (3D) forward and inverse computing
 
