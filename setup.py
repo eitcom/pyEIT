@@ -29,5 +29,5 @@ setup(
     keywords=["Electrical impedance tomography", "Python", "Unstructural Mesh"],
     packages=find_packages(exclude=["tests", "tests.*"]),
     zip_safe=False,
-    install_requires=["numpy", "scipy", "pandas"],
+    install_requires=["numpy", "scipy", "pandas", "matplotlib", "shapely"],
 )
