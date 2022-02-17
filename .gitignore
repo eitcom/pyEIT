@@ -36,3 +36,20 @@ var/
 .installed.cfg
 *.egg
 
+# dbar and tex folder
+*.zip
+*.mat
+*.pdf
+*.m
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.gz
+*.thm
+*.DS_Store
+._data
+*_Matlab
+
+
