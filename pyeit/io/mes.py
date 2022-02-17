@@ -159,12 +159,13 @@ def extract_el(fh):
 
 
 if __name__ == "__main__":
-    # How to load and use a .mes file (github.com/liubenyuan/pyeit-models)
-    mstr = resource_filename("pyeit-models", "data/model/DLS2.mes")
+    # How to load and use a .mes file (github.com/liubenyuan/eitmesh)
+    mstr = resource_filename("eitmesh", "data/I0007.mes")
     mesh_obj, el_pos = load(fstr=mstr)
 
     # print the size
     e, pts = mesh_obj["element"], mesh_obj["node"]
+    mesh_center = np.array([np.median(pts[:, 0]), np.median(pts[:, 1])])
     # print('tri size = (%d, %d)' % e.shape)
     # print('pts size = (%d, %d)' % pts.shape)
 
@@ -173,13 +174,23 @@ if __name__ == "__main__":
     ax.triplot(pts[:, 0], pts[:, 1], e)
     ax.plot(pts[el_pos, 0], pts[el_pos, 1], "ro")
     for i, el in enumerate(el_pos):
-        ax.text(pts[el, 0], pts[el, 1], str(i + 1), color="r")
+        xy = np.array([pts[el, 0], pts[el, 1]])
+        text_offset = (xy - mesh_center) * [1, -1] * 0.05
+        ax.annotate(
+            str(i + 1),
+            xy=xy,
+            xytext=text_offset,
+            textcoords="offset points",
+            color="k",
+            ha="center",
+            va="center",
+        )
     ax.set_aspect("equal")
     ax.invert_yaxis()
 
     # bmp and mesh overlay
     fig, ax = plt.subplots(figsize=(6, 6))
-    imstr = mstr.replace("mes", "bmp")
+    imstr = mstr.replace(".mes", ".bmp")
     im = plt.imread(imstr)
     ax.imshow(im)
     ax.set_aspect("equal")
@@ -188,6 +199,16 @@ if __name__ == "__main__":
     ax.triplot(pts[:, 0], pts[:, 1], e)
     ax.plot(pts[el_pos, 0], pts[el_pos, 1], "ro")
     for i, el in enumerate(el_pos):
-        ax.text(pts[el, 0], pts[el, 1], str(i + 1), color="r")
+        xy = np.array([pts[el, 0], pts[el, 1]])
+        text_offset = (xy - mesh_center) * [1, -1] * 0.05
+        ax.annotate(
+            str(i + 1),
+            xy=xy,
+            xytext=text_offset,
+            textcoords="offset points",
+            color="w",
+            ha="center",
+            va="center",
+        )
     ax.axis("off")
     plt.show()

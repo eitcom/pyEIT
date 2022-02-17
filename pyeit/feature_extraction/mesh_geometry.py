@@ -284,7 +284,7 @@ def ellipse_points(x_cent=0, y_cent=0, semimaj=1, semimin=1, phi=0, theta_num=1e
 
     """
     # Generate data for ellipse structure
-    theta = np.linspace(0, 2 * np.pi, np.int(theta_num))
+    theta = np.linspace(0, 2 * np.pi, int(theta_num))
     r = 1 / np.sqrt((np.cos(theta)) ** 2 + (np.sin(theta)) ** 2)
     x = r * np.cos(theta)
     y = r * np.sin(theta)
@@ -300,8 +300,8 @@ def ellipse_points(x_cent=0, y_cent=0, semimaj=1, semimin=1, phi=0, theta_num=1e
 
 
 if __name__ == "__main__":
-    # load package mesh data from pyEIT (data/model/*.mes)
-    mstr = resource_filename("pyeit-models", "data/model/DLS2.mes")
+    # load package mesh data for pyEIT (data/*.mes)
+    mstr = resource_filename("eitmesh", "data/DLS2.mes")
     print(mstr)
 
     # load mesh
@@ -324,7 +324,7 @@ if __name__ == "__main__":
 
     # plot mesh
     fig, ax = plt.subplots(figsize=(9, 6))
-    mesh_image = mstr.replace("mes", "bmp")
+    mesh_image = mstr.replace(".mes", ".bmp")
     im = plt.imread(mesh_image)
     ax.imshow(im)
     ax.triplot(x, y, tri, "g-", lw=1.0, alpha=0.5)
@@ -335,13 +335,13 @@ if __name__ == "__main__":
     # plot electrodes and its numbering
     ax.plot(pts[el_pos, 0], pts[el_pos, 1], "bo")
     for i, e in enumerate(el_pos):
-        ax.text(pts[e, 0], pts[e, 1], np.str(i + 1), color="r")
+        ax.text(pts[e, 0], pts[e, 1], str(i + 1), color="r")
 
     # 2. demo using simple fit
     mg = SimpleMeshGeometry(mesh, el_pos)
     perm = np.zeros(tri.shape[0])
     fig, ax = plt.subplots(figsize=(9, 6))
-    mesh_image = mstr.replace("mes", "bmp")
+    mesh_image = mstr.replace(".mes", ".bmp")
     im = plt.imread(mesh_image)
     ax.imshow(im)
     # plot regions
@@ -352,7 +352,7 @@ if __name__ == "__main__":
     ax.plot(pts[el_pos, 0], pts[el_pos, 1], "bo")
     ax.set_title("left = 1.0, down right = 2.0")
     for i, e in enumerate(el_pos):
-        ax.text(pts[e, 0], pts[e, 1], np.str(i + 1), color="r", size=12)
+        ax.text(pts[e, 0], pts[e, 1], str(i + 1), color="r", size=12)
     fig.colorbar(img)
 
     plt.show()
