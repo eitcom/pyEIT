@@ -43,7 +43,7 @@ print('locations of electrodes',p_fix)
 bbox = np.array([[-meshwidth/2, -meshwidth/2, 0], [meshwidth/2, meshwidth/2, meshheight]])
 
 # save calling convention as distmesh 2D
-mesh_obj, el_pos = mesh.create(h0=meshsize, bbox=bbox, p_fix=p_fix, fd=ball)
+mesh_obj, el_pos = mesh.create(n_el=len(p_fix), h0=meshsize, bbox=bbox, p_fix=p_fix, fd=ball)
 
 pts = mesh_obj["node"]
 tri = mesh_obj["element"]
@@ -58,11 +58,19 @@ quality.stats(pts, tri)
 
 # array of electrode pairs
 
-ex_mat = list(itertools.product(range(n_el),[int((n_el+1)/2),int((n_el+5)/2),int((n_el-3)/2)]))
-ex_mat = np.array([e for e in ex_mat if e[0]!=e[1]])  # remove doubles
+#ex_mat = list(itertools.product(range(n_el),[int((n_el+1)/2),int((n_el+5)/2),int((n_el-3)/2)]))
+#ex_mat = np.array([e for e in ex_mat if e[0]!=e[1]])  # remove doubles
 
+# define the measurement matrix    
+p_fix_microns = np.int64(np.float32(p_fix)*1e6)
+p_fix_line_indices = np.array([x for x in range(len(p_fix_microns)) if p_fix_microns[x][0]==0])
 
-
+ex_mat = np.array( [ [x,x+1] for x in range(0,n_el-1) ] )
+ex_mat = np.append( ex_mat, np.array( [ [x,x+2] for x in range(0,n_el-3) ] ), axis=0 )
+ex_mat = np.append( ex_mat, np.array( [ [x,x+3] for x in range(0,n_el-4) ] ), axis=0 )
+ex_mat = np.append( ex_mat, np.array( [ [x,x+4] for x in range(0,n_el-5) ] ), axis=0 )
+ex_mat = np.append( ex_mat, np.array( [ [x,x+5] for x in range(0,n_el-6) ] ), axis=0 )
+ex_mat = np.array( [ [p_fix_line_indices[x1],p_fix_line_indices[x2]] for (x1,x2) in ex_mat ] )
 
 # calculate simulated data
 fwd = Forward(mesh_obj, el_pos)
