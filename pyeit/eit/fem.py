@@ -11,7 +11,7 @@ import numpy as np
 import numpy.linalg as la
 from scipy import sparse
 
-from .utils import eit_scan_lines
+from pyeit.eit.utils import eit_scan_lines
 
 
 class Forward:
@@ -236,7 +236,7 @@ def subtract_row(v, pairs):
     return v_diff
 
 
-def voltage_meter(ex_line, n_el=16, step=1, parser=None):
+def voltage_meter(ex_line, n_el=16, step=1, parser=None)->np.ndarray:
     """
     extract subtract_row-voltage measurements on boundary electrodes.
     we direct operate on measurements or Jacobian on electrodes,
@@ -249,9 +249,6 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None):
     B: current sink,
     M, N: boundary electrodes, where v_diff = v_n - v_m.
 
-    'no_meas_current': (EIDORS3D)
-    mesurements on current carrying electrodes are discarded.
-
     Parameters
     ----------
     ex_line: NDArray
@@ -260,12 +257,15 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None):
         number of total electrodes.
     step: int
         measurement method (two adjacent electrodes are used for measuring).
-    parser: str
-        if parser is 'fmmu', or 'rotate_meas' then data are trimmed,
+    parser: str or list[str]
+        if parser contains 'fmmu', or 'rotate_meas' then data are trimmed,
         boundary voltage measurements are re-indexed and rotated,
         start from the positive stimulus electrodestart index 'A'.
-        if parser is 'std', or 'no_rotate_meas' then data are trimmed,
+        if parser contains 'std', or 'no_rotate_meas' then data are trimmed,
         the start index (i) of boundary voltage measurements is always 0.
+        if parser contains 'meas_current', mesurements on all will be carried, 
+        otherwise (if not contained, of if 'no_meas_current' is contained) 
+        mesurements on current carrying electrodes are discarded.
 
     Returns
     -------
@@ -275,7 +275,13 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None):
     # local node
     drv_a = ex_line[0]
     drv_b = ex_line[1]
-    i0 = drv_a if parser in ("fmmu", "rotate_meas") else 0
+
+    if not isinstance(parser, list): # transform parser in list
+        parser = [parser]
+
+    meas_current= 'meas_current' in parser
+    fmmu_rotate= any(p in ("fmmu", "rotate_meas") for p in parser)
+    i0 = drv_a if fmmu_rotate else 0
 
     # build differential pairs
     v = []
@@ -283,7 +289,7 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None):
         m = a % n_el
         n = (m + step) % n_el
         # if any of the electrodes is the stimulation electrodes
-        if not (m == drv_a or m == drv_b or n == drv_a or n == drv_b):
+        if not (m == drv_a or m == drv_b or n == drv_a or n == drv_b) or meas_current:
             # the order of m, n matters
             v.append([n, m])
 
@@ -516,3 +522,25 @@ def _k_tetrahedron(xy):
     ke_matrix = np.dot(a, a.transpose()) / (36.0 * vt)
 
     return ke_matrix
+
+
+if __name__ == '__main__':
+
+    parser=['meas_current']
+    print('meas_current' in parser)
+    parser=['meas_current']
+    print('no_meas_current' in parser)
+
+    parser=['fmmu', 'meas_current']
+    print(any(p in ("fmmu", "rotate_meas") for p in parser))
+
+    ex_line=np.array([1, 2])
+    parser='meas_current'
+    v= voltage_meter(ex_line, parser= parser)
+    print(f'{v=}, {v.shape=}')
+    parser='no_meas_current'
+    v= voltage_meter(ex_line, parser= parser)
+    print(f'{v=}, {v.shape=}')
+    parser=None
+    v= voltage_meter(ex_line, parser= parser)
+    print(f'{v=}, {v.shape=}')
