@@ -533,13 +533,24 @@ if __name__ == '__main__':
     parser=['fmmu', 'meas_current']
     print(any(p in ("fmmu", "rotate_meas") for p in parser))
 
-    ex_line=np.array([1, 2])
-    parser='meas_current'
-    v= voltage_meter(ex_line, parser= parser)
-    print(f'{v=}, {v.shape=}')
-    parser='no_meas_current'
-    v= voltage_meter(ex_line, parser= parser)
-    print(f'{v=}, {v.shape=}')
-    parser=None
-    v= voltage_meter(ex_line, parser= parser)
-    print(f'{v=}, {v.shape=}')
+
+    ex_line=[[1, 0], [2, 1], [3, 2], [4, 3], [5, 4], [6, 5], [7, 6], [8, 7], [9, 8], [10, 9], [11, 10], [12, 11], [13, 12], [14, 13], [15, 14], [0, 15]]
+    
+    for i in ex_line:
+        line=np.array(i)
+        parser='meas_current'
+        v= voltage_meter(line, parser= parser)
+        print(f'{v=}')
+    
+    for i in ex_line:
+        line=np.array(i)
+        parser='no_meas_current'
+        v= voltage_meter(line, parser= parser)
+        print(f'{v=}')
+        
+    # parser='no_meas_current'
+    # v= voltage_meter(ex_line, parser= parser)
+    # print(f'{v=}, {v.shape=}')
+    # parser=None
+    # v= voltage_meter(ex_line, parser= parser)
+    # print(f'{v=}, {v.shape=}')
