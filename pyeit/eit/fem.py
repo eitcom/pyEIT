@@ -11,7 +11,7 @@ import numpy as np
 import numpy.linalg as la
 from scipy import sparse
 
-from pyeit.eit.utils import eit_scan_lines
+from .utils import eit_scan_lines
 
 
 class Forward:
@@ -522,35 +522,3 @@ def _k_tetrahedron(xy):
     ke_matrix = np.dot(a, a.transpose()) / (36.0 * vt)
 
     return ke_matrix
-
-if __name__ == '__main__':
-
-    parser=['meas_current']
-    print('meas_current' in parser)
-    parser=['meas_current']
-    print('no_meas_current' in parser)
-
-    parser=['fmmu', 'meas_current']
-    print(any(p in ("fmmu", "rotate_meas") for p in parser))
-
-
-    ex_line=[[1, 0], [2, 1], [3, 2], [4, 3], [5, 4], [6, 5], [7, 6], [8, 7], [9, 8], [10, 9], [11, 10], [12, 11], [13, 12], [14, 13], [15, 14], [0, 15]]
-    
-    for i in ex_line:
-        line=np.array(i)
-        parser='meas_current'
-        v= voltage_meter(line, parser= parser)
-        print(f'{v=}')
-    
-    for i in ex_line:
-        line=np.array(i)
-        parser='no_meas_current'
-        v= voltage_meter(line, parser= parser)
-        print(f'{v=}')
-        
-    # parser='no_meas_current'
-    # v= voltage_meter(ex_line, parser= parser)
-    # print(f'{v=}, {v.shape=}')
-    # parser=None
-    # v= voltage_meter(ex_line, parser= parser)
-    # print(f'{v=}, {v.shape=}')
