@@ -59,7 +59,7 @@ class JAC(EitBase):
         The input (dv) and output (ds) is log-normalized.
         """
         if normalize:
-            dv = np.log(np.abs(v1) / np.abs(v0)) * self.v0_sign
+            dv = np.log(np.abs(v1) / np.abs(v0)) * np.sign(v0.real)
         else:
             dv = v1 - v0
         # s_r = J^Tv_r

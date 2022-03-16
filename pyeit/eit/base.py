@@ -86,7 +86,6 @@ class EitBase:
         # solving Jacobian using uniform sigma distribution
         res = fwd.solve_eit(ex_mat, step=step, perm=self.perm, parser=self.parser)
         self.J, self.v0, self.B = res.jac, res.v, res.b_matrix
-        self.v0_sign = np.sign(np.real(self.v0))  # real-valued sign
 
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])
         if jac_normalized:
