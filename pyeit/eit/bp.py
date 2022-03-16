@@ -24,7 +24,10 @@ class BP(EitBase):
             self.H = wb_mat.T
 
     def normalize(self, v1, v0):
-        """redefine normalize for BP (without amplitude normalization)"""
+        """
+        redefine normalize for BP (without amplitude normalization) using
+        only the sign of v0.real. [experimental]
+        """
         dv = (v1 - v0) / self.v0_sign
         return dv
 
@@ -34,7 +37,7 @@ class BP(EitBase):
         return np.dot(self.H, x.transpose())
 
     def solve_gs(self, v1, v0):
-        """solving using gram-schmidt"""
+        """solving using gram-schmidt orthogonalization"""
         a = np.dot(v1, v0) / np.dot(v0, v0)
         vn = -(v1 - a * v0) / self.v0_sign
         ds = np.dot(self.H, vn.transpose())

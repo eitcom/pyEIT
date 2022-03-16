@@ -56,7 +56,7 @@ class JAC(EitBase):
             Clinical Physics and Physiological Measurement,
             10(3), 275–281. doi:10.1088/0143-0815/10/3/008
 
-        The input (dv) and output (ds) is log-normalized
+        The input (dv) and output (ds) is log-normalized.
         """
         if normalize:
             dv = np.log(np.abs(v1) / np.abs(v0)) * self.v0_sign
