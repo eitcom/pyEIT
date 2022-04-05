@@ -11,4 +11,4 @@ jobs:
         with:
           options: "--check --diff"
           src: "./pyeit"
-          version: "22.1"
+          version: "22.3"
