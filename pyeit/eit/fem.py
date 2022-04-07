@@ -54,7 +54,7 @@ class Forward:
         self.n_tri, self.n_vertices = self.tri.shape
         self.ne = el_pos.size
 
-    def solve_eit(self, ex_mat=None, step=1, perm=None, parser=None):
+    def solve_eit(self, ex_mat=None, step=1, perm=None, parser=None, vector=False):
         """
         EIT simulation, generate perturbation matrix and forward v
 
@@ -68,6 +68,8 @@ class Forward:
             Mx1 array, initial x0. must be the same size with self.tri_perm
         parser: str
             see voltage_meter for more details.
+        vector: bool
+            Use vectorized methods or regular methods, for compatibility.
 
         Returns
         -------
@@ -164,6 +166,62 @@ class Forward:
         jac = np.zeros((self.ne, self.n_tri), dtype=perm.dtype)
         for (i, e) in enumerate(self.tri):
             jac[:, i] = np.dot(np.dot(r_el[:, e], ke[i]), f[e])
+
+        return f, jac
+
+    def solve_nd(self, ex_mat, perm):
+        """
+        Vectorized version of solve. It take the full ex_mat
+        instead of lines.
+
+        with one pos (A), neg(B) driven pairs, calculate and
+        compute the potential distribution (complex-valued)
+
+        The calculation of Jacobian can be skipped.
+        Currently, only simple electrode model is supported,
+        CEM (complete electrode model) is under development.
+
+        Parameters
+        ----------
+        ex_mat: NDArray
+            stimulation (scan) patterns/lines
+        perm: NDArray
+            permittivity on elements (initial)
+
+        Returns
+        -------
+        f: NDArray
+            potential on nodes
+        J: NDArray
+            Jacobian
+        """
+        # 1. calculate local stiffness matrix (on each element)
+        ke = calculate_ke(self.pts, self.tri)
+
+        # 2. assemble to global K
+        kg = assemble_sparse(ke, self.tri, perm, self.n_pts, ref=self.ref)
+
+        # 3. calculate electrode impedance matrix R = K^{-1}
+        r_matrix = la.inv(kg)
+        r_el = r_matrix[self.el_pos]
+
+        # 4. solving nodes potential using boundary conditions
+        b = self._natural_boundary_nd(ex_mat)
+
+        def f_init(b):
+            return np.dot(r_matrix, b).ravel()
+        f = np.array(list(map(f_init, b)))
+
+        # 5. build Jacobian matrix column wise (element wise)
+        #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
+        jac = np.zeros((ex_mat.shape[0], self.ne, self.n_tri), dtype=perm.dtype)
+
+        def jac_init(jac, k):
+            for (i, e) in enumerate(self.tri):
+                jac[:, i] = np.dot(np.dot(r_el[:, e], ke[i]), f[k, e])
+            return jac
+
+        jac = np.array(list(map(jac_init, jac, np.arange(0, ex_mat.shape[0]))))
 
         return f, jac
 
