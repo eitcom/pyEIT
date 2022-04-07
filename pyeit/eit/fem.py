@@ -68,7 +68,7 @@ class Forward:
             Mx1 array, initial x0. must be the same size with self.tri_perm
         parser: str
             see voltage_meter for more details.
-        vector: bool
+        vector: bool, optional
             Use vectorized methods or regular methods, for compatibility.
 
         Returns
