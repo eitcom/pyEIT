@@ -101,7 +101,9 @@ class Forward:
             f_el = f[:, self.el_pos]
 
             # boundary measurements, subtract_row-voltages on electrodes
-            diff_op = voltage_meter_nd(ex_mat, n_el=self.ne, step=step, parser=parser).astype(int)
+            diff_op = voltage_meter_nd(
+                ex_mat, n_el=self.ne, step=step, parser=parser
+            ).astype(int)
             v = subtract_row_nd(f_el, diff_op)
             jac = subtract_row_nd(jac_i, diff_op)
 
@@ -313,10 +315,10 @@ def smear(f, fb, pairs):
     """
 
     # Replacing the code below by a faster implementation in Numpy
-    f_min, f_max = np.minimum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape((-1, 1)), np.maximum(fb[pairs[:, 0]],
-                                                                                             fb[pairs[:, 1]]).reshape(
-        (-1, 1))
-    b_matrix = ((f_min < f) & (f <= f_max))
+    f_min, f_max = np.minimum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape(
+        (-1, 1)
+    ), np.maximum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape((-1, 1))
+    b_matrix = (f_min < f) & (f <= f_max)
 
     # b_matrix = []
     # for i, j in pairs:
@@ -457,10 +459,13 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
     m = a % n_el
     n = (m + step) % n_el
     # if any of the electrodes is the stimulation electrodes
-    diff_pairs_mask = ((m == drv_a) | (m == drv_b) | (n == drv_a) | (
-                n == drv_b)) | meas_current  # Create an array of bool to act as a mask
+    diff_pairs_mask = (
+        (m == drv_a) | (m == drv_b) | (n == drv_a) | (n == drv_b)
+    ) | meas_current  # Create an array of bool to act as a mask
     arr = np.array([n, m]).T  # Create an array with n an m as columns
-    diff_pairs = arr[~np.array(diff_pairs_mask)]  # Remove elements not complying with the mask (eg: False)
+    diff_pairs = arr[
+        ~np.array(diff_pairs_mask)
+    ]  # Remove elements not complying with the mask (eg: False)
 
     # # build differential pairs
     # v = []
@@ -471,7 +476,6 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
     #     if not (m == drv_a or m == drv_b or n == drv_a or n == drv_b) or meas_current:
     #         # the order of m, n matters
     #         v.append([n, m])
-    # 
     # diff_pairs = np.array(v)
     return diff_pairs
 
@@ -533,10 +537,23 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
     n = (m + step) % n_el
     # if any of the electrodes is the stimulation electrodes
     diff_pairs_mask = np.array(
-        [(((m[i] == drv_a[i]) | (m[i] == drv_b[i]) | (n[i] == drv_a[i]) | (n[i] == drv_b[i])) | meas_current) for i in
-         range(m.shape[0])])
+        [
+            (
+                (
+                    (m[i] == drv_a[i])
+                    | (m[i] == drv_b[i])
+                    | (n[i] == drv_a[i])
+                    | (n[i] == drv_b[i])
+                )
+                | meas_current
+            )
+            for i in range(m.shape[0])
+        ]
+    )
     arr = np.array([np.array([n[i], m[i]]).T for i in range(n.shape[0])])
-    diff_pairs = np.array([arr[i, ~np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])])
+    diff_pairs = np.array(
+        [arr[i, ~np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])]
+    )
 
     return diff_pairs
 
