@@ -518,7 +518,13 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
     # local node
     drv_a = ex_mat[:, 0]
     drv_b = ex_mat[:, 1]
-    i0 = drv_a if parser in ("fmmu", "rotate_meas") else np.zeros(shape=drv_a.shape)
+
+    if not isinstance(parser, list):  # transform parser in list
+        parser = [parser]
+
+    meas_current = "meas_current" in parser
+    fmmu_rotate = any(p in ("fmmu", "rotate_meas") for p in parser)
+    i0 = drv_a if fmmu_rotate else np.zeros(shape=drv_a.shape)
 
     # Same code as below but with numpy implementation for faster computing
     # build differential pairs
@@ -527,7 +533,7 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
     n = (m + step) % n_el
     # if any of the electrodes is the stimulation electrodes
     diff_pairs_mask = np.array(
-        [((m[i] == drv_a[i]) | (m[i] == drv_b[i]) | (n[i] == drv_a[i]) | (n[i] == drv_b[i])) for i in
+        [(((m[i] == drv_a[i]) | (m[i] == drv_b[i]) | (n[i] == drv_a[i]) | (n[i] == drv_b[i])) | meas_current) for i in
          range(m.shape[0])])
     arr = np.array([np.array([n[i], m[i]]).T for i in range(n.shape[0])])
     diff_pairs = np.array([arr[i, ~np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])])
