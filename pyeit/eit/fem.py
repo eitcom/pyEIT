@@ -238,6 +238,7 @@ class Forward:
 
         def f_init(b):
             return np.dot(r_matrix, b).ravel()
+
         f = np.array(list(map(f_init, b)))
 
         # 5. build Jacobian matrix column wise (element wise)
@@ -324,6 +325,7 @@ def smear(f, fb, pairs):
     # return np.array(b_matrix)
     return b_matrix
 
+
 def smear_nd(f, fb, pairs):
     """
     Same as smear, except it takes advantage of
@@ -344,6 +346,7 @@ def smear_nd(f, fb, pairs):
     B: NDArray
         back-projection matrix
     """
+
     # Replacing the below code by a faster implementation in Numpy
     def b_matrix_init(k):
         return smear(f[k], fb[k], pairs[k])
@@ -367,12 +370,13 @@ def subtract_row(v, pairs):
     v_diff: NDArray
         difference measurements
     """
-    i = pairs[:, 0]
-    j = pairs[:, 1]
-    # row-wise/element-wise operation on matrix/vector v
-    v_diff = v[i] - v[j]
+    # i = pairs[:, 0]
+    # j = pairs[:, 1]
+    # # row-wise/element-wise operation on matrix/vector v
+    # v_diff = v[i] - v[j]
 
-    return v_diff
+    # Removed unnecessary memory allocation
+    return v[pairs[:, 0]] - v[pairs[:, 1]]
 
 
 def subtract_row_nd(v, pairs):
@@ -393,6 +397,7 @@ def subtract_row_nd(v, pairs):
     v_diff: NDArray
         difference measurements
     """
+
     def v_diff_init(k):
         return subtract_row(v[k], pairs[k])
 
@@ -446,17 +451,28 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
     fmmu_rotate = any(p in ("fmmu", "rotate_meas") for p in parser)
     i0 = drv_a if fmmu_rotate else 0
 
+    # Same code as below but with numpy implementation for faster computing
     # build differential pairs
-    v = []
-    for a in range(i0, i0 + n_el):
-        m = a % n_el
-        n = (m + step) % n_el
-        # if any of the electrodes is the stimulation electrodes
-        if not (m == drv_a or m == drv_b or n == drv_a or n == drv_b) or meas_current:
-            # the order of m, n matters
-            v.append([n, m])
+    a = np.arange(i0, i0 + n_el)
+    m = a % n_el
+    n = (m + step) % n_el
+    # if any of the electrodes is the stimulation electrodes
+    diff_pairs_mask = ((m == drv_a) | (m == drv_b) | (n == drv_a) | (
+                n == drv_b)) | meas_current  # Create an array of bool to act as a mask
+    arr = np.array([n, m]).T  # Create an array with n an m as columns
+    diff_pairs = arr[~np.array(diff_pairs_mask)]  # Remove elements not complying with the mask (eg: False)
 
-    diff_pairs = np.array(v)
+    # # build differential pairs
+    # v = []
+    # for a in range(i0, i0 + n_el):
+    #     m = a % n_el
+    #     n = (m + step) % n_el
+    #     # if any of the electrodes is the stimulation electrodes
+    #     if not (m == drv_a or m == drv_b or n == drv_a or n == drv_b) or meas_current:
+    #         # the order of m, n matters
+    #         v.append([n, m])
+    # 
+    # diff_pairs = np.array(v)
     return diff_pairs
 
 
@@ -510,7 +526,9 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
     m = a % n_el
     n = (m + step) % n_el
     # if any of the electrodes is the stimulation electrodes
-    diff_pairs_mask = np.array([((m[i] == drv_a[i]) | (m[i] == drv_b[i]) | (n[i] == drv_a[i]) | (n[i] == drv_b[i])) for i in range(m.shape[0])])
+    diff_pairs_mask = np.array(
+        [((m[i] == drv_a[i]) | (m[i] == drv_b[i]) | (n[i] == drv_a[i]) | (n[i] == drv_b[i])) for i in
+         range(m.shape[0])])
     arr = np.array([np.array([n[i], m[i]]).T for i in range(n.shape[0])])
     diff_pairs = np.array([arr[i, ~np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])])
 
