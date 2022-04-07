@@ -368,6 +368,63 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
     return diff_pairs
 
 
+def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
+    """
+    Faster implementation using numpy's native ufuncs.
+    Made to work with a full matrix, unlike voltage_meter.
+
+    extract subtract_row-voltage measurements on boundary electrodes.
+    we direct operate on measurements or Jacobian on electrodes,
+    so, we can use LOCAL index in this module, do not require el_pos.
+
+    Notes
+    -----
+    ABMN Model.
+    A: current driving electrode,
+    B: current sink,
+    M, N: boundary electrodes, where v_diff = v_n - v_m.
+
+    'no_meas_current': (EIDORS3D)
+    mesurements on current carrying electrodes are discarded.
+
+    Parameters
+    ----------
+    ex_line: NDArray
+        2x1 array, [positive electrode, negative electrode].
+    n_el: int
+        number of total electrodes.
+    step: int
+        measurement method (two adjacent electrodes are used for measuring).
+    parser: str
+        if parser is 'fmmu', or 'rotate_meas' then data are trimmed,
+        boundary voltage measurements are re-indexed and rotated,
+        start from the positive stimulus electrodestart index 'A'.
+        if parser is 'std', or 'no_rotate_meas' then data are trimmed,
+        the start index (i) of boundary voltage measurements is always 0.
+
+    Returns
+    -------
+    v: NDArray
+        (N-1)*2 arrays of subtract_row pairs
+    """
+    # local node
+    drv_a = ex_mat[:, 0]
+    drv_b = ex_mat[:, 1]
+    i0 = drv_a if parser in ("fmmu", "rotate_meas") else np.zeros(shape=drv_a.shape)
+
+    # Same code as below but with numpy implementation for faster computing
+    # build differential pairs
+    a = np.array([np.arange(i0[i], i0[i] + n_el) for i in range(i0.shape[0])])
+    m = a % n_el
+    n = (m + step) % n_el
+    # if any of the electrodes is the stimulation electrodes
+    diff_pairs_mask = np.array([((m[i] == drv_a[i]) | (m[i] == drv_b[i]) | (n[i] == drv_a[i]) | (n[i] == drv_b[i])) for i in range(m.shape[0])])
+    arr = np.array([np.array([n[i], m[i]]).T for i in range(n.shape[0])])
+    diff_pairs = np.array([arr[i, ~np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])])
+
+    return diff_pairs
+
+
 def assemble(ke, tri, perm, n_pts, ref=0):
     """
     Assemble the stiffness matrix (dense matrix, default)
