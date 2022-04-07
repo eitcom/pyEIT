@@ -54,7 +54,7 @@ class Forward:
         self.n_tri, self.n_vertices = self.tri.shape
         self.ne = el_pos.size
 
-    def solve_eit(self, ex_mat=None, step=1, perm=None, parser=None):
+    def solve_eit(self, ex_mat=None, step=1, perm=None, parser=None, vector=False):
         """
         EIT simulation, generate perturbation matrix and forward v
 
@@ -68,6 +68,8 @@ class Forward:
             Mx1 array, initial x0. must be the same size with self.tri_perm
         parser: str
             see voltage_meter for more details.
+        vector: bool, optional
+            Use vectorized methods or regular methods, for compatibility.
 
         Returns
         -------
@@ -91,33 +93,61 @@ class Forward:
             assert perm.shape == (self.n_tri,)
             perm0 = perm
 
-        # calculate f and Jacobian iteratively over all stimulation lines
-        jac, v, b_matrix = [], [], []
-        n_lines = ex_mat.shape[0]
-
-        for i in range(n_lines):
-            # FEM solver of one stimulation pattern, a row in ex_mat
-            ex_line = ex_mat[i]
-            f, jac_i = self.solve(ex_line, perm0)
-            f_el = f[self.el_pos]
+        def vectorization():
+            """
+            Vectorized methods.
+            """
+            f, jac_i = self.solve_nd(ex_mat, perm0)
+            f_el = f[:, self.el_pos]
 
             # boundary measurements, subtract_row-voltages on electrodes
-            diff_op = voltage_meter(ex_line, n_el=self.ne, step=step, parser=parser)
-            v_diff = subtract_row(f_el, diff_op)
-            jac_diff = subtract_row(jac_i, diff_op)
+            diff_op = voltage_meter_nd(ex_mat, n_el=self.ne, step=step, parser=parser).astype(int)
+            v = subtract_row_nd(f_el, diff_op)
+            jac = subtract_row_nd(jac_i, diff_op)
 
             # build bp projection matrix
             # 1. we can either smear at the center of elements, using
-            #    >> fe = np.mean(f[self.tri], axis=1)
+            #    >> fe = np.mean(f[:, self.tri], axis=1)
             # 2. or, simply smear at the nodes using f
-            b = smear(f, f_el, diff_op)
+            b_matrix = smear_nd(f, f_el, diff_op)
+            return v, jac, b_matrix
 
-            # append
-            v.append(v_diff)
-            jac.append(jac_diff)
-            b_matrix.append(b)
+        def no_vectorization():
+            """
+            Standard methods.
+            """
+            # calculate f and Jacobian iteratively over all stimulation lines
+            jac, v, b_matrix = [], [], []
+            n_lines = ex_mat.shape[0]
+            for i in range(n_lines):
+                # FEM solver of one stimulation pattern, a row in ex_mat
+                ex_line = ex_mat[i]
+                f, jac_i = self.solve(ex_line, perm0)
+                f_el = f[self.el_pos]
+
+                # boundary measurements, subtract_row-voltages on electrodes
+                diff_op = voltage_meter(ex_line, n_el=self.ne, step=step, parser=parser)
+                v_diff = subtract_row(f_el, diff_op)
+                jac_diff = subtract_row(jac_i, diff_op)
+
+                # build bp projection matrix
+                # 1. we can either smear at the center of elements, using
+                #    >> fe = np.mean(f[self.tri], axis=1)
+                # 2. or, simply smear at the nodes using f
+                b = smear(f, f_el, diff_op)
+
+                # append
+                v.append(v_diff)
+                jac.append(jac_diff)
+                b_matrix.append(b)
+            return v, jac, b_matrix
 
         # update output, now you can call p.jac, p.v, p.b_matrix
+        if vector:
+            v, jac, b_matrix = vectorization()
+        else:
+            v, jac, b_matrix = no_vectorization()
+
         pde_result = namedtuple("pde_result", ["jac", "v", "b_matrix"])
         p = pde_result(jac=np.vstack(jac), v=np.hstack(v), b_matrix=np.vstack(b_matrix))
         return p
@@ -167,6 +197,63 @@ class Forward:
 
         return f, jac
 
+    def solve_nd(self, ex_mat, perm):
+        """
+        Vectorized version of solve. It take the full ex_mat
+        instead of lines.
+
+        with one pos (A), neg(B) driven pairs, calculate and
+        compute the potential distribution (complex-valued)
+
+        The calculation of Jacobian can be skipped.
+        Currently, only simple electrode model is supported,
+        CEM (complete electrode model) is under development.
+
+        Parameters
+        ----------
+        ex_mat: NDArray
+            stimulation (scan) patterns/lines
+        perm: NDArray
+            permittivity on elements (initial)
+
+        Returns
+        -------
+        f: NDArray
+            potential on nodes
+        J: NDArray
+            Jacobian
+        """
+        # 1. calculate local stiffness matrix (on each element)
+        ke = calculate_ke(self.pts, self.tri)
+
+        # 2. assemble to global K
+        kg = assemble_sparse(ke, self.tri, perm, self.n_pts, ref=self.ref)
+
+        # 3. calculate electrode impedance matrix R = K^{-1}
+        r_matrix = la.inv(kg)
+        r_el = r_matrix[self.el_pos]
+
+        # 4. solving nodes potential using boundary conditions
+        b = self._natural_boundary_nd(ex_mat)
+
+        def f_init(b):
+            return np.dot(r_matrix, b).ravel()
+
+        f = np.array(list(map(f_init, b)))
+
+        # 5. build Jacobian matrix column wise (element wise)
+        #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
+        jac = np.zeros((ex_mat.shape[0], self.ne, self.n_tri), dtype=perm.dtype)
+
+        def jac_init(jac, k):
+            for (i, e) in enumerate(self.tri):
+                jac[:, i] = np.dot(np.dot(r_el[:, e], ke[i]), f[k, e])
+            return jac
+
+        jac = np.array(list(map(jac_init, jac, np.arange(0, ex_mat.shape[0]))))
+
+        return f, jac
+
     def _natural_boundary(self, ex_line):
         """
         Notes
@@ -182,6 +269,26 @@ class Forward:
         b = np.zeros((self.n_pts, 1))
         b[drv_a_global] = 1.0
         b[drv_b_global] = -1.0
+
+        return b
+
+    def _natural_boundary_nd(self, ex_mat):
+        """
+        Notes
+        -----
+        Same as _natural_boundary, except it takes advantage of
+        Numpy's vectorization capacities.
+        Generate the Neumann boundary condition. In utils.py,
+        you should note that ex_line is local indexed from 0...15,
+        which need to be converted to global node number using el_pos.
+        """
+        drv_a_global = self.el_pos[ex_mat[:, 0]]
+        drv_b_global = self.el_pos[ex_mat[:, 1]]
+
+        # global boundary condition
+        b = np.zeros((ex_mat.shape[0], self.n_pts, 1))
+        b[np.arange(drv_a_global.shape[0]), drv_a_global] = 1.0
+        b[np.arange(drv_b_global.shape[0]), drv_b_global] = -1.0
 
         return b
 
@@ -204,12 +311,47 @@ def smear(f, fb, pairs):
     B: NDArray
         back-projection matrix
     """
-    b_matrix = []
-    for i, j in pairs:
-        f_min, f_max = min(fb[i], fb[j]), max(fb[i], fb[j])
-        b_matrix.append((f_min < f) & (f <= f_max))
 
-    return np.array(b_matrix)
+    # Replacing the code below by a faster implementation in Numpy
+    f_min, f_max = np.minimum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape((-1, 1)), np.maximum(fb[pairs[:, 0]],
+                                                                                             fb[pairs[:, 1]]).reshape(
+        (-1, 1))
+    b_matrix = ((f_min < f) & (f <= f_max))
+
+    # b_matrix = []
+    # for i, j in pairs:
+    #     f_min, f_max = min(fb[i], fb[j]), max(fb[i], fb[j])
+    #     b_matrix.append((f_min < f) & (f <= f_max))
+    # return np.array(b_matrix)
+    return b_matrix
+
+
+def smear_nd(f, fb, pairs):
+    """
+    Same as smear, except it takes advantage of
+    Numpy's vectorization capacities.
+    build smear matrix B for bp
+
+    Parameters
+    ----------
+    f: NDArray
+        potential on nodes
+    fb: NDArray
+        potential on adjacent electrodes
+    pairs: NDArray
+        electrodes numbering pairs
+
+    Returns
+    -------
+    B: NDArray
+        back-projection matrix
+    """
+
+    # Replacing the below code by a faster implementation in Numpy
+    def b_matrix_init(k):
+        return smear(f[k], fb[k], pairs[k])
+
+    return np.array(list(map(b_matrix_init, np.arange(0, f.shape[0]))))
 
 
 def subtract_row(v, pairs):
@@ -228,12 +370,38 @@ def subtract_row(v, pairs):
     v_diff: NDArray
         difference measurements
     """
-    i = pairs[:, 0]
-    j = pairs[:, 1]
-    # row-wise/element-wise operation on matrix/vector v
-    v_diff = v[i] - v[j]
+    # i = pairs[:, 0]
+    # j = pairs[:, 1]
+    # # row-wise/element-wise operation on matrix/vector v
+    # v_diff = v[i] - v[j]
 
-    return v_diff
+    # Removed unnecessary memory allocation
+    return v[pairs[:, 0]] - v[pairs[:, 1]]
+
+
+def subtract_row_nd(v, pairs):
+    """
+    Same as subtract_row, except it takes advantage of
+    Numpy's vectorization capacities.
+    v_diff[k] = v[i, :] - v[j, :]
+
+    Parameters
+    ----------
+    v: NDArray
+        Nx1 boundary measurements vector or NxM matrix
+    pairs: NDArray
+        Nx2 subtract_row pairs
+
+    Returns
+    -------
+    v_diff: NDArray
+        difference measurements
+    """
+
+    def v_diff_init(k):
+        return subtract_row(v[k], pairs[k])
+
+    return np.array(list(map(v_diff_init, np.arange(0, v.shape[0]))))
 
 
 def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
@@ -283,17 +451,93 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
     fmmu_rotate = any(p in ("fmmu", "rotate_meas") for p in parser)
     i0 = drv_a if fmmu_rotate else 0
 
+    # Same code as below but with numpy implementation for faster computing
     # build differential pairs
-    v = []
-    for a in range(i0, i0 + n_el):
-        m = a % n_el
-        n = (m + step) % n_el
-        # if any of the electrodes is the stimulation electrodes
-        if not (m == drv_a or m == drv_b or n == drv_a or n == drv_b) or meas_current:
-            # the order of m, n matters
-            v.append([n, m])
+    a = np.arange(i0, i0 + n_el)
+    m = a % n_el
+    n = (m + step) % n_el
+    # if any of the electrodes is the stimulation electrodes
+    diff_pairs_mask = ((m == drv_a) | (m == drv_b) | (n == drv_a) | (
+                n == drv_b)) | meas_current  # Create an array of bool to act as a mask
+    arr = np.array([n, m]).T  # Create an array with n an m as columns
+    diff_pairs = arr[~np.array(diff_pairs_mask)]  # Remove elements not complying with the mask (eg: False)
 
-    diff_pairs = np.array(v)
+    # # build differential pairs
+    # v = []
+    # for a in range(i0, i0 + n_el):
+    #     m = a % n_el
+    #     n = (m + step) % n_el
+    #     # if any of the electrodes is the stimulation electrodes
+    #     if not (m == drv_a or m == drv_b or n == drv_a or n == drv_b) or meas_current:
+    #         # the order of m, n matters
+    #         v.append([n, m])
+    # 
+    # diff_pairs = np.array(v)
+    return diff_pairs
+
+
+def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
+    """
+    Faster implementation using numpy's native ufuncs.
+    Made to work with a full matrix, unlike voltage_meter.
+
+    extract subtract_row-voltage measurements on boundary electrodes.
+    we direct operate on measurements or Jacobian on electrodes,
+    so, we can use LOCAL index in this module, do not require el_pos.
+
+    Notes
+    -----
+    ABMN Model.
+    A: current driving electrode,
+    B: current sink,
+    M, N: boundary electrodes, where v_diff = v_n - v_m.
+
+    'no_meas_current': (EIDORS3D)
+    mesurements on current carrying electrodes are discarded.
+
+    Parameters
+    ----------
+    ex_line: NDArray
+        2x1 array, [positive electrode, negative electrode].
+    n_el: int
+        number of total electrodes.
+    step: int
+        measurement method (two adjacent electrodes are used for measuring).
+    parser: str
+        if parser is 'fmmu', or 'rotate_meas' then data are trimmed,
+        boundary voltage measurements are re-indexed and rotated,
+        start from the positive stimulus electrodestart index 'A'.
+        if parser is 'std', or 'no_rotate_meas' then data are trimmed,
+        the start index (i) of boundary voltage measurements is always 0.
+
+    Returns
+    -------
+    v: NDArray
+        (N-1)*2 arrays of subtract_row pairs
+    """
+    # local node
+    drv_a = ex_mat[:, 0]
+    drv_b = ex_mat[:, 1]
+
+    if not isinstance(parser, list):  # transform parser in list
+        parser = [parser]
+
+    meas_current = "meas_current" in parser
+    fmmu_rotate = any(p in ("fmmu", "rotate_meas") for p in parser)
+    i0 = drv_a if fmmu_rotate else np.zeros(shape=drv_a.shape)
+
+    # Same code as below but with numpy implementation for faster computing
+    # build differential pairs
+    a = np.array([np.arange(i0[i], i0[i] + n_el) for i in range(i0.shape[0])])
+    m = a % n_el
+    n = (m + step) % n_el
+    # if any of the electrodes is the stimulation electrodes
+    diff_pairs_mask = np.array(
+        [(((m[i] == drv_a[i]) | (m[i] == drv_b[i]) | (n[i] == drv_a[i]) | (n[i] == drv_b[i])) | meas_current) for i in
+         range(m.shape[0])])
+    arr = np.array([np.array([n[i], m[i]]).T for i in range(n.shape[0])])
+    diff_pairs = np.array([arr[i, ~np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])])
+
     return diff_pairs
 
 
