@@ -232,6 +232,33 @@ def smear(f, fb, pairs):
     return np.array(b_matrix)
 
 
+def smear_nd(f, fb, pairs):
+    """
+    Same as smear, except it takes advantage of
+    Numpy's vectorization capacities.
+    build smear matrix B for bp
+
+    Parameters
+    ----------
+    f: NDArray
+        potential on nodes
+    fb: NDArray
+        potential on adjacent electrodes
+    pairs: NDArray
+        electrodes numbering pairs
+
+    Returns
+    -------
+    B: NDArray
+        back-projection matrix
+    """
+    # Replacing the below code by a faster implementation in Numpy
+    def b_matrix_init(k):
+        return smear(f[k], fb[k], pairs[k])
+
+    return np.array(list(map(b_matrix_init, np.arange(0, f.shape[0]))))
+
+
 def subtract_row(v, pairs):
     """
     v_diff[k] = v[i, :] - v[j, :]
