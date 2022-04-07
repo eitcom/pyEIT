@@ -283,6 +283,30 @@ def subtract_row(v, pairs):
     return v_diff
 
 
+def subtract_row_nd(v, pairs):
+    """
+    Same as subtract_row, except it takes advantage of
+    Numpy's vectorization capacities.
+    v_diff[k] = v[i, :] - v[j, :]
+
+    Parameters
+    ----------
+    v: NDArray
+        Nx1 boundary measurements vector or NxM matrix
+    pairs: NDArray
+        Nx2 subtract_row pairs
+
+    Returns
+    -------
+    v_diff: NDArray
+        difference measurements
+    """
+    def v_diff_init(k):
+        return subtract_row(v[k], pairs[k])
+
+    return np.array(list(map(v_diff_init, np.arange(0, v.shape[0]))))
+
+
 def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
     """
     extract subtract_row-voltage measurements on boundary electrodes.
