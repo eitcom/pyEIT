@@ -185,6 +185,26 @@ class Forward:
 
         return b
 
+    def _natural_boundary_nd(self, ex_mat):
+        """
+        Notes
+        -----
+        Same as _natural_boundary, except it takes advantage of
+        Numpy's vectorization capacities.
+        Generate the Neumann boundary condition. In utils.py,
+        you should note that ex_line is local indexed from 0...15,
+        which need to be converted to global node number using el_pos.
+        """
+        drv_a_global = self.el_pos[ex_mat[:, 0]]
+        drv_b_global = self.el_pos[ex_mat[:, 1]]
+
+        # global boundary condition
+        b = np.zeros((ex_mat.shape[0], self.n_pts, 1))
+        b[np.arange(drv_a_global.shape[0]), drv_a_global] = 1.0
+        b[np.arange(drv_b_global.shape[0]), drv_b_global] = -1.0
+
+        return b
+
 
 def smear(f, fb, pairs):
     """
