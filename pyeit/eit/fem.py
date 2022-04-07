@@ -311,7 +311,7 @@ def smear(f, fb, pairs):
         back-projection matrix
     """
 
-    # Replacing the below code by a faster implementation in Numpy
+    # Replacing the code below by a faster implementation in Numpy
     f_min, f_max = np.minimum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape((-1, 1)), np.maximum(fb[pairs[:, 0]],
                                                                                              fb[pairs[:, 1]]).reshape(
         (-1, 1))
