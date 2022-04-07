@@ -46,14 +46,14 @@ ax.set_title(r"$\Delta$ Conductivities")
 el_dist, step = 1, 1
 ex_mat = eit_scan_lines(n_el, el_dist)
 fwd = Forward(mesh_obj, el_pos)
-f1 = fwd.solve_eit(ex_mat, step, perm=mesh_new["perm"], parser="std", vector=False)
+f1 = fwd.solve_eit(ex_mat, step, perm=mesh_new["perm"], parser="std", vector=True)
 
 """ 3. solve_eit using gaussian-newton (with regularization) """
 # number of stimulation lines/patterns
 eit = jac.JAC(mesh_obj, el_pos, ex_mat, step, perm=1.0, parser="std")
 eit.setup(p=0.25, lamb=1.0, method="lm")
 # lamb = lamb * lamb_decay
-ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True, vector=False)
+ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True, vector=True)
 
 # plot
 ax = axes[1]
