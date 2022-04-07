@@ -310,13 +310,19 @@ def smear(f, fb, pairs):
     B: NDArray
         back-projection matrix
     """
-    b_matrix = []
-    for i, j in pairs:
-        f_min, f_max = min(fb[i], fb[j]), max(fb[i], fb[j])
-        b_matrix.append((f_min < f) & (f <= f_max))
 
-    return np.array(b_matrix)
+    # Replacing the below code by a faster implementation in Numpy
+    f_min, f_max = np.minimum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape((-1, 1)), np.maximum(fb[pairs[:, 0]],
+                                                                                             fb[pairs[:, 1]]).reshape(
+        (-1, 1))
+    b_matrix = ((f_min < f) & (f <= f_max))
 
+    # b_matrix = []
+    # for i, j in pairs:
+    #     f_min, f_max = min(fb[i], fb[j]), max(fb[i], fb[j])
+    #     b_matrix.append((f_min < f) & (f <= f_max))
+    # return np.array(b_matrix)
+    return b_matrix
 
 def smear_nd(f, fb, pairs):
     """
