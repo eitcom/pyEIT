@@ -15,7 +15,7 @@ from pyeit.mesh.shape import thorax
 import pyeit.eit.jac as jac
 
 """ 1. setup """
-n_el = 16
+n_el = 64
 # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
 mesh_obj, el_pos = create(n_el, h0=0.05, fd=thorax)
 # test function for altering the permittivity in mesh
@@ -46,14 +46,14 @@ ax.set_title(r"$\Delta$ Conductivities")
 el_dist, step = 1, 1
 ex_mat = eit_scan_lines(n_el, el_dist)
 fwd = Forward(mesh_obj, el_pos)
-f1 = fwd.solve_eit(ex_mat, step, perm=mesh_new["perm"], parser="std")
+f1 = fwd.solve_eit(ex_mat, step, perm=mesh_new["perm"], parser="std", vector=True)
 
 """ 3. solve_eit using gaussian-newton (with regularization) """
 # number of stimulation lines/patterns
 eit = jac.JAC(mesh_obj, el_pos, ex_mat, step, perm=1.0, parser="std")
 eit.setup(p=0.25, lamb=1.0, method="lm")
 # lamb = lamb * lamb_decay
-ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
+ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True, vector=True)
 
 # plot
 ax = axes[1]
