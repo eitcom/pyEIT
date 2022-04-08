@@ -78,7 +78,7 @@ class JAC(EitBase):
         lamb_min=0,
         method="kotre",
         verbose=False,
-        vector=False
+        vector=False,
     ):
         """
         Gaussian Newton Static Solver
