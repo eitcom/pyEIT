@@ -238,10 +238,7 @@ class Forward:
         # 4. solving nodes potential using boundary conditions
         b = self._natural_boundary_nd(ex_mat)
 
-        def f_init(b):
-            return np.dot(r_matrix, b).ravel()
-
-        f = np.array(list(map(f_init, b)))
+        f = np.dot(r_matrix, b[:, None]).T.reshape(b.shape[:-1])
 
         # 5. build Jacobian matrix column wise (element wise)
         #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
