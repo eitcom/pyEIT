@@ -86,7 +86,6 @@ class EitBase:
         # solving Jacobian using uniform sigma distribution
         res = fwd.solve_eit(ex_mat, step=step, perm=self.perm, parser=self.parser)
         self.J, self.v0, self.B = res.jac, res.v, res.b_matrix
-        self.v0_sign = np.sign(self.v0)
 
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])
         if jac_normalized:
@@ -147,8 +146,6 @@ class EitBase:
         Normalize current frame using the amplitude of the reference frame.
         Boundary measurements v are complex-valued, we can use the real part of v,
         np.real(v), or the absolute values of v, np.abs(v).
-        The use of self.v0_sign is compatible in both scenarios, self.v0_sign
-        is from Forward solve and is not equal to sign(v0) in abs mode.
 
         Parameters
         ----------
@@ -157,6 +154,6 @@ class EitBase:
         v0: NDArray
             referenced frame, which is a row vector
         """
-        dv = (v1 - v0) / (v0 * self.v0_sign)
+        dv = (v1 - v0) / np.abs(v0)
 
         return dv

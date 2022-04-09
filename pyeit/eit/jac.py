@@ -56,10 +56,10 @@ class JAC(EitBase):
             Clinical Physics and Physiological Measurement,
             10(3), 275–281. doi:10.1088/0143-0815/10/3/008
 
-        The input (dv) and output (ds) is log-normalized
+        The input (dv) and output (ds) is log-normalized.
         """
         if normalize:
-            dv = np.log(np.abs(v1) / np.abs(v0)) * self.v0_sign
+            dv = np.log(np.abs(v1) / np.abs(v0)) * np.sign(v0.real)
         else:
             dv = v1 - v0
         # s_r = J^Tv_r
@@ -78,6 +78,7 @@ class JAC(EitBase):
         lamb_min=0,
         method="kotre",
         verbose=False,
+        vector=False,
     ):
         """
         Gaussian Newton Static Solver
@@ -101,6 +102,8 @@ class JAC(EitBase):
             'kotre' or 'lm'
         verbose: bool, optional
             print debug information
+        vector: bool, optional
+            Use vectorized methods or regular methods, for compatibility.
 
         Returns
         -------
@@ -131,7 +134,7 @@ class JAC(EitBase):
 
             # forward solver
             fs = self.fwd.solve_eit(
-                self.ex_mat, step=self.step, perm=x0, parser=self.parser
+                self.ex_mat, step=self.step, perm=x0, parser=self.parser, vector=vector
             )
             # Residual
             r0 = v - fs.v

@@ -8,5 +8,6 @@ dependencies:
   - numpy
   - scipy
   - pandas
-  - matplotlib
+  - matplotlib-base
   - vispy
+  - shapely
