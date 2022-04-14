@@ -6,6 +6,11 @@
 import numpy as np
 
 
+def nansum(x):
+    """implement numpy-1.8 behavior of nansum"""
+    return np.NAN if np.isnan(x).any() else np.nansum(np.abs(x))
+
+
 def ati(x):
     """
     averaged total impedance, unit (mV),
@@ -16,13 +21,7 @@ def ati(x):
     -----
     if I=1mA, then ati returns Ohms
     """
-    # implement old behavior of numpy.nansum
-    if np.isnan(x).any():
-        v = np.nan
-    else:
-        v = np.sum(np.abs(x)) / 192.0
-
-    return v
+    return nansum(x) / 192.0
 
 
 def ati_df(x):
@@ -66,8 +65,8 @@ def fmmu_index(n_el=16, dist=8, step=1):
     return left_sel, right_sel
 
 
-def ati_lr(x, sel):
-    """extract ATI left, right"""
+def ati_roi(x, sel):
+    """extract ATI from ROI region"""
     x_sel = np.nanmean(np.abs(x[sel]))
 
     return x_sel

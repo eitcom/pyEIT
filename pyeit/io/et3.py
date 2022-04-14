@@ -156,7 +156,7 @@ class ET3:
                 d = fh.read(self.frame_size)
                 # extract time ticks
                 time_array[i] = unpack("d", d[8:16])[0]
-                # extract ADC samples
+                # extract ADC samples (double precision)
                 dp = d[960 : self.header_size]
                 adc_array[i] = np.array(unpack("8d", dp))
                 # extract demodulated I,Q data
@@ -206,24 +206,31 @@ class ET3:
         return df
 
     def to_dp(self, adc_filter=False):
-        """convert raw ADC data to DataFrame"""
-        # left ear, right ear, Nasopharyngeal, rectal
-        columns = ["tle", "tre", "tn", "tr", "c4", "c5", "c6", "c7"]
+        """
+        in new ET3 data, the left ear, right ear, Nasopharyngeal, rectal
+        temperature are recorded in the headers of .et3 file.
+        This script convert raw ADC data to DataFrame.
+        """
+        #
+        columns = [
+            "t_left_ear",
+            "t_right_ear",
+            "t_naso",
+            "t_renal",
+            "aux_c4",
+            "aux_c5",
+            "aux_c6",
+            "aux_c7",
+        ]
         dp = pd.DataFrame(self.adc_array, index=self.ts, columns=columns)
         dp = dp[~dp.index.duplicated()]
 
         if adc_filter:
             # correct temperature (temperature can accidently be 0)
-            dp.loc[dp["tle"] == 0, "tle"] = np.nan
-            dp.loc[dp["tre"] == 0, "tre"] = np.nan
-            dp.loc[dp["tn"] == 0, "tn"] = np.nan
-            dp.loc[dp["tr"] == 0, "tr"] = np.nan
-
             # filter auxillary sampled data
-            dp.tle = med_outlier(dp.tle)
-            dp.tre = med_outlier(dp.tre)
-            dp.tn = med_outlier(dp.tn)
-            dp.tr = med_outlier(dp.tr)
+            for c in columns:
+                dp.loc[dp[c] == 0, c] = np.NAN
+                dp[c] = med_outlier(dp[c])
 
         return dp
 

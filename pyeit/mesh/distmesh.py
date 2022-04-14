@@ -12,10 +12,7 @@ import numpy as np
 from numpy import sqrt
 from scipy.spatial import Delaunay
 from scipy.sparse import csr_matrix
-
 from .utils import dist, edge_project
-
-from .shape import thorax
 
 
 class DISTMESH:
@@ -101,15 +98,8 @@ class DISTMESH:
         self.num_density = 0
         self.num_move = 0
 
-        """
-        keep points that are inside the thorax shape using a function that returns a matrix containing
-        True if the corresponing point is inside the shape, False if not.
-        """
-        if fd == thorax:
-            p = p[fd(p)]
-        else:
-            # keep points inside (minus distance) with a small gap (geps)
-            p = p[fd(p) < self.geps]  # pylint: disable=E1136
+        # keep points inside (minus distance) with a small gap (geps)
+        p = p[fd(p) < self.geps]  # pylint: disable=E1136
 
         # rejection points by sampling on fh
         r0 = 1.0 / fh(p) ** self.n_dim
@@ -122,20 +112,11 @@ class DISTMESH:
         self.pfix = p_fix
         self.nfix = len(p_fix)
 
-        # convert boolean array to 2D to be compatible with Delaunay pts paramater (must be 2D)
-        if fd == thorax:
-            p = np.reshape(p, (-1, 2))
-
         # remove duplicated points of p and p_fix
         # avoid overlapping of mesh points
         if self.nfix > 0:
             p = remove_duplicate_nodes(p, p_fix, self.geps)
             p = np.vstack([p_fix, p])
-
-        if fd == thorax:
-            p = np.reshape(
-                p, (-1, 2)
-            )  # convert boolean array to 2D to be compatible with Delaunay pts paramater (must be 2D)
 
         # store p and N
         self.N = p.shape[0]
@@ -163,23 +144,12 @@ class DISTMESH:
         self.pold = self.p.copy()
 
         # triangles where the points are arranged counterclockwise
-        if self.fd != thorax:
-            tri = Delaunay(self.p).simplices
-        else:
-            tri = Delaunay(
-                self.p, qhull_options="QJ"
-            ).simplices  # QJ parameter so tuples don't exceed boundary
-
+        # QJ parameter so tuples don't exceed boundary
+        tri = Delaunay(self.p, qhull_options="QJ").simplices
         pmid = np.mean(self.p[tri], axis=1)
 
-        if self.fd != thorax:
-            # keeps only interior points
-            t = tri[self.fd(pmid) < -self.geps]
-        else:
-            # adapting returned triangles matrix with the thorax integrated fd
-            tri_pmid = [p[0] for p in self.fd(pmid)]
-            tri_pmid = np.array(tri_pmid)
-            t = tri[tri_pmid]
+        # keeps only interior points
+        t = tri[self.fd(pmid) < -self.geps]
         # extract edges (bars)
         bars = t[:, self.edge_combinations].reshape((-1, 2))
         # sort and remove duplicated edges, eg (1,2) and (2,1)
@@ -459,13 +429,10 @@ def build(
         # calculate bar forces
         Ftot = dm.bar_force(L, L0, barvec)
 
-        if fd != thorax:
-            # update p
-            converge = dm.move_p(Ftot)
-            # the stopping ctriterion (movements interior are small)
-            if converge:
-                break
-        else:  # Thorax mesh is created so far without iteration process (to be updated)
+        # update p
+        converge = dm.move_p(Ftot)
+        # the stopping ctriterion (movements interior are small)
+        if converge:
             break
 
     # at the end of iteration, (p - pold) is small, so we recreate delaunay
