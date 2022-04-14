@@ -10,6 +10,7 @@ Please Cite the following paper if you are using .mes in your research:
 """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+import os
 import ctypes
 import struct
 import numpy as np
@@ -158,9 +159,40 @@ def extract_el(fh):
     return el_pos
 
 
+def mesh_plot(ax, mesh_obj, el_pos, imstr="", title=None):
+    """plot and annotate mesh"""
+    p, e, perm = mesh_obj["node"], mesh_obj["element"], mesh_obj["perm"]
+    annotate_color = "k"
+    if os.path.exists(imstr):
+        im = plt.imread(imstr)
+        annotate_color = "w"
+        ax.imshow(im, origin="lower")
+    ax.tripcolor(p[:, 0], p[:, 1], e, facecolors=perm, edgecolors="k", alpha=0.4)
+    ax.triplot(p[:, 0], p[:, 1], e, lw=1)
+    ax.plot(p[el_pos, 0], p[el_pos, 1], "ro")
+    for i, el in enumerate(el_pos):
+        xy = np.array([p[el, 0], p[el, 1]])
+        text_offset = (xy - mesh_center) * [1, -1] * 0.05
+        ax.annotate(
+            str(i + 1),
+            xy=xy,
+            xytext=text_offset,
+            textcoords="offset points",
+            color=annotate_color,
+            ha="center",
+            va="center",
+        )
+    ax.set_aspect("equal")
+    ax.set_title(title)
+    ax.invert_yaxis()
+
+    return ax
+
+
 if __name__ == "__main__":
     # How to load and use a .mes file (github.com/liubenyuan/eitmesh)
     mstr = resource_filename("eitmesh", "data/IM470.mes")
+    imstr = mstr.replace(".mes", ".bmp")
     mesh_obj, el_pos = load(fstr=mstr)
 
     # print the size
@@ -168,53 +200,17 @@ if __name__ == "__main__":
     mesh_center = np.array([np.median(pts[:, 0]), np.median(pts[:, 1])])
     # print('tri size = (%d, %d)' % e.shape)
     # print('pts size = (%d, %d)' % pts.shape)
-
-    # show mesh
     fig, ax = plt.subplots(1, figsize=(6, 6))
-    ax.triplot(pts[:, 0], pts[:, 1], e)
-    ax.plot(pts[el_pos, 0], pts[el_pos, 1], "ro")
-    for i, el in enumerate(el_pos):
-        xy = np.array([pts[el, 0], pts[el, 1]])
-        text_offset = (xy - mesh_center) * [1, -1] * 0.05
-        ax.annotate(
-            str(i + 1),
-            xy=xy,
-            xytext=text_offset,
-            textcoords="offset points",
-            color="k",
-            ha="center",
-            va="center",
-        )
-    ax.set_aspect("equal")
-    ax.invert_yaxis()
+    mesh_plot(ax, mesh_obj, el_pos, imstr=imstr)
+    # fig.savefig("IM470.png", dpi=100)
 
-    # bmp and mesh overlay
-    fig, ax = plt.subplots(figsize=(6, 6))
-    imstr = mstr.replace(".mes", ".bmp")
-    im = plt.imread(imstr)
-    ax.imshow(im)
-    ax.set_aspect("equal")
+    # compare two mesh
+    mstr = resource_filename("eitmesh", "data/DLS2.mes")
+    mesh_obj2, el_pos2 = load(fstr=mstr)
+    mesh_array = [[mesh_obj, el_pos, "IM470"], [mesh_obj2, el_pos2, "DLS2"]]
 
-    # the plot will automatically align with an overlay image
-    ax.triplot(pts[:, 0], pts[:, 1], e)
-    ax.plot(pts[el_pos, 0], pts[el_pos, 1], "ro")
-    for i, el in enumerate(el_pos):
-        xy = np.array([pts[el, 0], pts[el, 1]])
-        text_offset = (xy - mesh_center) * [1, -1] * 0.05
-        ax.annotate(
-            str(i + 1),
-            xy=xy,
-            xytext=text_offset,
-            textcoords="offset points",
-            color="w",
-            ha="center",
-            va="center",
-        )
-    ax.axis("off")
-
-    # bmp and permitivity overlay
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.imshow(im)
-    im = ax.tripcolor(pts[:, 0], pts[:, 1], e, facecolors=perm, edgecolors="k")
-    ax.set_aspect("equal")
-    plt.show()
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+    for i, ax in enumerate(axs):
+        mesh, elp, title = mesh_array[i]
+        mesh_plot(ax, mesh, elp, title=title)
+    # fig.savefig("mesh_plot.png", dpi=100)
