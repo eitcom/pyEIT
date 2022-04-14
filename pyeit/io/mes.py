@@ -160,11 +160,11 @@ def extract_el(fh):
 
 if __name__ == "__main__":
     # How to load and use a .mes file (github.com/liubenyuan/eitmesh)
-    mstr = resource_filename("eitmesh", "data/I0007.mes")
+    mstr = resource_filename("eitmesh", "data/IM470.mes")
     mesh_obj, el_pos = load(fstr=mstr)
 
     # print the size
-    e, pts = mesh_obj["element"], mesh_obj["node"]
+    e, pts, perm = mesh_obj["element"], mesh_obj["node"], mesh_obj["perm"]
     mesh_center = np.array([np.median(pts[:, 0]), np.median(pts[:, 1])])
     # print('tri size = (%d, %d)' % e.shape)
     # print('pts size = (%d, %d)' % pts.shape)
@@ -211,4 +211,10 @@ if __name__ == "__main__":
             va="center",
         )
     ax.axis("off")
+
+    # bmp and permitivity overlay
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.imshow(im)
+    im = ax.tripcolor(pts[:, 0], pts[:, 1], e, facecolors=perm, edgecolors="k")
+    ax.set_aspect("equal")
     plt.show()
