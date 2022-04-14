@@ -164,7 +164,7 @@ def example6():
         (-0.1653, 0.6819),
     ]
     # build triangles
-    p, t = distmesh.build(thorax, fh=area_uniform, pfix=p_fix, h0=0.05)
+    p, t = distmesh.build(thorax, fh=area_uniform, pfix=p_fix, h0=0.1)
     # plot
     fig, ax = plt.subplots()
     ax.triplot(p[:, 0], p[:, 1], t)
@@ -174,6 +174,11 @@ def example6():
     ax.set_ylim([-1.1, 1.1])
     ax.set_title("Thorax mesh")
     plt.show()
+
+
+def example_head_symm():
+    """head phantom (symmetric)"""
+    pass
 
 
 def example_voronoi_plot():
