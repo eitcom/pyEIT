@@ -350,6 +350,10 @@ def build(
 
     Parameters
     ----------
+    fd, fh : function
+        signed distance and quality control function
+    pfix : ndarray
+        fixed points on the boundary, usually used for electrodes positions
     maxiter : int, optional
         maximum iteration numbers, default=1000
 
@@ -372,7 +376,6 @@ def build(
     Also, the user should be aware that, equal-edged tetrahedron cannot fill
     space without gaps. So, in 3D, you can lower dptol, or limit the maximum
     iteration steps.
-
     """
     # parsing arguments
     # make sure : g_Fscale < 1.5

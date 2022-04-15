@@ -340,20 +340,45 @@ def area_uniform(p):
     return np.ones(p.shape[0])
 
 
+def lshape(pts):
+    """L_shaped mesh (for testing)"""
+    return dist_diff(
+        rectangle(pts, p1=[-1, -1], p2=[1, 1]), rectangle(pts, p1=[0, 0], p2=[1, 1])
+    )
+
+
+lshape_pfix = np.array(
+    [
+        [1, 0],
+        [1, -1],
+        [0, -1],
+        [-1, -1],
+        [-1, 0],
+        [-1, 1],
+        [0, 1],
+        [0, 0],
+    ]
+)
+
+
+def fd_polygon(poly, pts):
+    """return signed distance of polygon"""
+    pts_ = [Point(p) for p in pts]
+    # calculate signed distance
+    dist = [poly.exterior.distance(p) for p in pts_]
+    sign = np.sign([-int(poly.contains(p)) + 0.5 for p in pts_])
+
+    return sign * dist
+
+
 def thorax(pts):
-
     """
-     p : Nx2 ndarray
+    thorax polygon signed distance function
 
-    returns boolean ndarray specifiying whether the point is inside thorax or not
-    e.g :
-    array([[False, False],
-    [ True,  True],
-    [ True,  True]])
-
+    Thorax contour points coordinates are taken from
+    a thorax simulation based on EIDORS
     """
-    # Thorax contour points coordinates are taken from a thorax simulation based on EIDORS
-    thrx_pts = [
+    poly = [
         (0.0487, 0.6543),
         (0.1564, 0.6571),
         (0.2636, 0.6697),
@@ -405,17 +430,76 @@ def thorax(pts):
         (-0.1653, 0.6819),
         (-0.0581, 0.6699),
     ]
-    thrx = Polygon(thrx_pts)
-    pts_ = [Point(p) for p in pts]
-    # calculate signed distance
-    dist = [thrx.exterior.distance(p) for p in pts_]
-    sign = np.sign([-int(thrx.contains(p)) + 0.5 for p in pts_])
-
-    return sign * dist
+    poly_obj = Polygon(poly)
+    return fd_polygon(poly_obj, pts)
 
 
-# L_shaped mesh (for testing)
-def L_shaped(pts):
-    return dist_diff(
-        rectangle(pts, p1=[-1, -1], p2=[1, 1]), rectangle(pts, p1=[0, 0], p2=[1, 1])
+thorax_pfix = np.array(
+    [
+        (-0.098, -0.6463),
+        (-0.4181, -0.6074),
+        (-0.7207, -0.4946),
+        (-0.933, -0.2647),
+        (-0.9147, 0.0543),
+        (-0.8022, 0.3565),
+        (-0.5791, 0.5864),
+        (-0.1653, 0.6819),
+        (0.1564, 0.6571),
+        (0.5814, 0.6353),
+        (0.8298, 0.433),
+        (0.9698, 0.1431),
+        (0.9914, -0.1767),
+        (0.8359, -0.449),
+        (0.5419, -0.5833),
+        (0.2243, -0.6456),
+    ]
+)
+
+
+head_symm_poly = (
+    np.array(
+        [
+            [197, 0],
+            [188, 43],
+            [174, 83],
+            [150, 120],
+            [118, 148],
+            [81, 168],
+            [41, 182],
+            [0, 186],
+            [-41, 182],
+            [-81, 168],
+            [-118, 148],
+            [-150, 120],
+            [-174, 83],
+            [-188, 43],
+            [-197, 0],
+            [-201, -35],
+            [-194, -70],
+            [-185, -106],
+            [-169, -141],
+            [-148, -177],
+            [-123, -213],
+            [-88, -241],
+            [-45, -259],
+            [0, -263],
+            [45, -259],
+            [88, -241],
+            [123, -213],
+            [148, -177],
+            [169, -141],
+            [185, -106],
+            [194, -70],
+            [201, -35],
+        ]
     )
+    / 255.0
+)
+
+head_symm_pfix = np.array(head_symm_poly[::-2])
+
+
+def head_symm(pts):
+    """symmetric head polygon"""
+    poly_obj = Polygon(head_symm_poly)
+    return fd_polygon(poly_obj, pts)

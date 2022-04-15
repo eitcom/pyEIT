@@ -194,6 +194,27 @@ def tet_volume(xyz):
     return v_tot
 
 
+def to_polar(xy, shift=True, sort=True):
+    vec = xy
+    if shift:
+        pc = np.median(xy, axis=0)
+        print(pc)
+        vec = vec - pc
+    dist = np.sqrt(np.sum(vec**2, axis=1))
+    deg = np.rad2deg(np.arctan2(vec[:, 1], vec[:, 0]))
+    deg = deg % 360
+    if sort:
+        ind = np.argsort(deg)
+        dist, deg = dist[ind], deg[ind]
+    return dist, deg
+
+
+def to_xy(dist, deg):
+    x = dist * np.cos(np.deg2rad(deg))
+    y = dist * np.sin(np.deg2rad(deg))
+    return x, y
+
+
 if __name__ == "__main__":
     # test 'edge_project'
     def fd_test(p):

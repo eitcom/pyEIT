@@ -10,11 +10,10 @@ import numpy as np
 from .distmesh import build
 from .mesh_circle import MeshCircle
 from .utils import check_order
-from .shape import circle, area_uniform, ball, thorax, L_shaped
-from .shape import fix_points_fd, fix_points_ball
+from . import shape
 
 
-def create(n_el=16, fd=None, fh=area_uniform, h0=0.1, p_fix=None, bbox=None):
+def create(n_el=16, fd=None, fh=shape.area_uniform, h0=0.1, p_fix=None, bbox=None):
     """
     Generating 2D/3D meshes using distmesh (pyEIT built-in)
 
@@ -42,22 +41,21 @@ def create(n_el=16, fd=None, fh=area_uniform, h0=0.1, p_fix=None, bbox=None):
     # test conditions if fd or/and bbox are none
 
     if bbox is None:
-        if fd != ball:
+        if fd != shape.ball:
             bbox = np.array([[-1, -1], [1, 1]])
         else:
             bbox = [[-1.2, -1.2, -1.2], [1.2, 1.2, 1.2]]
 
-    bbox = np.array(
-        bbox
-    )  # list is converted to Numpy array so we can use it then (calling shape method..)
+    # list is converted to Numpy array so we can use it then (calling shape method..)
+    bbox = np.array(bbox)
     n_dim = bbox.shape[1]  # bring dimension
 
     # infer dim
     if fd is None:
         if n_dim == 2:
-            fd = circle
+            fd = shape.circle
         elif n_dim == 3:
-            fd = ball
+            fd = shape.ball
 
     if n_dim not in [2, 3]:
         raise TypeError("distmesh only supports 2D or 3D")
@@ -66,44 +64,17 @@ def create(n_el=16, fd=None, fh=area_uniform, h0=0.1, p_fix=None, bbox=None):
 
     if p_fix is None:
         if n_dim == 2:
-            if fd == thorax:
-                # thorax shape is generated so far without fixed points (to be updated later)
-                p_fix = [
-                    (-0.098, -0.6463),
-                    (-0.4181, -0.6074),
-                    (-0.7207, -0.4946),
-                    (-0.933, -0.2647),
-                    (-0.9147, 0.0543),
-                    (-0.8022, 0.3565),
-                    (-0.5791, 0.5864),
-                    (-0.1653, 0.6819),
-                    (0.1564, 0.6571),
-                    (0.5814, 0.6353),
-                    (0.8298, 0.433),
-                    (0.9698, 0.1431),
-                    (0.9914, -0.1767),
-                    (0.8359, -0.449),
-                    (0.5419, -0.5833),
-                    (0.2243, -0.6456),
-                ]
-                p_fix = np.array(p_fix)
-            elif fd == L_shaped:
-                p_fix = [
-                    [1, 0],
-                    [1, -1],
-                    [0, -1],
-                    [-1, -1],
-                    [-1, 0],
-                    [-1, 1],
-                    [0, 1],
-                    [0, 0],
-                ]  # values brought from distmesh2D L shaped mesh example
-                p_fix = np.array(p_fix)
+            if fd == shape.thorax:
+                p_fix = shape.thorax_pfix
+            elif fd == shape.head_symm:
+                p_fix = shape.head_symm_pfix
+            elif fd == shape.lshape:
+                p_fix = shape.lshape_pfix
                 h0 = 0.15
             else:
-                p_fix = fix_points_fd(fd, n_el=n_el)
+                p_fix = shape.fix_points_fd(fd, n_el=n_el)
         elif n_dim == 3:
-            p_fix = fix_points_ball(n_el=n_el)
+            p_fix = shape.fix_points_ball(n_el=n_el)
 
     # 1. build mesh
     p, t = build(fd, fh, pfix=p_fix, bbox=bbox, h0=h0)

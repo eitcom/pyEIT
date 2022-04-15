@@ -162,6 +162,7 @@ def extract_el(fh):
 def mesh_plot(ax, mesh_obj, el_pos, imstr="", title=None):
     """plot and annotate mesh"""
     p, e, perm = mesh_obj["node"], mesh_obj["element"], mesh_obj["perm"]
+    mesh_center = np.array([np.median(p[:, 0]), np.median(p[:, 1])])
     annotate_color = "k"
     if os.path.exists(imstr):
         im = plt.imread(imstr)
@@ -179,6 +180,7 @@ def mesh_plot(ax, mesh_obj, el_pos, imstr="", title=None):
             xytext=text_offset,
             textcoords="offset points",
             color=annotate_color,
+            fontsize=15,
             ha="center",
             va="center",
         )
@@ -197,7 +199,6 @@ if __name__ == "__main__":
 
     # print the size
     e, pts, perm = mesh_obj["element"], mesh_obj["node"], mesh_obj["perm"]
-    mesh_center = np.array([np.median(pts[:, 0]), np.median(pts[:, 1])])
     # print('tri size = (%d, %d)' % e.shape)
     # print('pts size = (%d, %d)' % pts.shape)
     fig, ax = plt.subplots(1, figsize=(6, 6))
