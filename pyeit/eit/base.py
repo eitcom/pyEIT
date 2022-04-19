@@ -29,6 +29,7 @@ class EitBase:
         perm=None,
         jac_normalized=False,
         parser="std",
+        vector=False,
     ):
         """
         Parameters
@@ -47,6 +48,8 @@ class EitBase:
             normalize the jacobian using f0 computed from input perm
         parser: str, optional, default is 'std'
             parsing the format of each frame in measurement/file
+        vector: bool, optional
+            Use vectorized methods or regular methods, for compatibility.
 
         Notes
         -----
@@ -82,9 +85,12 @@ class EitBase:
         # solving configurations
         self.ex_mat = ex_mat
         self.step = step
+        self.vector = vector
 
         # solving Jacobian using uniform sigma distribution
-        res = fwd.solve_eit(ex_mat, step=step, perm=self.perm, parser=self.parser)
+        res = fwd.solve_eit(
+            ex_mat, step=step, perm=self.perm, parser=self.parser, vector=self.vector
+        )
         self.J, self.v0, self.B = res.jac, res.v, res.b_matrix
 
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])
