@@ -535,10 +535,10 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
         [
             (
                 (
-                    (m[i] == drv_a[i])
-                    | (m[i] == drv_b[i])
-                    | (n[i] == drv_a[i])
-                    | (n[i] == drv_b[i])
+                    (m[i] != drv_a[i])
+                    & (m[i] != drv_b[i])
+                    & (n[i] != drv_a[i])
+                    & (n[i] != drv_b[i])
                 )
                 | meas_current
             )
@@ -546,11 +546,7 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
         ]
     )
     arr = np.array([np.array([n[i], m[i]]).T for i in range(n.shape[0])])
-    diff_pairs = np.array(
-        [arr[i, ~np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])]
-    )
-
-    return diff_pairs
+    return np.array([arr[i, np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])])
 
 
 def assemble(ke, tri, perm, n_pts, ref=0):
