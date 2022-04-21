@@ -456,14 +456,12 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
     m = a % n_el
     n = (m + step) % n_el
     # if any of the electrodes is the stimulation electrodes
-    diff_pairs_mask = (
-        (m == drv_a) | (m == drv_b) | (n == drv_a) | (n == drv_b)
-    ) | meas_current  # Create an array of bool to act as a mask
+    diff_pairs_mask = np.array(
+        ((m != drv_a) & (m != drv_b) & (n != drv_a) & (n != drv_b)) | meas_current
+    )  # Create an array of bool to act as a mask
     arr = np.array([n, m]).T  # Create an array with n an m as columns
-    diff_pairs = arr[
-        ~np.array(diff_pairs_mask)
-    ]  # Remove elements not complying with the mask (eg: False)
-
+    # Remove elements not complying with the mask (eg: False)
+    # diff_pairs = arr[diff_pairs_mask] Removed inutile memory alloc
     # # build differential pairs
     # v = []
     # for a in range(i0, i0 + n_el):
@@ -474,7 +472,7 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
     #         # the order of m, n matters
     #         v.append([n, m])
     # diff_pairs = np.array(v)
-    return diff_pairs
+    return arr[diff_pairs_mask]
 
 
 def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
