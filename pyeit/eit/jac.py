@@ -78,7 +78,7 @@ class JAC(EitBase):
         lamb_min=0,
         method="kotre",
         verbose=False,
-        vector=False,
+        vector=None,
     ):
         """
         Gaussian Newton Static Solver
@@ -126,6 +126,8 @@ class JAC(EitBase):
             lamb = self.params["lamb"]
         if method is None:
             method = self.params["method"]
+        if vector is None:
+            vector = self.vector
 
         # convergence test
         x0_norm = np.linalg.norm(x0)
