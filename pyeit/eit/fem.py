@@ -369,12 +369,6 @@ def subtract_row(v, pairs):
     v_diff: NDArray
         difference measurements
     """
-    # i = pairs[:, 0]
-    # j = pairs[:, 1]
-    # # row-wise/element-wise operation on matrix/vector v
-    # v_diff = v[i] - v[j]
-
-    # Removed unnecessary memory allocation
     return v[pairs[:, 0]] - v[pairs[:, 1]]
 
 
@@ -427,12 +421,12 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
     parser: str or list[str]
         if parser contains 'fmmu', or 'rotate_meas' then data are trimmed,
         boundary voltage measurements are re-indexed and rotated,
-        start from the positive stimulus electrodestart index 'A'.
+        start from the positive stimulus electrode start index 'A'.
         if parser contains 'std', or 'no_rotate_meas' then data are trimmed,
         the start index (i) of boundary voltage measurements is always 0.
-        if parser contains 'meas_current', mesurements on all will be carried,
-        otherwise (if not contained, of if 'no_meas_current' is contained)
-        mesurements on current carrying electrodes are discarded.
+        if parser contains 'meas_current', the measurements on current carrying
+        electrodes are allowed. Otherwise the measurements on current carrying
+        electrodes are discarded (like 'no_meas_current' option in EIDORS3D).
 
     Returns
     -------
@@ -446,7 +440,9 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
     if not isinstance(parser, list):  # transform parser in list
         parser = [parser]
 
-    meas_current = "meas_current" in parser
+    meas_current = (
+        "meas_current" in parser
+    )  # flag for measurements on current carrying electrodes
     fmmu_rotate = any(p in ("fmmu", "rotate_meas") for p in parser)
     i0 = drv_a if fmmu_rotate else 0
 
@@ -460,7 +456,7 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
         ((m != drv_a) & (m != drv_b) & (n != drv_a) & (n != drv_b)) | meas_current
     )  # Create an array of bool to act as a mask
     arr = np.array([n, m]).T  # Create an array with n an m as columns
-    # Remove elements not complying with the mask (eg: False)
+    # Remove elements complying with the mask (eg: True)
     # diff_pairs = arr[diff_pairs_mask] Removed inutile memory alloc
     # # build differential pairs
     # v = []
@@ -491,9 +487,6 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
     B: current sink,
     M, N: boundary electrodes, where v_diff = v_n - v_m.
 
-    'no_meas_current': (EIDORS3D)
-    mesurements on current carrying electrodes are discarded.
-
     Parameters
     ----------
     ex_line: NDArray
@@ -502,12 +495,15 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
         number of total electrodes.
     step: int
         measurement method (two adjacent electrodes are used for measuring).
-    parser: str
-        if parser is 'fmmu', or 'rotate_meas' then data are trimmed,
+    parser: str or list[str]
+        if parser contains 'fmmu', or 'rotate_meas' then data are trimmed,
         boundary voltage measurements are re-indexed and rotated,
-        start from the positive stimulus electrodestart index 'A'.
-        if parser is 'std', or 'no_rotate_meas' then data are trimmed,
+        start from the positive stimulus electrode start index 'A'.
+        if parser contains 'std', or 'no_rotate_meas' then data are trimmed,
         the start index (i) of boundary voltage measurements is always 0.
+        if parser contains 'meas_current', the measurements on current carrying
+        electrodes are allowed. Otherwise the measurements on current carrying
+        electrodes are discarded (like 'no_meas_current' option in EIDORS3D).
 
     Returns
     -------
@@ -546,7 +542,9 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
         ]
     )
     arr = np.array([np.array([n[i], m[i]]).T for i in range(n.shape[0])])
-    return np.array([arr[i, np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])])
+    return np.array(
+        [arr[i, np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])]
+    )
 
 
 def assemble(ke, tri, perm, n_pts, ref=0):
