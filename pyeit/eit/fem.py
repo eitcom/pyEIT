@@ -109,7 +109,6 @@ class Forward:
         #    >> fe = np.mean(f[:, self.tri], axis=1)
         # 2. or, simply smear at the nodes using f
         b_matrix = smear_nd(f, f_el, diff_op)
-            return v, jac, b_matrix
 
         # def no_vectorization():
         #     """
@@ -449,22 +448,13 @@ def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
     m = a % n_el
     n = (m + step) % n_el
     # if any of the electrodes is the stimulation electrodes
-    diff_pairs_mask = np.array(
-        ((m != drv_a) & (m != drv_b) & (n != drv_a) & (n != drv_b)) | meas_current
-    )  # Create an array of bool to act as a mask
     arr = np.array([n, m]).T  # Create an array with n an m as columns
+    if meas_current:
+        return arr
+    diff_pairs_mask = np.array(
+        ((m == drv_a) & (m != drv_b) & (n != drv_a) & (n == drv_b))
+    )  # Create an array of bool to act as a mask
     # Remove elements complying with the mask (eg: True)
-    # diff_pairs = arr[diff_pairs_mask] Removed inutile memory alloc
-    # # build differential pairs
-    # v = []
-    # for a in range(i0, i0 + n_el):
-    #     m = a % n_el
-    #     n = (m + step) % n_el
-    #     # if any of the electrodes is the stimulation electrodes
-    #     if not (m == drv_a or m == drv_b or n == drv_a or n == drv_b) or meas_current:
-    #         # the order of m, n matters
-    #         v.append([n, m])
-    # diff_pairs = np.array(v)
     return arr[diff_pairs_mask]
 
 
@@ -523,22 +513,25 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
     a = np.array([np.arange(i0[i], i0[i] + n_el) for i in range(i0.shape[0])])
     m = a % n_el
     n = (m + step) % n_el
+    arr = np.array([np.array([n[i], m[i]]).T for i in range(n.shape[0])])
+
     # if any of the electrodes is the stimulation electrodes
-    diff_pairs_mask = np.array(
+    if meas_current:
+        return arr
+
+    diff_pairs_mask = ~np.array(
         [
             (
-                (
-                    (m[i] != drv_a[i])
-                    & (m[i] != drv_b[i])
-                    & (n[i] != drv_a[i])
-                    & (n[i] != drv_b[i])
-                )
-                | meas_current
+                
+                (m[i] == drv_a[i])
+                & (m[i] == drv_b[i])
+                & (n[i] == drv_a[i])
+                & (n[i] == drv_b[i])
+                
             )
             for i in range(m.shape[0])
         ]
     )
-    arr = np.array([np.array([n[i], m[i]]).T for i in range(n.shape[0])])
     return np.array(
         [arr[i, np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])]
     )
