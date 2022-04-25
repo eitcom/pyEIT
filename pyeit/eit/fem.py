@@ -54,7 +54,7 @@ class Forward:
         self.n_tri, self.n_vertices = self.tri.shape
         self.ne = el_pos.size
 
-    def solve_eit(self, ex_mat=None, step=1, perm=None, parser=None, vector=False):
+    def solve_eit(self, ex_mat=None, step=1, perm=None, parser=None, **kwargs):
         """
         EIT simulation, generate perturbation matrix and forward v
 
