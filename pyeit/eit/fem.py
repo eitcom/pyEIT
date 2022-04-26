@@ -762,3 +762,33 @@ def _k_tetrahedron(xy):
     ke_matrix = np.dot(a, a.transpose()) / (36.0 * vt)
 
     return ke_matrix
+
+
+if __name__ == "__main__":
+
+    from glob_utils.debug.debugging_help import print_np
+    print_np(np.arange(3))
+    print_np(np.arange(3))
+
+
+    v = np.array([np.random.random(16) for _ in range(16)])
+    print_np(v, id='v')
+    ex_mat= eit_scan_lines()
+    print_np(ex_mat, id='ex_mat')
+
+    parser= 'meas_current'
+    iter= 100
+
+    start_time = timeit.default_timer()
+    for _ in range(iter):
+        meas_pattern= voltage_meter(ex_mat, parser=parser)
+    print(timeit.default_timer() - start_time)
+
+    # start_time = timeit.default_timer()
+    # for _ in range(iter):
+    #     meas_pattern= voltage_meter_new(ex_mat, parser=parser)
+    # print(timeit.default_timer() - start_time)
+
+    # print_np(meas_pattern, id='meas_pattern')
+    # v_diff= subtract_row_nd(v, meas_pattern)
+    # print_np(v_diff, id='v_diff')
