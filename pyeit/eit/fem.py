@@ -163,7 +163,7 @@ class Forward:
 
         return f, jac
 
-    def solve_nd(self, ex_mat, perm):
+    def solve_nd(self, ex_mat:np.ndarray, perm:np.ndarray)->tuple[np.ndarray, np.ndarray]:
         """
         Vectorized version of solve. It take the full ex_mat
         instead of lines.
@@ -178,16 +178,16 @@ class Forward:
         Parameters
         ----------
         ex_mat: NDArray
-            stimulation (scan) patterns/lines
+            stimulation/excitation matrix of shape (n_exc, 2)
         perm: NDArray
-            permittivity on elements (initial)
+            permittivity on elements (initial) of shape (n_tri,)
 
         Returns
         -------
         f: NDArray
-            potential on nodes
+            potential on nodes of shape (ne, n_pts)
         J: NDArray
-            Jacobian
+            Jacobian of shape (n_exc,ne, n_tri)
         """
         # 1. calculate local stiffness matrix (on each element)
         ke = calculate_ke(self.pts, self.tri)
@@ -201,7 +201,7 @@ class Forward:
 
         # 4. solving nodes potential using boundary conditions
         b = self._natural_boundary_nd(ex_mat)
-
+        
         f = np.dot(r_matrix, b[:, None]).T.reshape(b.shape[:-1])
 
         # 5. build Jacobian matrix column wise (element wise)
@@ -213,8 +213,17 @@ class Forward:
                 jac[:, i] = np.dot(np.dot(r_el[:, e], ke[i]), f[k, e])
             return jac
 
-        jac = np.array(list(map(jac_init, jac, np.arange(0, ex_mat.shape[0]))))
-
+        jac = np.array(list(map(jac_init, jac, np.arange(ex_mat.shape[0]))))
+        # print(f'{b=}')
+        # print(f'{f=}')
+        # print(f'{jac=}')
+        print(f'{self.pts.shape=}')
+        print(f'{self.tri.shape=}')
+        print(f'{ex_mat.shape=}')
+        print(f'{perm.shape=}')
+        print(f'{b.shape=}')
+        print(f'{f.shape=}')
+        print(f'{jac.shape=}')
         return f, jac
 
     def _natural_boundary(self, ex_line):
@@ -235,16 +244,21 @@ class Forward:
 
         return b
 
-    def _natural_boundary_nd(self, ex_mat):
-        """
-        Notes
-        -----
-        Same as _natural_boundary, except it takes advantage of
-        Numpy's vectorization capacities.
-        Generate the Neumann boundary condition. In utils.py,
-        you should note that ex_line is local indexed from 0...15,
+    def _natural_boundary_nd(self, ex_mat:np.ndarray)->np.ndarray:
+        """ Generate the Neumann boundary condition.
+
+        In utils.py, you should note that ex_mat is local indexed from 0...15,
         which need to be converted to global node number using el_pos.
+        
+        Parameters
+        ----------
+            ex_mat (np.ndarray): Excitation matrix shape=(n_exc, 2)
+
+        Returns
+        ----------
+            np.ndarray: global boundary condition on pts of shape (n_pts, 1)
         """
+
         drv_a_global = self.el_pos[ex_mat[:, 0]]
         drv_b_global = self.el_pos[ex_mat[:, 1]]
 
@@ -279,17 +293,15 @@ def smear(f, fb, pairs):
     f_min, f_max = np.minimum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape(
         (-1, 1)
     ), np.maximum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape((-1, 1))
-    b_matrix = (f_min < f) & (f <= f_max)
-
     # b_matrix = []
     # for i, j in pairs:
     #     f_min, f_max = min(fb[i], fb[j]), max(fb[i], fb[j])
     #     b_matrix.append((f_min < f) & (f <= f_max))
     # return np.array(b_matrix)
-    return b_matrix
+    return (f_min < f) & (f <= f_max)
 
 
-def smear_nd(f, fb, pairs):
+def smear(f, fb, pairs):
     """
     Same as smear, except it takes advantage of
     Numpy's vectorization capacities.
@@ -314,7 +326,7 @@ def smear_nd(f, fb, pairs):
     def b_matrix_init(k):
         return smear(f[k], fb[k], pairs[k])
 
-    return np.array(list(map(b_matrix_init, np.arange(0, f.shape[0]))))
+    return np.array(list(map(b_matrix_init, np.arange(f.shape[0]))))
 
 
 def subtract_row(v, pairs):
@@ -336,7 +348,7 @@ def subtract_row(v, pairs):
     return v[pairs[:, 0]] - v[pairs[:, 1]]
 
 
-def subtract_row_nd(v, pairs):
+def subtract_row_nd(v:np.ndarray, meas_pattern:np.ndarray)->np.ndarray:
     """
     Same as subtract_row, except it takes advantage of
     Numpy's vectorization capacities.
@@ -345,9 +357,9 @@ def subtract_row_nd(v, pairs):
     Parameters
     ----------
     v: NDArray
-        Nx1 boundary measurements vector or NxM matrix
-    pairs: NDArray
-        Nx2 subtract_row pairs
+        Nx1 boundary measurements vector or NxM matrix of shape (n_exc,n_meas,1)
+    meas_pattern: NDArray
+        of shape (n_exc, n_meas, 2) Nx2 subtract_row pairs ??could be a list??
 
     Returns
     -------
@@ -358,7 +370,7 @@ def subtract_row_nd(v, pairs):
     def v_diff_init(k):
         return subtract_row(v[k], meas_pattern[k])
 
-    return np.array(list(map(v_diff_init, np.arange(0, v.shape[0]))))
+    return np.array(list(map(v_diff_init, np.arange(v.shape[0]))))
 
 
 def voltage_meter(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[str, list[str]]=None)->np.ndarray:
