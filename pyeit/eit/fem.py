@@ -145,7 +145,7 @@ class Forward:
         ke = calculate_ke(self.pts, self.tri)
 
         # 2. assemble to global K
-        kg = assemble_sparse(ke, self.tri, perm, self.n_pts, ref=self.ref)
+        kg = assemble(ke, self.tri, perm, self.n_pts, ref=self.ref)
 
         # 3. calculate electrode impedance matrix R = K^{-1}
         r_matrix = la.inv(kg)
@@ -201,7 +201,7 @@ class Forward:
         ke = calculate_ke(self.pts, self.tri)
 
         # 2. assemble to global K
-        kg = assemble_sparse(ke, self.tri, perm, self.n_pts, ref=self.ref)
+        kg = assemble(ke, self.tri, perm, self.n_pts, ref=self.ref)
 
         # 3. calculate electrode impedance matrix R = K^{-1}
         r_matrix = la.inv(kg)
@@ -459,56 +459,7 @@ def voltage_meter(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[str, 
     return filtered_meas_pattern.reshape(n_exc, -1, 2)
 
 
-
 def assemble(ke, tri, perm, n_pts, ref=0):
-    """
-    Assemble the stiffness matrix (dense matrix, default)
-
-    Parameters
-    ----------
-    ke: NDArray
-        n_tri x (n_dim x n_dim) 3d matrix
-    tri: NDArray
-        the structure of mesh
-    perm: NDArray
-        n_tri x 1 conductivities on elements
-    n_pts: int
-        number of nodes
-    ref: int
-        reference electrode
-
-    Returns
-    -------
-    K: NDArray
-        k_matrix, NxN array of complex stiffness matrix
-
-    Notes
-    -----
-    you can use sparse matrix (IJV) format to automatically add the local
-    stiffness matrix to the global matrix.
-    """
-    n_tri = tri.shape[0]
-
-    # assemble global stiffness matrix
-    k_global = np.zeros((n_pts, n_pts), dtype=perm.dtype)
-    for ei in range(n_tri):
-        k_local = ke[ei]
-        pe = perm[ei]
-
-        no = tri[ei, :]
-        ij = np.ix_(no, no)
-        k_global[ij] += k_local * pe
-
-    # place reference electrode
-    if 0 <= ref < n_pts:
-        k_global[ref, :] = 0.0
-        k_global[:, ref] = 0.0
-        k_global[ref, ref] = 1.0
-
-    return k_global
-
-
-def assemble_sparse(ke, tri, perm, n_pts, ref=0):
     """
     Assemble the stiffness matrix (using sparse matrix)
 
