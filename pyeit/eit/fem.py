@@ -374,7 +374,6 @@ def subtract_row_nd(v:np.ndarray, meas_pattern:np.ndarray)->np.ndarray:
     v_diff: NDArray
         difference measurements
     """
-
     def v_diff_init(k):
         return subtract_row(v[k], meas_pattern[k])
 
@@ -383,8 +382,10 @@ def subtract_row_nd(v:np.ndarray, meas_pattern:np.ndarray)->np.ndarray:
 
 def voltage_meter(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[str, list[str]]=None)->np.ndarray:
     """
-    Faster implementation using numpy's native ufuncs.
+    Faster implementation using numpy's native funcs.
     Made to work with a full matrix, unlike voltage_meter.
+
+    David Metz: new implementation 35% less computation time
 
     extract subtract_row-voltage measurements on boundary electrodes.
     we direct operate on measurements or Jacobian on electrodes,
@@ -479,7 +480,7 @@ def assemble(ke, tri, perm, n_pts, ref=0):
     Returns
     -------
     K: NDArray
-        k_matrix, NxN array of complex stiffness matrix
+        , NxN array of complex stiffness matrix
 
     Notes
     -----
@@ -505,18 +506,18 @@ def assemble(ke, tri, perm, n_pts, ref=0):
     # data = mask_ref_node(data, row, col, ref)
 
     # for efficient sparse inverse (csc)
-    A = sparse.csr_matrix((data, (row, col)), shape=(n_pts, n_pts), dtype=perm.dtype)
+    k_matrix = sparse.csr_matrix((data, (row, col)), shape=(n_pts, n_pts), dtype=perm.dtype)
 
     # the stiffness matrix may not be sparse
-    A = A.toarray()
+    k_matrix = k_matrix.toarray()
 
     # place reference electrode
     if 0 <= ref < n_pts:
-        A[ref, :] = 0.0
-        A[:, ref] = 0.0
-        A[ref, ref] = 1.0
+        k_matrix[ref, :] = 0.0
+        k_matrix[:, ref] = 0.0
+        k_matrix[ref, ref] = 1.0
 
-    return A
+    return k_matrix
 
 
 def calculate_ke(pts, tri):
@@ -585,6 +586,8 @@ def _k_triangle(xy):
     # user must make sure all triangles are CCW (conter clock wised).
     # at = 0.5 * la.det(s[[0, 1]])
     at = 0.5 * det2x2(s[0], s[1])
+    # TODO maybe replace with:
+    # at= 0.5 * np.linalg.det(s)
 
     # (e for element) local stiffness matrix
     ke_matrix = np.dot(s, s.T) / (4.0 * at)
