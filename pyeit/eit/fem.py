@@ -161,6 +161,14 @@ class Forward:
         for (i, e) in enumerate(self.tri):
             jac[:, i] = np.dot(np.dot(r_el[:, e], ke[i]), f[e])
 
+        # print(f'{b=}')
+        # print(f'{f=}')
+        # print(f'{jac=}')
+        print(f'{self.pts.shape=}')
+        print(f'{self.tri.shape=}')
+        print(f'{b.shape=}')
+        print(f'{f.shape=}')
+        print(f'{jac.shape=}')
         return f, jac
 
     def solve_nd(self, ex_mat:np.ndarray, perm:np.ndarray)->tuple[np.ndarray, np.ndarray]:
