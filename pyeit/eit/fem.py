@@ -107,8 +107,8 @@ class Forward:
         f_el = f[:, self.el_pos]
         # boundary measurements, subtract_row-voltages on electrodes
         diff_op = voltage_meter(ex_mat, n_el=self.ne, idx_el=step, parser=parser)
-        v = subtract_row_nd(f_el, diff_op)
-        jac = subtract_row_nd(jac_i, diff_op)
+        v = subtract_row(f_el, diff_op)
+        jac = subtract_row(jac_i, diff_op)
         # build bp projection matrix
         # 1. we can either smear at the center of elements, using
         #    >> fe = np.mean(f[:, self.tri], axis=1)
@@ -337,49 +337,7 @@ def smear(f, fb, pairs):
     return np.array(list(map(b_matrix_init, np.arange(f.shape[0]))))
 
 
-def subtract_row(v, pairs):
-    """
-    v_diff[k] = v[i, :] - v[j, :]
-
-    Parameters
-    ----------
-    v: NDArray
-        Nx1 boundary measurements vector or NxM matrix
-    pairs: NDArray
-        Nx2 subtract_row pairs
-
-    Returns
-    -------
-    v_diff: NDArray
-        difference measurements
-    """
-    return v[pairs[:, 0]] - v[pairs[:, 1]]
-
-
-def subtract_row_nd(v:np.ndarray, meas_pattern:np.ndarray)->np.ndarray:
-    """
-    Same as subtract_row, except it takes advantage of
-    Numpy's vectorization capacities.
-    v_diff[k] = v[i, :] - v[j, :]
-
-    Parameters
-    ----------
-    v: NDArray
-        Nx1 boundary measurements vector or NxM matrix of shape (n_exc,n_meas,1)
-    meas_pattern: NDArray
-        of shape (n_exc, n_meas, 2) Nx2 subtract_row pairs ??could be a list??
-
-    Returns
-    -------
-    v_diff: NDArray
-        difference measurements
-    """
-    def v_diff_init(k):
-        return subtract_row(v[k], meas_pattern[k])
-
-    return np.array(list(map(v_diff_init, np.arange(v.shape[0]))))
-
-def subtract_row_new(v:np.ndarray, meas_pattern:np.ndarray) -> np.ndarray:
+def subtract_row(v:np.ndarray, meas_pattern:np.ndarray) -> np.ndarray:
     """
     Same as subtract_row, except it takes advantage of
     Numpy's vectorization capacities.
@@ -705,12 +663,7 @@ if __name__ == "__main__":
 
     start_time = timeit.default_timer()
     for _ in range(iter):
-        v_diff= subtract_row_nd(v, meas_pattern)
-    print(timeit.default_timer() - start_time)
-
-    start_time = timeit.default_timer()
-    for _ in range(iter):
-        v_diff= subtract_row_new(v, meas_pattern)
+        v_diff= subtract_row(v, meas_pattern)
     print(timeit.default_timer() - start_time)
 
     print_np(v_diff, id='v_diff')
