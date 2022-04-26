@@ -84,11 +84,11 @@ class Forward:
         Returns
         -------
         jac: NDArray
-            number of measures x n_E complex array, the Jacobian
+            number of measures x n_E complex array, the Jacobian of shape(n_exc, n_el, n_tri)
         v: NDArray
-            number of measures x 1 array, simulated boundary measures
-        b_matrix: NDArray
-            back-projection mappings (smear matrix)
+            number of measures x 1 array, simulated boundary measures of shape(n_exc, n_el)
+        b_matrix: NDArray(bool)
+            back-projection mappings (smear matrix) of shape(n_exc, n_pts, 1)
         """
         # initialize/extract the scan lines (default: apposition)
         if ex_mat is None:
@@ -106,14 +106,18 @@ class Forward:
         f, jac_i = self.solve_nd(ex_mat, perm0)
         f_el = f[:, self.el_pos]
         # boundary measurements, subtract_row-voltages on electrodes
-        diff_op = voltage_meter(ex_mat, n_el=self.ne, idx_el=step, parser=parser)
+        diff_op = voltage_meter(ex_mat, n_el=self.ne, step=step, parser=parser)
+        print(f'{diff_op=}, {diff_op.shape=}')
+        print(f'{f_el=}, {f_el.shape=}')
         v = subtract_row(f_el, diff_op)
+        print(f'{v=}, {v.shape=}')
+        print(f'{jac_i=}, {jac_i.shape=}')
         jac = subtract_row(jac_i, diff_op)
         # build bp projection matrix
         # 1. we can either smear at the center of elements, using
         #    >> fe = np.mean(f[:, self.tri], axis=1)
         # 2. or, simply smear at the nodes using f
-        b_matrix = smear(f, f_el, diff_op)
+        b_matrix = smear_nd(f, f_el, diff_op)
 
         # update output, now you can call p.jac, p.v, p.b_matrix
         return  PdeResult(jac, v, b_matrix)
@@ -309,7 +313,7 @@ def smear(f, fb, pairs):
     return (f_min < f) & (f <= f_max)
 
 
-def smear(f, fb, pairs):
+def smear_nd(f, fb, pairs):
     """
     Same as smear, except it takes advantage of
     Numpy's vectorization capacities.
@@ -333,6 +337,48 @@ def smear(f, fb, pairs):
     # Replacing the below code by a faster implementation in Numpy
     def b_matrix_init(k):
         return smear(f[k], fb[k], pairs[k])
+
+    return np.array(list(map(b_matrix_init, np.arange(f.shape[0]))))
+
+def smear_nd_new(f:np.ndarray, fb:np.ndarray, meas_pattern:np.ndarray)->np.ndarray:
+    """
+    Same as smear, except it takes advantage of
+    Numpy's vectorization capacities.
+    build smear matrix B for bp
+
+    Parameters
+    ----------
+    f: NDArray
+        potential on nodes
+    fb: NDArray
+        potential on adjacent electrodes
+    meas_pattern: NDArray
+        electrodes numbering pairs of shape (n_exc, n_meas, 2)
+
+    Returns
+    -------
+    B: NDArray
+        back-projection matrix
+    """
+
+    # Replacing the below code by a faster implementation in Numpy
+    def b_matrix_init(k):
+        return smear(f[k], fb[k], meas_pattern[k])
+
+    idx_meas_0=meas_pattern[:,:,0]
+    idx_meas_1=meas_pattern[:,:,1]
+    n_exc = meas_pattern.shape[0]
+    idx_exc=np.ones_like(idx_meas_0, dtype=int) * np.arange(n_exc).reshape(n_exc,1)
+
+
+    f_min = np.minimum(fb[meas_pattern[:, 0]], fb[meas_pattern[:, 1]]).reshape((-1, 1))
+    f_max= np.maximum(fb[meas_pattern[:, 0]], fb[meas_pattern[:, 1]]).reshape((-1, 1))
+    # b_matrix = []
+    # for i, j in pairs:
+    #     f_min, f_max = min(fb[i], fb[j]), max(fb[i], fb[j])
+    #     b_matrix.append((f_min < f) & (f <= f_max))
+    # return np.array(b_matrix)
+    # return (f_min < f) & (f <= f_max)
 
     return np.array(list(map(b_matrix_init, np.arange(f.shape[0]))))
 
@@ -638,35 +684,48 @@ if __name__ == "__main__":
     print_np(np.arange(3))
     print_np(np.arange(3))
 
-    ex_mat= eit_scan_lines()
-    n_exc= ex_mat.shape[0]
 
-    print_np(ex_mat, id='ex_mat')
+    import numpy as np
 
-    parser= None#'meas_current'
-    iter= 100
+    import pyeit.mesh as mesh
+    from pyeit.mesh import quality
+    from pyeit.eit.fem import Forward
+    from pyeit.eit.utils import eit_scan_lines
 
-    start_time = timeit.default_timer()
-    for _ in range(iter):
-        meas_pattern= voltage_meter(ex_mat, parser=parser)
-    print(timeit.default_timer() - start_time)
+    """ 0. build mesh """
+    # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
+    mesh_obj, el_pos = mesh.create(16, h0=0.1)
 
-    # start_time = timeit.default_timer()
-    # for _ in range(iter):
-    #     meas_pattern= voltage_meter_new(ex_mat, parser=parser)
-    # print(timeit.default_timer() - start_time)
+    # extract node, element, alpha
+    pts = mesh_obj["node"]
+    tri = mesh_obj["element"]
+    x, y = pts[:, 0], pts[:, 1]
+    quality.stats(pts, tri)
 
-    # print_np(meas_pattern, id='meas_pattern')
+    # change permittivity
+    anomaly = [{"x": 0.40, "y": 0.50, "d": 0.20, "perm": 100.0}]
+    mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
+    perm = mesh_new["perm"]
+
+    """ 1. FEM forward simulations """
+    # setup EIT scan conditions
+    ex_dist, step = 7, 1
+    ex_mat = eit_scan_lines(16, ex_dist)
+    # Define electrode current sink and current source
+    ex_line = ex_mat[0].ravel()
+
+    # calculate simulated data using FEM
+    fwd = Forward(mesh_obj, el_pos)
+    p= fwd.solve_eit(ex_mat, perm=perm, vector=True)
+    print(f'{p.b_matrix=}, {p.b_matrix.shape=}')
+    print(f'{p.v=}, {p.v.shape=}')
+    # f, _ = fwd.solve(ex_line, perm=perm)
     
-    v = np.array([np.arange(16)+ i+0.1 for i in range(16)])
-    print_np(v, id='v')
 
-    start_time = timeit.default_timer()
-    for _ in range(iter):
-        v_diff= subtract_row(v, meas_pattern)
-    print(timeit.default_timer() - start_time)
 
-    print_np(v_diff, id='v_diff')
+
+
+
 
     # a = np.array([[1, 2], [3, 4]])
 
