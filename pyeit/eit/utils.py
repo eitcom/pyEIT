@@ -54,9 +54,7 @@ def eit_scan_lines(ne=16, dist=1):
     of the number of electrodes. In FEM applications, you should convert ex_mat
     to global index using the (global) el_pos parameters.
     """
-    ex = np.array([[i, np.mod(i + dist, ne)] for i in range(ne)])
-
-    return ex
+    return np.array([[i, np.mod(i + dist, ne)] for i in range(ne)])
 
 
 if __name__ == "__main__":
