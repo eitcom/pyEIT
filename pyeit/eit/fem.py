@@ -17,6 +17,12 @@ from scipy import sparse
 from pyeit.eit.utils import eit_scan_lines
 
 
+@dataclass
+class PdeResult:
+    v:np.ndarray
+    jac:np.ndarray
+    b_matrix:np.ndarray
+
 
 class Forward:
     """FEM forward computing code"""
@@ -50,13 +56,13 @@ class Forward:
         # reference electrodes [ref node should not be on electrodes]
         ref_el = 0
         while ref_el in self.el_pos:
-            ref_el = ref_el + 1
+            ref_el += 1
         self.ref = ref_el
 
         # infer dimensions from mesh
         self.n_pts, self.n_dim = self.pts.shape
         self.n_tri, self.n_vertices = self.tri.shape
-        self.ne = el_pos.size
+        self.ne = el_pos.size # TODO n_el would be more consistent
 
     def solve_eit(self, ex_mat=None, step=1, perm=None, parser=None, **kwargs):
         """
@@ -67,7 +73,7 @@ class Forward:
         ex_mat: NDArray
             numLines x n_el array, stimulation matrix
         step: int
-            the configuration of measurement electrodes (default: adjacent)
+            the configuration of measurement electrodes (default: apposition)
         perm: NDArray
             Mx1 array, initial x0. must be the same size with self.tri_perm
         parser: str
@@ -96,63 +102,21 @@ class Forward:
         else:
             assert perm.shape == (self.n_tri,)
             perm0 = perm
-
         
         f, jac_i = self.solve_nd(ex_mat, perm0)
         f_el = f[:, self.el_pos]
-
         # boundary measurements, subtract_row-voltages on electrodes
-        diff_op = voltage_meter_nd(
-            ex_mat, n_el=self.ne, step=step, parser=parser
-        ).astype(int)
+        diff_op = voltage_meter(ex_mat, n_el=self.ne, idx_el=step, parser=parser)
         v = subtract_row_nd(f_el, diff_op)
         jac = subtract_row_nd(jac_i, diff_op)
-
         # build bp projection matrix
         # 1. we can either smear at the center of elements, using
         #    >> fe = np.mean(f[:, self.tri], axis=1)
         # 2. or, simply smear at the nodes using f
-        b_matrix = smear_nd(f, f_el, diff_op)
-
-        # def no_vectorization():
-        #     """
-        #     Standard methods.
-        #     """
-        #     # calculate f and Jacobian iteratively over all stimulation lines
-        #     jac, v, b_matrix = [], [], []
-        #     n_lines = ex_mat.shape[0]
-        #     for i in range(n_lines):
-        #         # FEM solver of one stimulation pattern, a row in ex_mat
-        #         ex_line = ex_mat[i]
-        #         f, jac_i = self.solve(ex_line, perm0)
-        #         f_el = f[self.el_pos]
-
-        #         # boundary measurements, subtract_row-voltages on electrodes
-        #         diff_op = voltage_meter(ex_line, n_el=self.ne, step=step, parser=parser)
-        #         v_diff = subtract_row(f_el, diff_op)
-        #         jac_diff = subtract_row(jac_i, diff_op)
-
-        #         # build bp projection matrix
-        #         # 1. we can either smear at the center of elements, using
-        #         #    >> fe = np.mean(f[self.tri], axis=1)
-        #         # 2. or, simply smear at the nodes using f
-        #         b = smear(f, f_el, diff_op)
-
-        #         # append
-        #         v.append(v_diff)
-        #         jac.append(jac_diff)
-        #         b_matrix.append(b)
-        #     return v, jac, b_matrix
+        b_matrix = smear(f, f_el, diff_op)
 
         # update output, now you can call p.jac, p.v, p.b_matrix
-        # if vector:
-        # v, jac, b_matrix = vectorization()
-        # else:
-        #     v, jac, b_matrix = no_vectorization()
-
-        pde_result = namedtuple("pde_result", ["jac", "v", "b_matrix"])
-        p = pde_result(jac=np.vstack(jac), v=np.hstack(v), b_matrix=np.vstack(b_matrix))
-        return p
+        return  PdeResult(jac, v, b_matrix)
 
     def solve(self, ex_line, perm):
         """
