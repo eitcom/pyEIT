@@ -113,6 +113,7 @@ class Forward:
         print(f'{v=}, {v.shape=}')
         print(f'{jac_i=}, {jac_i.shape=}')
         jac = subtract_row(jac_i, diff_op)
+        print(f'{jac=}, {jac.shape=}')
         # build bp projection matrix
         # 1. we can either smear at the center of elements, using
         #    >> fe = np.mean(f[:, self.tri], axis=1)
@@ -120,7 +121,7 @@ class Forward:
         b_matrix = smear_nd(f, f_el, diff_op)
 
         # update output, now you can call p.jac, p.v, p.b_matrix
-        return  PdeResult(jac, v, b_matrix)
+        return  PdeResult(jac=np.vstack(jac), v=np.hstack(v), b_matrix=np.vstack(b_matrix))
 
     def solve(self, ex_line, perm):
         """
