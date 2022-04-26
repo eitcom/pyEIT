@@ -379,6 +379,39 @@ def subtract_row_nd(v:np.ndarray, meas_pattern:np.ndarray)->np.ndarray:
 
     return np.array(list(map(v_diff_init, np.arange(v.shape[0]))))
 
+def subtract_row_new(v:np.ndarray, meas_pattern:np.ndarray) -> np.ndarray:
+    """
+    Same as subtract_row, except it takes advantage of
+    Numpy's vectorization capacities.
+    v_diff[k] = v[i, :] - v[j, :]
+
+    David Metz: new implementation 33% less computation time
+
+    Parameters
+    ----------
+    v: NDArray
+        Nx1 boundary measurements vector or NxM matrix of shape (n_exc,n_el,1)
+    meas_pattern: NDArray
+        of shape (n_exc, n_meas, 2) Nx2 subtract_row pairs ??could be a list??
+
+    Returns
+    -------
+    v_diff: NDArray
+        difference measurements
+    """
+
+    if v.shape[:1] != meas_pattern.shape[:1]:
+        raise ValueError(
+            f'Measurements vector v ({v.shape=}) should have same 1stand 2nd dim as meas_pattern ({meas_pattern.shape=})')
+
+    # creation of excitation indexe for each idx_meas
+    idx_meas_0=meas_pattern[:,:,0]
+    idx_meas_1=meas_pattern[:,:,1]
+    n_exc = meas_pattern.shape[0]
+    idx_exc=np.ones_like(idx_meas_0, dtype=int) * np.arange(n_exc).reshape(n_exc,1)
+
+    return v[idx_exc,idx_meas_0]-v[idx_exc,idx_meas_1]
+
 
 def voltage_meter(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[str, list[str]]=None)->np.ndarray:
     """
@@ -647,10 +680,9 @@ if __name__ == "__main__":
     print_np(np.arange(3))
     print_np(np.arange(3))
 
-
-    v = np.array([np.random.random(16) for _ in range(16)])
-    print_np(v, id='v')
     ex_mat= eit_scan_lines()
+    n_exc= ex_mat.shape[0]
+
     print_np(ex_mat, id='ex_mat')
 
     parser= None#'meas_current'
@@ -667,5 +699,23 @@ if __name__ == "__main__":
     # print(timeit.default_timer() - start_time)
 
     # print_np(meas_pattern, id='meas_pattern')
-    # v_diff= subtract_row_nd(v, meas_pattern)
-    # print_np(v_diff, id='v_diff')
+    
+    v = np.array([np.arange(16)+ i+0.1 for i in range(16)])
+    print_np(v, id='v')
+
+    start_time = timeit.default_timer()
+    for _ in range(iter):
+        v_diff= subtract_row_nd(v, meas_pattern)
+    print(timeit.default_timer() - start_time)
+
+    start_time = timeit.default_timer()
+    for _ in range(iter):
+        v_diff= subtract_row_new(v, meas_pattern)
+    print(timeit.default_timer() - start_time)
+
+    print_np(v_diff, id='v_diff')
+
+    # a = np.array([[1, 2], [3, 4]])
+
+    # print(np.linalg.det(a), det2x2(a[0], a[1]))
+
