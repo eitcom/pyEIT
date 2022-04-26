@@ -7,11 +7,15 @@
 from __future__ import division, absolute_import, print_function
 
 from collections import namedtuple
+from dataclasses import dataclass
+import timeit
+from typing import Any, Union
 import numpy as np
 import numpy.linalg as la
 from scipy import sparse
 
-from .utils import eit_scan_lines
+from pyeit.eit.utils import eit_scan_lines
+
 
 
 class Forward:
@@ -388,77 +392,12 @@ def subtract_row_nd(v, pairs):
     """
 
     def v_diff_init(k):
-        return subtract_row(v[k], pairs[k])
+        return subtract_row(v[k], meas_pattern[k])
 
     return np.array(list(map(v_diff_init, np.arange(0, v.shape[0]))))
 
 
-def voltage_meter(ex_line, n_el=16, step=1, parser=None) -> np.ndarray:
-    """
-    extract subtract_row-voltage measurements on boundary electrodes.
-    we direct operate on measurements or Jacobian on electrodes,
-    so, we can use LOCAL index in this module, do not require el_pos.
-
-    Notes
-    -----
-    ABMN Model.
-    A: current driving electrode,
-    B: current sink,
-    M, N: boundary electrodes, where v_diff = v_n - v_m.
-
-    Parameters
-    ----------
-    ex_line: NDArray
-        2x1 array, [positive electrode, negative electrode].
-    n_el: int
-        number of total electrodes.
-    step: int
-        measurement method (two adjacent electrodes are used for measuring).
-    parser: str or list[str]
-        if parser contains 'fmmu', or 'rotate_meas' then data are trimmed,
-        boundary voltage measurements are re-indexed and rotated,
-        start from the positive stimulus electrode start index 'A'.
-        if parser contains 'std', or 'no_rotate_meas' then data are trimmed,
-        the start index (i) of boundary voltage measurements is always 0.
-        if parser contains 'meas_current', the measurements on current carrying
-        electrodes are allowed. Otherwise the measurements on current carrying
-        electrodes are discarded (like 'no_meas_current' option in EIDORS3D).
-
-    Returns
-    -------
-    v: NDArray
-        (N-1)*2 arrays of subtract_row pairs
-    """
-    # local node
-    drv_a = ex_line[0]
-    drv_b = ex_line[1]
-
-    if not isinstance(parser, list):  # transform parser in list
-        parser = [parser]
-
-    meas_current = (
-        "meas_current" in parser
-    )  # flag for measurements on current carrying electrodes
-    fmmu_rotate = any(p in ("fmmu", "rotate_meas") for p in parser)
-    i0 = drv_a if fmmu_rotate else 0
-
-    # Same code as below but with numpy implementation for faster computing
-    # build differential pairs
-    a = np.arange(i0, i0 + n_el)
-    m = a % n_el
-    n = (m + step) % n_el
-    # if any of the electrodes is the stimulation electrodes
-    arr = np.array([n, m]).T  # Create an array with n an m as columns
-    if meas_current:
-        return arr
-    diff_pairs_mask = np.array(
-        ((m == drv_a) & (m != drv_b) & (n != drv_a) & (n == drv_b))
-    )  # Create an array of bool to act as a mask
-    # Remove elements complying with the mask (eg: True)
-    return arr[diff_pairs_mask]
-
-
-def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
+def voltage_meter(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[str, list[str]]=None)->np.ndarray:
     """
     Faster implementation using numpy's native ufuncs.
     Made to work with a full matrix, unlike voltage_meter.
@@ -476,8 +415,8 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
 
     Parameters
     ----------
-    ex_line: NDArray
-        2x1 array, [positive electrode, negative electrode].
+    ex_mat: NDArray
+        Nx2 array, [positive electrode, negative electrode]. of shape (n_exc, 2)
     n_el: int
         number of total electrodes.
     step: int
@@ -498,43 +437,43 @@ def voltage_meter_nd(ex_mat, n_el=16, step=1, parser=None):
         (N-1)*2 arrays of subtract_row pairs
     """
     # local node
-    drv_a = ex_mat[:, 0]
-    drv_b = ex_mat[:, 1]
+    ex_mat= ex_mat.astype(int)
+    n_exc= ex_mat.shape[0]
+    drv_a= np.ones((n_exc, n_exc), dtype=int) * ex_mat[:, 0].reshape(n_exc, 1)
+    drv_b= np.ones((n_exc, n_exc), dtype=int) * ex_mat[:, 1].reshape(n_exc, 1)
+    # print(f'{drv_a=}, {drv_a.shape=}')
+    # print(f'{drv_b=}, {drv_b.shape=}')
 
     if not isinstance(parser, list):  # transform parser in list
         parser = [parser]
 
-    meas_current = "meas_current" in parser
+    meas_current = "meas_current" in parser 
     fmmu_rotate = any(p in ("fmmu", "rotate_meas") for p in parser)
-    i0 = drv_a if fmmu_rotate else np.zeros(shape=drv_a.shape)
+    i0 = drv_a if fmmu_rotate else np.zeros_like(drv_a)
 
-    # Same code as below but with numpy implementation for faster computing
-    # build differential pairs
-    a = np.array([np.arange(i0[i], i0[i] + n_el) for i in range(i0.shape[0])])
-    m = a % n_el
-    n = (m + step) % n_el
-    arr = np.array([np.array([n[i], m[i]]).T for i in range(n.shape[0])])
+    # print(f'{i0=}, {i0.shape=}')
+    idx_el=np.ones((n_exc, n_exc), dtype=int) * np.arange(n_el)
+    # print(f'{idx_el=}, {idx_el.shape=}')
+    a= i0+idx_el
+    # print(f'{a=}, {a.shape=}')
+    m= a % n_el
+    # print(f'{m=}, {m.shape=}')
+    n= (m + step) % n_el
+    all_meas_pattern = np.concatenate((n[:,:,np.newaxis],m[:,:,np.newaxis]), 2)
+    # print(f'1st {all_meas_pattern=}, {all_meas_pattern.shape=}')
 
-    # if any of the electrodes is the stimulation electrodes
     if meas_current:
-        return arr
+        return all_meas_pattern
 
-    diff_pairs_mask = ~np.array(
-        [
-            (
-                
-                (m[i] == drv_a[i])
-                & (m[i] == drv_b[i])
-                & (n[i] == drv_a[i])
-                & (n[i] == drv_b[i])
-                
-            )
-            for i in range(m.shape[0])
-        ]
-    )
-    return np.array(
-        [arr[i, np.array((diff_pairs_mask[i]))] for i in range(arr.shape[0])]
-    )
+    # print(f'{m=}, {m.shape=}')
+    # print(f'{n=}, {n.shape=}')
+    # print(f'{drv_a=}, {drv_a.shape=}')
+    diff_pairs_mask = np.logical_and.reduce((m != drv_a, m != drv_b , n != drv_a, n != drv_b))
+    # print(f'{diff_pairs_mask=}, {diff_pairs_mask.shape=}')
+    filtered_meas_pattern=all_meas_pattern[diff_pairs_mask]
+    # to reshape after masking
+    return filtered_meas_pattern.reshape(n_exc, -1, 2)
+
 
 
 def assemble(ke, tri, perm, n_pts, ref=0):
@@ -776,7 +715,7 @@ if __name__ == "__main__":
     ex_mat= eit_scan_lines()
     print_np(ex_mat, id='ex_mat')
 
-    parser= 'meas_current'
+    parser= None#'meas_current'
     iter= 100
 
     start_time = timeit.default_timer()
