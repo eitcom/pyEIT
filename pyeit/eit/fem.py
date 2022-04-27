@@ -118,7 +118,19 @@ class Forward:
         # 1. we can either smear at the center of elements, using
         #    >> fe = np.mean(f[:, self.tri], axis=1)
         # 2. or, simply smear at the nodes using f
-        b_matrix = smear_nd(f, f_el, diff_op)
+        print(f'{f=}, {f.shape=}')
+        print(f'{f_el=}, {f_el.shape=}')
+        print(f'{diff_op=}, {diff_op.shape=}')
+
+        start_time = timeit.default_timer()
+        for _ in range(100):
+            b_matrix = smear(f, f_el, diff_op, new= False)
+        print('smear_nd:',timeit.default_timer() - start_time)
+
+        start_time = timeit.default_timer()
+        for _ in range(100):
+            b_matrix = smear(f, f_el, diff_op, new= True)
+        print('smear_nd_new:',timeit.default_timer() - start_time)
 
         # update output, now you can call p.jac, p.v, p.b_matrix
         return  PdeResult(jac=np.vstack(jac), v=np.hstack(v), b_matrix=np.vstack(b_matrix))
@@ -283,9 +295,10 @@ class Forward:
         return b
 
 
-def smear(f, fb, pairs):
+def _smear(f, fb, pairs):
     """
     build smear matrix B for bp
+    for one exitation
 
     Parameters
     ----------
@@ -303,18 +316,12 @@ def smear(f, fb, pairs):
     """
 
     # Replacing the code below by a faster implementation in Numpy
-    f_min, f_max = np.minimum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape(
-        (-1, 1)
-    ), np.maximum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape((-1, 1))
-    # b_matrix = []
-    # for i, j in pairs:
-    #     f_min, f_max = min(fb[i], fb[j]), max(fb[i], fb[j])
-    #     b_matrix.append((f_min < f) & (f <= f_max))
-    # return np.array(b_matrix)
+    f_min= np.minimum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape((-1, 1))
+    f_max= np.maximum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape((-1, 1))
     return (f_min < f) & (f <= f_max)
 
 
-def smear_nd(f, fb, pairs):
+def smear(f:np.ndarray, fb:np.ndarray, meas_pattern:np.ndarray, new)->np.ndarray:
     """
     Same as smear, except it takes advantage of
     Numpy's vectorization capacities.
@@ -323,65 +330,41 @@ def smear_nd(f, fb, pairs):
     Parameters
     ----------
     f: NDArray
-        potential on nodes
+        potential on nodes of shape (n_exc, n_pts)
     fb: NDArray
-        potential on adjacent electrodes
-    pairs: NDArray
-        electrodes numbering pairs
-
-    Returns
-    -------
-    B: NDArray
-        back-projection matrix
-    """
-
-    # Replacing the below code by a faster implementation in Numpy
-    def b_matrix_init(k):
-        return smear(f[k], fb[k], pairs[k])
-
-    return np.array(list(map(b_matrix_init, np.arange(f.shape[0]))))
-
-def smear_nd_new(f:np.ndarray, fb:np.ndarray, meas_pattern:np.ndarray)->np.ndarray:
-    """
-    Same as smear, except it takes advantage of
-    Numpy's vectorization capacities.
-    build smear matrix B for bp
-
-    Parameters
-    ----------
-    f: NDArray
-        potential on nodes
-    fb: NDArray
-        potential on adjacent electrodes
+        potential on adjacent electrodes of shape (n_exc, n_el/n_bound)
     meas_pattern: NDArray
         electrodes numbering pairs of shape (n_exc, n_meas, 2)
 
     Returns
     -------
     B: NDArray
-        back-projection matrix
+        back-projection matrix of shape (n_exc, n_meas, n_pts)
     """
+    if new:
+        # new implementation not really faster!
+        idx_meas_0=meas_pattern[:,:,0]
+        idx_meas_1=meas_pattern[:,:,1]
+        n_exc = meas_pattern.shape[0] # number of excitations
+        n_meas = meas_pattern.shape[1] # number of measurements per excitations
+        n_pts= f.shape[1] # number of nodes
+        idx_exc=np.ones_like(idx_meas_0, dtype=int) * np.arange(n_exc).reshape(n_exc,1)
+        f_min = np.minimum(fb[idx_exc, idx_meas_0], fb[idx_exc, idx_meas_1])
+        f_max = np.maximum(fb[idx_exc, idx_meas_0], fb[idx_exc, idx_meas_1])
+        # contruct matrices of shapes (n_exc, n_meas, n_pts) for comparison
+        f_min= np.repeat(f_min[:, :, np.newaxis], n_pts, axis=2)
+        f_max= np.repeat(f_max[:, :, np.newaxis], n_pts, axis=2)
+        f0= np.repeat(f[:, :, np.newaxis], n_meas, axis=2)
+        f0=f0.swapaxes(1,2)
+        return (f_min < f0) & (f0 <= f_max)
+    else:
+        # Replacing the below code by a faster implementation in Numpy
+        def b_matrix_init(k):
+            return _smear(f[k], fb[k], meas_pattern[k])
+        return np.array(list(map(b_matrix_init, np.arange(f.shape[0]))))
 
-    # Replacing the below code by a faster implementation in Numpy
-    def b_matrix_init(k):
-        return smear(f[k], fb[k], meas_pattern[k])
-
-    idx_meas_0=meas_pattern[:,:,0]
-    idx_meas_1=meas_pattern[:,:,1]
-    n_exc = meas_pattern.shape[0]
-    idx_exc=np.ones_like(idx_meas_0, dtype=int) * np.arange(n_exc).reshape(n_exc,1)
 
 
-    f_min = np.minimum(fb[meas_pattern[:, 0]], fb[meas_pattern[:, 1]]).reshape((-1, 1))
-    f_max= np.maximum(fb[meas_pattern[:, 0]], fb[meas_pattern[:, 1]]).reshape((-1, 1))
-    # b_matrix = []
-    # for i, j in pairs:
-    #     f_min, f_max = min(fb[i], fb[j]), max(fb[i], fb[j])
-    #     b_matrix.append((f_min < f) & (f <= f_max))
-    # return np.array(b_matrix)
-    # return (f_min < f) & (f <= f_max)
-
-    return np.array(list(map(b_matrix_init, np.arange(f.shape[0]))))
 
 
 def subtract_row(v:np.ndarray, meas_pattern:np.ndarray) -> np.ndarray:
@@ -685,6 +668,16 @@ if __name__ == "__main__":
     print_np(np.arange(3))
     print_np(np.arange(3))
 
+   
+    # f_min= np.arange(16*12).reshape((16, 12))
+    # f_min= np.repeat(f_min[:, :, np.newaxis], 376, axis=2)
+    # f=np.arange(16*376).reshape((16, 376))
+    # f= np.repeat(f[:, :, np.newaxis], 12, axis=2)
+    # f=f.swapaxes(1,2)
+    # print(f'{f_min=}, {f_min.shape=}')
+    # print(f'{f=}, {f.shape=}')
+    # b= f_min<f
+    # print(f'{b=}, {b.shape=}')
 
     import numpy as np
 
@@ -719,7 +712,7 @@ if __name__ == "__main__":
     fwd = Forward(mesh_obj, el_pos)
     p= fwd.solve_eit(ex_mat, perm=perm, vector=True)
     print(f'{p.b_matrix=}, {p.b_matrix.shape=}')
-    print(f'{p.v=}, {p.v.shape=}')
+    # print(f'{p.v=}, {p.v.shape=}')
     # f, _ = fwd.solve(ex_line, perm=perm)
     
 
