@@ -6,10 +6,9 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
-from collections import namedtuple
 from dataclasses import dataclass
 import timeit
-from typing import Any, Union
+from typing import Union
 import numpy as np
 import numpy.linalg as la
 from scipy import sparse
@@ -19,9 +18,9 @@ from pyeit.eit.utils import eit_scan_lines
 
 @dataclass
 class PdeResult:
-    v:np.ndarray
-    jac:np.ndarray
-    b_matrix:np.ndarray
+    v:np.ndarray # Voltages measurement of shape (N_meas)
+    jac:np.ndarray  # Jacobian matrix of shape ()
+    b_matrix:np.ndarray #smear matrix B for bp of shape (N_meas, n_pts)
 
 
 class Forward:
@@ -103,92 +102,21 @@ class Forward:
             assert perm.shape == (self.n_tri,)
             perm0 = perm
         
-        f, jac_i = self.solve_nd(ex_mat, perm0)
+        f, jac_i = self.solve(ex_mat, perm0)
         f_el = f[:, self.el_pos]
         # boundary measurements, subtract_row-voltages on electrodes
         diff_op = voltage_meter(ex_mat, n_el=self.ne, step=step, parser=parser)
-        print(f'{diff_op=}, {diff_op.shape=}')
-        print(f'{f_el=}, {f_el.shape=}')
         v = subtract_row(f_el, diff_op)
-        print(f'{v=}, {v.shape=}')
-        print(f'{jac_i=}, {jac_i.shape=}')
         jac = subtract_row(jac_i, diff_op)
-        print(f'{jac=}, {jac.shape=}')
         # build bp projection matrix
         # 1. we can either smear at the center of elements, using
         #    >> fe = np.mean(f[:, self.tri], axis=1)
         # 2. or, simply smear at the nodes using f
-        print(f'{f=}, {f.shape=}')
-        print(f'{f_el=}, {f_el.shape=}')
-        print(f'{diff_op=}, {diff_op.shape=}')
-
-        start_time = timeit.default_timer()
-        for _ in range(100):
-            b_matrix = smear(f, f_el, diff_op, new= False)
-        print('smear_nd:',timeit.default_timer() - start_time)
-
-        start_time = timeit.default_timer()
-        for _ in range(100):
-            b_matrix = smear(f, f_el, diff_op, new= True)
-        print('smear_nd_new:',timeit.default_timer() - start_time)
-
+        b_matrix = smear(f, f_el, diff_op, new= True) # set new to `False` to get computation from ChabaneAmaury
         # update output, now you can call p.jac, p.v, p.b_matrix
         return  PdeResult(jac=np.vstack(jac), v=np.hstack(v), b_matrix=np.vstack(b_matrix))
 
-    def solve(self, ex_line, perm):
-        """
-        with one pos (A), neg(B) driven pairs, calculate and
-        compute the potential distribution (complex-valued)
-
-        The calculation of Jacobian can be skipped.
-        Currently, only simple electrode model is supported,
-        CEM (complete electrode model) is under development.
-
-        Parameters
-        ----------
-        ex_line: NDArray
-            stimulation (scan) patterns/lines
-        perm: NDArray
-            permittivity on elements (initial)
-
-        Returns
-        -------
-        f: NDArray
-            potential on nodes
-        J: NDArray
-            Jacobian
-        """
-        # 1. calculate local stiffness matrix (on each element)
-        ke = calculate_ke(self.pts, self.tri)
-
-        # 2. assemble to global K
-        kg = assemble(ke, self.tri, perm, self.n_pts, ref=self.ref)
-
-        # 3. calculate electrode impedance matrix R = K^{-1}
-        r_matrix = la.inv(kg)
-        r_el = r_matrix[self.el_pos]
-
-        # 4. solving nodes potential using boundary conditions
-        b = self._natural_boundary(ex_line)
-        f = np.dot(r_matrix, b).ravel()
-
-        # 5. build Jacobian matrix column wise (element wise)
-        #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
-        jac = np.zeros((self.ne, self.n_tri), dtype=perm.dtype)
-        for (i, e) in enumerate(self.tri):
-            jac[:, i] = np.dot(np.dot(r_el[:, e], ke[i]), f[e])
-
-        # print(f'{b=}')
-        # print(f'{f=}')
-        # print(f'{jac=}')
-        print(f'{self.pts.shape=}')
-        print(f'{self.tri.shape=}')
-        print(f'{b.shape=}')
-        print(f'{f.shape=}')
-        print(f'{jac.shape=}')
-        return f, jac
-
-    def solve_nd(self, ex_mat:np.ndarray, perm:np.ndarray)->tuple[np.ndarray, np.ndarray]:
+    def solve(self, ex_mat:np.ndarray, perm:np.ndarray)->tuple[np.ndarray, np.ndarray]:
         """
         Vectorized version of solve. It take the full ex_mat
         instead of lines.
@@ -210,10 +138,28 @@ class Forward:
         Returns
         -------
         f: NDArray
-            potential on nodes of shape (ne, n_pts)
+            potential on nodes of shape (n_exc, n_pts)
         J: NDArray
-            Jacobian of shape (n_exc,ne, n_tri)
+            Jacobian of shape (n_exc, ne, n_tri)
+        
+        Notes
+        -------
+        For back compatibility in some script example an excitation line can 
+        be passed instead of the whole excitation pattern
+        in case ex_line (e.g. [0,7] or np.array([0,7]) or ex_mat[0].ravel) 
+        
+        has been passed instead of ex_math, simplified version of f with shape
+        (n_pts,) and jac with shape (ne, n_tri) are returned
+        
         """
+        # case ex_line has been passed instead of ex_mat 
+        if isinstance(ex_mat, list) and len(ex_mat)==2:
+            ex_mat= np.array([ex_mat]).reshape((1,2)) # build a 2D array
+        elif isinstance(ex_mat, np.ndarray) and ex_mat.ndim==1:
+            ex_mat= ex_mat.reshape((-1,2))
+        else:
+            raise ValueError(f'Wrong value of {ex_mat=} expected an ndarray of shape (n_exc, 2)')
+
         # 1. calculate local stiffness matrix (on each element)
         ke = calculate_ke(self.pts, self.tri)
 
@@ -225,7 +171,7 @@ class Forward:
         r_el = r_matrix[self.el_pos]
 
         # 4. solving nodes potential using boundary conditions
-        b = self._natural_boundary_nd(ex_mat)
+        b = self._natural_boundary(ex_mat)
         
         f = np.dot(r_matrix, b[:, None]).T.reshape(b.shape[:-1])
 
@@ -239,37 +185,14 @@ class Forward:
             return jac
 
         jac = np.array(list(map(jac_init, jac, np.arange(ex_mat.shape[0]))))
-        # print(f'{b=}')
-        # print(f'{f=}')
-        # print(f'{jac=}')
-        print(f'{self.pts.shape=}')
-        print(f'{self.tri.shape=}')
-        print(f'{ex_mat.shape=}')
-        print(f'{perm.shape=}')
-        print(f'{b.shape=}')
-        print(f'{f.shape=}')
-        print(f'{jac.shape=}')
+
+        # case ex_line has been passed instead of ex_mat
+        # we return simplified version of f with shape (n_pts,) and jac with shape (ne, n_tri)
+        if ex_mat.shape[0]==1:
+            f, jac= f[0,:].ravel(), jac[0,:,:]
         return f, jac
 
-    def _natural_boundary(self, ex_line):
-        """
-        Notes
-        -----
-        Generate the Neumann boundary condition. In utils.py,
-        you should note that ex_line is local indexed from 0...15,
-        which need to be converted to global node number using el_pos.
-        """
-        drv_a_global = self.el_pos[ex_line[0]]
-        drv_b_global = self.el_pos[ex_line[1]]
-
-        # global boundary condition
-        b = np.zeros((self.n_pts, 1))
-        b[drv_a_global] = 1.0
-        b[drv_b_global] = -1.0
-
-        return b
-
-    def _natural_boundary_nd(self, ex_mat:np.ndarray)->np.ndarray:
+    def _natural_boundary(self, ex_mat:np.ndarray)->np.ndarray:
         """ Generate the Neumann boundary condition.
 
         In utils.py, you should note that ex_mat is local indexed from 0...15,
@@ -277,13 +200,15 @@ class Forward:
         
         Parameters
         ----------
-            ex_mat (np.ndarray): Excitation matrix shape=(n_exc, 2)
+            ex_mat (np.ndarray): Excitation matrix of shape (n_exc, 2)
 
         Returns
         ----------
-            np.ndarray: global boundary condition on pts of shape (n_pts, 1)
+            np.ndarray: global boundary condition on pts of shape (n_exc, n_pts, 1)
         """
-
+        
+        print(f'{ex_mat=}, {ex_mat.shape=}')
+        print(f'{self.el_pos=}, {self.el_pos.shape=}')
         drv_a_global = self.el_pos[ex_mat[:, 0]]
         drv_b_global = self.el_pos[ex_mat[:, 1]]
 
@@ -314,7 +239,6 @@ def _smear(f, fb, pairs):
     B: NDArray
         back-projection matrix
     """
-
     # Replacing the code below by a faster implementation in Numpy
     f_min= np.minimum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape((-1, 1))
     f_max= np.maximum(fb[pairs[:, 0]], fb[pairs[:, 1]]).reshape((-1, 1))
@@ -363,10 +287,6 @@ def smear(f:np.ndarray, fb:np.ndarray, meas_pattern:np.ndarray, new)->np.ndarray
             return _smear(f[k], fb[k], meas_pattern[k])
         return np.array(list(map(b_matrix_init, np.arange(f.shape[0]))))
 
-
-
-
-
 def subtract_row(v:np.ndarray, meas_pattern:np.ndarray) -> np.ndarray:
     """
     Same as subtract_row, except it takes advantage of
@@ -380,7 +300,7 @@ def subtract_row(v:np.ndarray, meas_pattern:np.ndarray) -> np.ndarray:
     v: NDArray
         Nx1 boundary measurements vector or NxM matrix of shape (n_exc,n_el,1)
     meas_pattern: NDArray
-        of shape (n_exc, n_meas, 2) Nx2 subtract_row pairs ??could be a list??
+        of shape (n_exc, n_meas, 2) Nx2 subtract_row pairs
 
     Returns
     -------
@@ -447,8 +367,6 @@ def voltage_meter(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[str, 
     n_exc= ex_mat.shape[0]
     drv_a= np.ones((n_exc, n_exc), dtype=int) * ex_mat[:, 0].reshape(n_exc, 1)
     drv_b= np.ones((n_exc, n_exc), dtype=int) * ex_mat[:, 1].reshape(n_exc, 1)
-    # print(f'{drv_a=}, {drv_a.shape=}')
-    # print(f'{drv_b=}, {drv_b.shape=}')
 
     if not isinstance(parser, list):  # transform parser in list
         parser = [parser]
@@ -457,28 +375,16 @@ def voltage_meter(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[str, 
     fmmu_rotate = any(p in ("fmmu", "rotate_meas") for p in parser)
     i0 = drv_a if fmmu_rotate else np.zeros_like(drv_a)
 
-    # print(f'{i0=}, {i0.shape=}')
-    idx_el=np.ones((n_exc, n_exc), dtype=int) * np.arange(n_el)
-    # print(f'{idx_el=}, {idx_el.shape=}')
-    a= i0+idx_el
-    # print(f'{a=}, {a.shape=}')
-    m= a % n_el
-    # print(f'{m=}, {m.shape=}')
+    idx_el=np.ones((n_exc, n_el), dtype=int) * np.arange(n_el)
+    m= (i0+idx_el) % n_el
     n= (m + step) % n_el
     all_meas_pattern = np.concatenate((n[:,:,np.newaxis],m[:,:,np.newaxis]), 2)
-    # print(f'1st {all_meas_pattern=}, {all_meas_pattern.shape=}')
 
     if meas_current:
         return all_meas_pattern
 
-    # print(f'{m=}, {m.shape=}')
-    # print(f'{n=}, {n.shape=}')
-    # print(f'{drv_a=}, {drv_a.shape=}')
     diff_pairs_mask = np.logical_and.reduce((m != drv_a, m != drv_b , n != drv_a, n != drv_b))
-    # print(f'{diff_pairs_mask=}, {diff_pairs_mask.shape=}')
-    filtered_meas_pattern=all_meas_pattern[diff_pairs_mask]
-    # to reshape after masking
-    return filtered_meas_pattern.reshape(n_exc, -1, 2)
+    return all_meas_pattern[diff_pairs_mask].reshape(n_exc, -1, 2)
 
 
 def assemble(ke, tri, perm, n_pts, ref=0):
@@ -653,13 +559,10 @@ def _k_tetrahedron(xy):
     # re-normalize using alternative (+,-) signs
     ij_pairs = [[0, 1], [1, 2], [2, 3], [3, 0]]
     signs = [1, -1, 1, -1]
-    a = [sign * np.cross(s[i], s[j]) for (i, j), sign in zip(ij_pairs, signs)]
-    a = np.array(a)
+    a = np.array([sign * np.cross(s[i], s[j]) for (i, j), sign in zip(ij_pairs, signs)])
 
     # local (e for element) stiffness matrix
-    ke_matrix = np.dot(a, a.transpose()) / (36.0 * vt)
-
-    return ke_matrix
+    return np.dot(a, a.transpose()) / (36.0 * vt)
 
 
 if __name__ == "__main__":
@@ -710,10 +613,18 @@ if __name__ == "__main__":
 
     # calculate simulated data using FEM
     fwd = Forward(mesh_obj, el_pos)
-    p= fwd.solve_eit(ex_mat, perm=perm, vector=True)
-    print(f'{p.b_matrix=}, {p.b_matrix.shape=}')
+
+    # p= fwd.solve_eit(ex_mat, perm=perm, vector=True)
+    # print(f'{p.b_matrix=}, {p.b_matrix.shape=}')
+    # b= fwd._natural_boundary(ex_line)
+    # print(f'single {b=}, {b.shape=}')
+    # b= fwd._natural_boundary_nd(ex_line)
+    # print(f'{b=}, {b.shape=}')
     # print(f'{p.v=}, {p.v.shape=}')
-    # f, _ = fwd.solve(ex_line, perm=perm)
+    f, jac = fwd.solve(ex_line, perm=perm)
+    print(f'{f.shape=}, {jac.shape=}')
+    f, jac = fwd.solve(ex_line, perm=perm)
+    print(f'{f.shape=}, {jac.shape=}')
     
 
 
