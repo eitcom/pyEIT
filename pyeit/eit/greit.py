@@ -76,7 +76,6 @@ class GREIT(EitBase):
             step=self.step,
             perm=self.perm,
             parser=self.parser,
-            vector=self.vector,
         )
         jac = f.jac
         # E[yy^T], it is more efficient to use left pinv than right pinv
