@@ -29,6 +29,7 @@ class EitBase:
         perm=None,
         jac_normalized=False,
         parser="std",
+        **kwargs,
     ):
         """
         Parameters

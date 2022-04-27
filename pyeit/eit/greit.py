@@ -72,7 +72,10 @@ class GREIT(EitBase):
         lamb, p = self.params["lamb"], self.params["p"]
 
         f = self.fwd.solve_eit(
-            self.ex_mat, step=self.step, perm=self.perm, parser=self.parser
+            self.ex_mat,
+            step=self.step,
+            perm=self.perm,
+            parser=self.parser,
         )
         jac = f.jac
         # E[yy^T], it is more efficient to use left pinv than right pinv

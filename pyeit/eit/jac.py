@@ -78,7 +78,7 @@ class JAC(EitBase):
         lamb_min=0,
         method="kotre",
         verbose=False,
-        vector=False,
+        **kwargs,
     ):
         """
         Gaussian Newton Static Solver
@@ -102,8 +102,6 @@ class JAC(EitBase):
             'kotre' or 'lm'
         verbose: bool, optional
             print debug information
-        vector: bool, optional
-            Use vectorized methods or regular methods, for compatibility.
 
         Returns
         -------
@@ -134,7 +132,7 @@ class JAC(EitBase):
 
             # forward solver
             fs = self.fwd.solve_eit(
-                self.ex_mat, step=self.step, perm=x0, parser=self.parser, vector=vector
+                self.ex_mat, step=self.step, perm=x0, parser=self.parser
             )
             # Residual
             r0 = v - fs.v

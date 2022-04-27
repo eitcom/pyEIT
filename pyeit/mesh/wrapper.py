@@ -83,7 +83,7 @@ def create(n_el=16, fd=None, fh=shape.area_uniform, h0=0.1, p_fix=None, bbox=Non
     # 3. generate electrodes, the same as p_fix (top n_el)
     el_pos = np.arange(n_el)
     # 4. init uniform element permittivity (sigma)
-    perm = np.ones(t.shape[0], dtype=np.float)
+    perm = np.ones(t.shape[0], dtype=float)  # np.float is deprecated
     # 5. build output structure
     mesh = {"element": t, "node": p, "perm": perm}
     return mesh, el_pos
