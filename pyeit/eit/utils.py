@@ -11,52 +11,39 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 
 
-def eit_scan_lines(ne=16, dist=1):
+def eit_scan_lines(n_el: int = 16, dist: int = 1) -> np.ndarray:
     """
-    generate scan matrix
+    Generate scan matrix, `ex_mat` ( or excitation pattern), see notes
 
-    Parameters
-    ----------
-    ne: int
-        number of electrodes
-    dist: int
-        distance between A and B (default=1)
+    Args:
+        n_el (int, optional): number of electrodes. Defaults to `16`.
+        dist (int, optional): distance (number of electrodes) of A to B. Defaults to `1`.
+        For 'adjacent'- or 'neighbore'-mode (default) use `1` , and
+        for 'apposition'-mode use `n_el/2`, (see Examples)
 
-    Returns
-    -------
-    ex_mat: NDArray
-        stimulation matrix
+    Returns:
+        np.ndarray: stimulation matrix; shape (n_exc, 2)
 
-    Notes
-    -----
-    in the scan of EIT (or stimulation matrix), we use 4-electrodes
-    mode, where A, B are used as positive and negative stimulation
-    electrodes and M, N are used as voltage measurements
+    Notes:
+        - in the scan of EIT (or stimulation matrix), we use 4-electrodes
+        mode, where A, B are used as positive and negative stimulation
+        electrodes and M, N are used as voltage measurements.
+        - `1` (A) for positive current injection, `-1` (B) for negative current
+        sink
 
-    1 (A) for positive current injection,
-    -1 (B) for negative current sink
+    Examples:
+        n_el=16
+        if mode=='neighbore':
+            ex_mat = eit_scan_lines(n_el=n_el)
+        elif mode=='apposition':
+            ex_mat = eit_scan_lines(dist=n_el/2)
 
-    dist is the distance (number of electrodes) of A to B
-    in 'adjacent' mode, dist=1, in 'apposition' mode, dist=ne/2
-
-    Examples
-    --------
-    # let the number of electrodes, ne=16
-
-    if mode=='neighbore':
-        ex_mat = eit_scan_lines()
-    elif mode=='apposition':
-        ex_mat = eit_scan_lines(dist=8)
-
-    WARNING
-    -------
-    ex_mat is a local index, where it is ranged from 0...15, within the range
-    of the number of electrodes. In FEM applications, you should convert ex_mat
-    to global index using the (global) el_pos parameters.
+    WARNING:
+        `ex_mat` is a local index, where it is ranged from 0...15, within the
+        range of the number of electrodes. In FEM applications, you should
+        convert `ex_mat` to global index using the (global) `el_pos` parameters.
     """
-    ex = np.array([[i, np.mod(i + dist, ne)] for i in range(ne)])
-
-    return ex
+    return np.array([[i, np.mod(i + dist, n_el)] for i in range(n_el)])
 
 
 if __name__ == "__main__":
