@@ -7,13 +7,12 @@
 from __future__ import division, absolute_import, print_function
 
 from dataclasses import dataclass
-import timeit
 from typing import Union
 import numpy as np
 import numpy.linalg as la
 from scipy import sparse
 
-from pyeit.eit.utils import eit_scan_lines
+from .utils import eit_scan_lines
 
 
 @dataclass
