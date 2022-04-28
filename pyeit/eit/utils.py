@@ -28,7 +28,7 @@ def eit_scan_lines(n_el: int = 16, dist: int = 1) -> np.ndarray:
     -------
     np.ndarray
         stimulation matrix; shape (n_exc, 2)
-    
+
     Notes
     -----
         - in the scan of EIT (or stimulation matrix), we use 4-electrodes
