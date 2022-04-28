@@ -4,6 +4,7 @@
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
+from typing import Tuple
 
 import numpy as np
 import scipy.linalg as la
@@ -16,37 +17,63 @@ import matplotlib.pyplot as plt
 from pyeit.mesh import layer_circle, set_perm
 
 
-def meshgrid(pts, n=32, ext_ratio=0, gc=False):
+def meshgrid(
+    pts: np.ndarray, n: int = 32, ext_ratio: float = 0.0, gc: bool = False
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     build xg, yg, mask grids from triangles point cloud
     function for interpolating regular grids
 
     Parameters
     ----------
-    pts: NDArray
+    pts: np.ndarray
         nx2 array of points (x, y)
-    el_pos: NDArray (optional)
-        the location of electrodes (for extract the convex hull of pts)
     n: int
-        the number of meshgrid per dimension
+        the number of meshgrid per dimension, by default 32
     ext_ratio: float
-        extend the boundary of meshgrid by ext_ratio*d
+        extend the boundary of meshgrid by ext_ratio*d, by default 0.0
     gc: bool
-        grid_correction, offset xgrid and ygrid by half step size
+        grid_correction, offset xgrid and ygrid by half step size , by default
+        False
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray, np.ndarray]
+        x grid, y grid, mask
 
     Notes
     -----
     mask denotes points outside mesh.
     """
     xg, yg = _build_grid(pts, n=n, ext_ratio=ext_ratio, gc=gc)
-    # pts_edges = pts[el_pos]
     pts_edges = _hull_points(pts)
     mask = _build_mask(pts_edges, xg, yg)
     return xg, yg, mask
 
 
-def _build_grid(pts, n=32, ext_ratio=0, gc=False):
-    """generating mesh grids"""
+def _build_grid(
+    pts: np.ndarray, n: int = 32, ext_ratio: float = 0.0, gc: bool = False
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Generating mesh grid from triangles point cloud
+
+    Parameters
+    ----------
+    pts: np.ndarray
+        nx2 array of points (x, y)
+    n: int
+        the number of meshgrid per dimension, by default 32
+    ext_ratio: float
+        extend the boundary of meshgrid by ext_ratio*d, by default 0.0
+    gc: bool
+        grid_correction, offset xgrid and ygrid by half step size , by default
+        False
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        x grid, y grid
+    """
     x, y = pts[:, 0], pts[:, 1]
     x_min, x_max = min(x), max(x)
     y_min, y_max = min(y), max(y)
@@ -66,29 +93,75 @@ def _build_grid(pts, n=32, ext_ratio=0, gc=False):
     return xg, yg
 
 
-def _build_mask(pts_edges, xg, yg):
-    """find whether meshgrids is interior of mesh"""
+def _build_mask(pts_edges: np.ndarray, xg: np.ndarray, yg: np.ndarray) -> np.ndarray:
+    """
+    find whether meshgrids is interior of mesh
+
+    Parameters
+    ----------
+    pts_edges : np.ndarray
+        points on the edges of the mesh
+    xg : np.ndarray
+        x grid
+    yg : np.ndarray
+        x grid
+
+    Returns
+    -------
+    np.ndarray
+        mask (denotes points outside mesh.)
+    """
     # 1. create mask based on meshes
     points = np.vstack((xg.flatten(), yg.flatten())).T
 
     # 2. extract edge points using el_pos
     path = Path(pts_edges, closed=False)
     mask = path.contains_points(points)
-
     return ~mask
 
 
-def _hull_points(pts):
-    """return the convex hull points"""
+def _hull_points(pts: np.ndarray) -> np.ndarray:
+    """
+    return the convex hull points from a point cloud
+
+    Parameters
+    ----------
+    pts: np.ndarray
+        nx2 array of points (x, y)
+
+    Returns
+    -------
+    np.ndarray
+        convex hull points (edge points)
+    """
     cv = ConvexHull(pts)
     hull_nodes = cv.vertices
     return pts[hull_nodes, :]
 
 
-def _distance2d(x, y, center="mean"):
+def _distance2d(
+    x: np.ndarray, y: np.ndarray, center: Tuple[str, list] = "mean"
+) -> np.ndarray:
     """
     Calculate radius given center.
     This function can be OPTIMIZED using numba or cython.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        nx1 array of x coordiante
+    y : np.ndarray
+        nx1 array of y coordiante
+    center : Tuple[str, list], optional
+        center definition, by default "mean".
+        If center is `None`, [0,0] will be used.
+        If center is "mean", [np.mean(x), np.mean(y)] will be used.
+        If center is list, [center[0], center[1]] will be used.
+
+    Returns
+    -------
+    np.ndarray
+        nx1 array of distance from center to points (x,y)
     """
     if center is None:
         xc, yc = 0, 0
@@ -96,16 +169,25 @@ def _distance2d(x, y, center="mean"):
         xc, yc = np.mean(x), np.mean(y)
     else:
         xc, yc = center[0], center[1]
+    # distance 2d
+    return np.sqrt((x - xc) ** 2 + (y - yc) ** 2).ravel()
 
-    d = np.sqrt((x - xc) ** 2 + (y - yc) ** 2).ravel()
-    return d
 
-
-def _distance_matrix2d(xy, xyi):
+def _distance_matrix2d(xy: np.ndarray, xyi: np.ndarray) -> np.ndarray:
     """
-    Description
-    -----------
     (2D only) return element-wise distance matrix (pair-wise)
+
+    Parameters
+    ----------
+    xy : np.ndarray
+        nx2 array of points (x, y)
+    xyi : np.ndarray
+        points pairs
+
+    Returns
+    -------
+    np.ndarray
+        distance matrix between pairwise observations
     """
     # Make a distance matrix between pairwise observations
     # Note: from <http://stackoverflow.com/questions/1871536>
@@ -117,27 +199,27 @@ def _distance_matrix2d(xy, xyi):
     return np.hypot(d0, d1)
 
 
-def weight_sigmod(xy, xyi, ratio=0.05, s=20.0):
+def weight_sigmod(
+    xy: np.ndarray, xyi: np.ndarray, ratio: float = 0.05, s: float = 20.0
+) -> np.ndarray:
     """
-    Description
-    -----------
     (2D only)
     local weight/interpolate by sigmod function (GREIT3D)
 
     Parameters
     ----------
-    xy: NDArray
+    xy: np.ndarray
         (x, y) of values
-    xyi: NDArray
+    xyi: np.ndarray
         (xi, yi) of interpolated locations
     ratio: float
-        R0 = d_max * ratio
+        R0 = d_max * ratio, by default 0.05.
     s: float
-        control the decay ratio
+        control the decay ratio, by default 20.0.
 
     Returns
     -------
-    w_mat: NDArray
+    w_mat: np.ndarray
         weighting matrix mapping from xy to xyi (xy meshgrid)
     """
     d_mat = _distance_matrix2d(xy, xyi)
@@ -148,33 +230,31 @@ def weight_sigmod(xy, xyi, ratio=0.05, s=20.0):
     r0 = 5.0 * ratio
     # weights is the sigmod function
     weight = 1.0 / (1 + np.exp(s * (d_mat - r0)))
-    # normalized
-    w_mat = weight / weight.sum(axis=0)
-
-    return w_mat
+    # weighting matrix normalized
+    return weight / weight.sum(axis=0)
 
 
-def weight_idw(xy, xyi, k=6, p=1.0):
+def weight_idw(
+    xy: np.ndarray, xyi: np.ndarray, k: int = 6, p: float = 1.0
+) -> np.ndarray:
     """
-    Description
-    -----------
     (2D only)
     local weight/interpolate by inverse distance
 
     Parameters
     ----------
-    xy: NDArray
+    xy: np.ndarray
         (x, y) of values
-    xyi: NDArray
+    xyi: np.ndarray
         (xi, yi) of interpolated locations
     k: int
-        number of nearest neighbores
+        number of nearest neighbores, by default 6.
     p: float
-        scaling distance
+        scaling distance, by default 1.0.
 
     Returns
     -------
-    w_mat: NDArray
+    w_mat: np.ndarray
         weighting matrix mapping from xy to xy_mesh
     """
     d_mat = _distance_matrix2d(xy, xyi)
@@ -184,67 +264,58 @@ def weight_idw(xy, xyi, k=6, p=1.0):
     for w in weight.T:
         sort_indices = np.argsort(w)
         np.put(w, sort_indices[:-k], 0)
-    # normalized
-    w_mat = weight / weight.sum(axis=0)
-
+    # weighting matrix normalized
     # xy times xyi size, use w_mat.T to multiply
-    return w_mat
+    return weight / weight.sum(axis=0)
 
 
-def weight_linear_rbf(xy, xyi, z):
+def weight_linear_rbf(xy: np.ndarray, xyi: np.ndarray, z: np.ndarray) -> np.ndarray:
     """
-    Description
-    -----------
     (2D only)
     local weight/interpolate by linear rbf function (z value required)
 
     Parameters
     ----------
-    xy: NDArray
+    xy: np.ndarray
         (x, y) of values
-    xyi: NDArray
+    xyi: np.ndarray
         (xi, yi) of interpolated locations
+    z: np.ndarray
+        z values
 
     Returns
     -------
-    w_mat: NDArray
+    w_mat: np.ndarray
         weighting matrix mapping from xy to xy_mesh
     """
     internal_dist = _distance_matrix2d(xy, xy)
     weights = la.solve(internal_dist, z)
-
     interp_dist = _distance_matrix2d(xy, xyi)
-    zi = np.dot(interp_dist.T, weights)
-
-    return zi
+    return np.dot(interp_dist.T, weights)
 
 
 def weight_barycentric_gradient():
     """
-    Description
-    -----------
     (2D only)
     local weight/interpolate by barycentric gradient
 
     Parameters
     ----------
-    xy: NDArray
+    xy: np.ndarray
         (x, y) of values
-    xyi: NDArray
+    xyi: np.ndarray
         (xi, yi) of interpolated locations
 
     Returns
     -------
-    w_mat: NDArray
+    w_mat: np.ndarray
         weighting matrix mapping from xy to xy_mesh
     """
     raise NotImplementedError()
 
 
-def sim2pts(pts, sim, sim_values):
+def sim2pts(pts: np.ndarray, sim: np.ndarray, sim_values: np.ndarray) -> np.ndarray:
     """
-    Description
-    -----------
     (2D/3D) compatible.
 
     Interp values on points using values on simplex,
@@ -255,6 +326,16 @@ def sim2pts(pts, sim, sim_values):
 
     where r_e is the value on triangles who share the node n,
     S_e is the area of triangle e.
+
+    Parameters
+    ----------
+    pts_values: np.ndarray
+        Nx1 array, real/complex valued
+    sim: np.ndarray
+        Mx3, Mx4 array, elements or simplex
+        triangles denote connectivity [[i, j, k]]
+        tetrahedrons denote connectivity [[i, j, m, n]]
+    sim_value: np.ndarray
 
     Notes
     -----
@@ -282,10 +363,8 @@ def sim2pts(pts, sim, sim_values):
     return f / w
 
 
-def pts2sim(sim, pts_values):
+def pts2sim(sim: np.ndarray, pts_values: np.ndarray) -> np.ndarray:
     """
-    Description
-    -----------
     (2D/3D) compatible.
 
     Given values on nodes, calculate interpolated values on simplex,
@@ -294,16 +373,16 @@ def pts2sim(sim, pts_values):
 
     Parameters
     ----------
-    sim: NDArray
+    sim: np.ndarray
         Mx3, Mx4 array, elements or simplex
         triangles denote connectivity [[i, j, k]]
         tetrahedrons denote connectivity [[i, j, m, n]]
-    pts_values: NDArray
+    pts_values: np.ndarray
         Nx1 array, real/complex valued
 
     Returns
     -------
-    el_value: NDArray
+    el_value: np.ndarray
         Mx1 array, real/complex valued
 
     Notes
@@ -311,32 +390,28 @@ def pts2sim(sim, pts_values):
     This function is similar to pdfinterp of MATLAB pde.
     """
     # averaged over 3 nodes of a triangle
-    el_value = np.mean(pts_values[sim], axis=1)
-    return el_value
+    return np.mean(pts_values[sim], axis=1)
 
 
-def tri_area(pts, sim):
+def tri_area(pts: np.ndarray, sim: np.ndarray) -> np.ndarray:
     """
     calculate the area of each triangle
 
     Parameters
     ----------
-    pts: NDArray
+    pts: np.ndarray
         Nx2 array, (x,y) locations for points
-    sim: NDArray
+    sim: np.ndarray
         Mx3 array, elements (triangles) connectivity
 
     Returns
     -------
-    a: NDArray
+    a: np.ndarray
         Areas of triangles
     """
     a = np.zeros(np.shape(sim)[0])
     for i, e in enumerate(sim):
         xy = pts[e]
-        # s1 = xy[2, :] - xy[1, :]
-        # s2 = xy[0, :] - xy[2, :]
-        # s3 = xy[1, :] - xy[0, :]
         # which can be simplified to
         # s = xy[[2, 0, 1]] - xy[[1, 2, 0]]
         s = xy[[2, 0]] - xy[[1, 2]]
@@ -347,20 +422,20 @@ def tri_area(pts, sim):
     return a * 0.5
 
 
-def tet_volume(pts, sim):
+def tet_volume(pts: np.ndarray, sim: np.ndarray) -> np.ndarray:
     """
     calculate the area of each triangle
 
     Parameters
     ----------
-    pts: NDArray
+    pts: np.ndarray
         Nx3 array, (x,y, z) locations for points
-    sim: NDArray
+    sim: np.ndarray
         Mx4 array, elements (tetrahedrons) connectivity
 
     Returns
     -------
-    v: NDArray
+    v: np.ndarray
         Volumes of tetrahedrons
     """
     v = np.zeros(np.shape(sim)[0])
@@ -374,10 +449,8 @@ def tet_volume(pts, sim):
     return v / 6.0
 
 
-def pdetrg(pts, tri):
+def pdetrg(pts: np.ndarray, tri: np.ndarray) -> np.ndarray:
     """
-    Description
-    -----------
     (Deprecated)
     analytical calculate the Area and grad(phi_i) using
     barycentric coordinates (simplex coordinates)
@@ -390,18 +463,18 @@ def pdetrg(pts, tri):
 
     Parameters
     ----------
-    pts: NDArray
+    pts: np.ndarray
         Nx2 array, (x,y) locations for points
-    tri: NDArray
+    tri: np.ndarray
         Mx3 array, elements (triangles) connectivity
 
     Returns
     -------
-    a: NDArray
+    a: np.ndarray
         Mx1 array, areas of elements
-    grad_phi_x: NDArray
+    grad_phi_x: np.ndarray
         Mx3 array, x-gradient on elements' local coordinate
-    grad_phi_y: NDArray
+    grad_phi_y: np.ndarray
         Mx3 array, y-gradient on elements' local coordinate
     """
     m = np.size(tri, 0)
@@ -429,10 +502,10 @@ def pdetrg(pts, tri):
     return a, grad_phi_x, grad_phi_y
 
 
-def pdegrad(pts, tri, node_value):
+def pdegrad(
+    pts: np.ndarray, tri: np.ndarray, node_value: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Description
-    -----------
     (Deprecated)
     given values on nodes, calculate the averaged-grad on elements
     this function was tested and equivalent to MATLAB 'pdegrad'
@@ -440,16 +513,16 @@ def pdegrad(pts, tri, node_value):
 
     Parameters
     ----------
-    pts: NDArray
+    pts: np.ndarray
         Nx2 array, (x,y) locations for points
-    tri: NDArray
+    tri: np.ndarray
         Mx3 array, elements (triangles) connectivity
-    node_value: NDArray
+    node_value: np.ndarray
         Nx1 array, real/complex valued
 
     Returns
     -------
-    el_grad: NDArray
+    el_grad: np.ndarray
         el_grad, Mx2 array, real/complex valued
     """
     m = np.size(tri, 0)
@@ -460,7 +533,7 @@ def pdegrad(pts, tri, node_value):
     return grad_el_x, grad_el_y
 
 
-def demo():
+def demo() -> None:
     """demo shows how to interpolate on regular/irregular grids"""
     # 1. create mesh
     mesh_obj, _ = layer_circle(n_layer=8, n_fan=6)
