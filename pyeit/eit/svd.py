@@ -13,7 +13,7 @@ from .jac import JAC
 class SVD(JAC):
     """implementing a sensitivity-based EIT imaging class"""
 
-    def setup(self, n:int=25, rcond:float=1e-2, method:str="svd") -> None:
+    def setup(self, n: int = 25, rcond: float = 1e-2, method: str = "svd") -> None:
         """
         Setup of SVD solver, singular value decomposition based reconstruction.
 
@@ -27,7 +27,7 @@ class SVD(JAC):
             reconstruction method, by default "svd"
             'svd': SVD truncation,
             'pinv': pseudo inverse
-        """ 
+        """
         # correct n_ord
         self.J = self._compute_jac()
         nm, ne = self.J.shape
@@ -58,11 +58,11 @@ class SVD(JAC):
             JtJ_inv = np.dot(U, np.dot(np.diag(s**-1), U.T))
             self.H = np.dot(JtJ_inv, self.J.T)
         self.is_ready = True
-    
+
     def gn(self):
         """deactivate gn"""
         raise NotImplementedError()
-    
+
     def solve_gs(self):
         """deactivate solve_gs"""
         raise NotImplementedError()
