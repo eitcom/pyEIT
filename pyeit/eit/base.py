@@ -260,7 +260,7 @@ class EitBase(ABC):
             raised if solver not ready
         """
         if not self.is_ready or self.H is None:
-            msg = "User must run solver.setup() before using solver.solve()"
+            msg = "User must first run solver.setup() before using solver for solving purpose"
             raise SolverNotReadyError(msg)
 
     def _normalize(self, v1: np.ndarray, v0: np.ndarray) -> np.ndarray:

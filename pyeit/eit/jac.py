@@ -201,6 +201,11 @@ class JAC(EitBase):
             regularization methods ("kotre", "lm", "dgn" ), by default "kotre"
         verbose : bool, optional
             verbose flag, by default False
+            
+        Raises
+        ------
+        SolverNotReadyError
+            raised if solver not ready (see self._check_solver_is_ready())
 
         Returns
         -------
@@ -215,6 +220,7 @@ class JAC(EitBase):
             R = diag(J^TJ)**p
             r0 (residual) = real_measure - forward_v
         """
+        self._check_solver_is_ready()
         if x0 is None:
             x0 = self.perm
         if p is None:
