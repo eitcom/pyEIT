@@ -105,3 +105,63 @@ def test_subtract_row():
     vd = pyeit.eit.fem.subtract_row(v, meas_pattern)
     assert vd_truth.size == vd.size
     assert np.allclose(vd.ravel(), vd_truth.ravel())
+
+
+def _mesh_obj():
+    """build a simple mesh, which is used in FMMU.CEM"""
+    node = np.array([[0.13, 0.15], [0.2, 0.2], [0.1, 0.1], [0.18, 0.12]])
+    element = np.array([[0, 2, 3], [0, 3, 1]])
+    # assemble uses perm.dtype, perm MUST not be np.int
+    perm = np.array([3.0, 1.0])
+    mesh = {"node": node, "element": element, "perm": perm, "ref": 3}
+    el_pos = np.array([1, 2])
+
+    return mesh, el_pos
+
+
+def test_k():
+    """test K using a simple mesh structure"""
+    k_truth = np.array(
+        [
+            [3.7391, -0.1521, -1.5, 0.0],
+            [-0.1521, 0.3695, 0.0, 0.0],
+            [-1.5, 0.0, 1.5, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+    mesh, _ = _mesh_obj()
+    n_pts = mesh["node"].shape[0]
+    ke = pyeit.eit.fem.calculate_ke(mesh["node"], mesh["element"])
+    # fix ref to be exactly the one in mesh
+    k = pyeit.eit.fem.assemble(
+        ke, mesh["element"], mesh["perm"], n_pts, ref=mesh["ref"]
+    )
+    assert np.allclose(k, k_truth, rtol=0.01)
+
+
+def test_solve():
+    """test solve using a simple mesh structure"""
+    mesh, el_pos = _mesh_obj()
+    f_truth = np.array([-0.27027027, 2.59459459, -0.93693694, 0.0])
+    jac_truth = np.array([[-0.02556611, 2.67129291], [-0.28431134, -0.08400292]])
+
+    # testing solve
+    ex_mat = np.array([[0, 1]])
+    fwd = pyeit.eit.fem.Forward(mesh, el_pos)
+    # fix ref to be exactly the one in mesh
+    fwd.ref = mesh["ref"]
+    f, jac = fwd.solve(ex_mat, perm=mesh["perm"])
+    assert np.allclose(f, f_truth)
+    assert np.allclose(jac, jac_truth)
+
+    # testing solve_eit
+    ex_mat = np.array([[0, 1], [1, 0]])
+    # include voltage differences on driving electrodes
+    fwd = fwd.solve_eit(ex_mat, parser="meas_current")
+    vdiff_truth = f_truth[el_pos[1]] - f_truth[el_pos[0]]
+    v_truth = vdiff_truth * np.array([1, -1, -1, 1])
+    assert np.allclose(fwd.v, v_truth)
+
+
+if __name__ == "__main__":
+    pass
