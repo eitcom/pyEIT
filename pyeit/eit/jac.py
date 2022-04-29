@@ -201,7 +201,7 @@ class JAC(EitBase):
             regularization methods ("kotre", "lm", "dgn" ), by default "kotre"
         verbose : bool, optional
             verbose flag, by default False
-            
+
         Raises
         ------
         SolverNotReadyError
