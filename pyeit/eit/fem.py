@@ -59,7 +59,7 @@ class Forward:
         self.el_pos = el_pos
 
         # reference electrodes [ref node should not be on electrodes]
-        self.ref_el= max(self.el_pos) + 1
+        self.set_ref_el()
 
         # infer dimensions from mesh
         self.n_pts, self.n_dim = self.pts.shape
@@ -69,7 +69,8 @@ class Forward:
         # temporary memory attributes for computation (e.g. jac)
         self._r_matrix = None
         self._ke = None
-
+    
+    
     def solve(
         self,
         ex_mat: np.ndarray = None,
@@ -262,6 +263,17 @@ class Forward:
         # set new to `False` to get smear-computation from ChabaneAmaury
         return  smear(f, f_el, diff_op, new=True )  
 
+    def set_ref_el(self, val:int=None)->None:
+        """
+        Set reference electrode node 
+
+        Parameters
+        ----------
+        val : int, optional
+            node number of reference electrode, by default None
+            
+        """        
+        self.ref_el = val if val is not None and val not in self.el_pos else max(self.el_pos) + 1
     
     def _compute_potential_distribution(
         self, 
