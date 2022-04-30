@@ -235,10 +235,8 @@ class JAC(EitBase):
 
         for i in range(maxiter):
 
-            # forward solver
-            jac = self._compute_jac_matrix(allow_jac_norm=False) # Why is jyc her computed and not outside the loop....
-
-            jac, _, v0 = self._solve_fwd(allow_jac_norm=False)
+            # forward solver, 
+            jac, v0 = self._gn_fwd_single_step(x0 = x0)
             # Residual
             r0 = v - v0
 
@@ -262,6 +260,13 @@ class JAC(EitBase):
             lamb *= lamb_decay
             lamb = max(lamb, lamb_min)
         return x0
+    
+    def _gn_fwd_single_step(self, x0):
+        """"""
+        jac = self._compute_jac_matrix(x0= x0, allow_jac_norm=False)
+        v0=self.fwd.v0
+        return jac, v0
+
 
     def project(self, ds: np.ndarray) -> np.ndarray:
         """

@@ -17,21 +17,14 @@ from .utils import eit_scan_lines
 
 @dataclass
 class FwdResult:
-    """Summarize the PDE results from solving the fwd problem
+    """Summarize the results from solving the eit fwd problem
 
     Attributes
     ----------
-    jac: np.ndarray
-        number of measures x n_E complex array, the Jacobian; shape(n_exc, n_el, n_tri)
     v: np.ndarray
         number of measures x 1 array, simulated boundary measures; shape(n_exc, n_el)
-    b_matrix: np.ndarray
-        back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
     """
-
     v: np.ndarray  # number of measures x 1 array, simulated boundary measures
-    jac: np.ndarray  # number of measures x n_E complex array, the Jacobian
-    b_matrix: np.ndarray  # back-projection mappings (smear matrix)
 
 
 class Forward:
@@ -39,6 +32,8 @@ class Forward:
 
     def __init__(self, mesh: dict[str, np.ndarray], el_pos: np.ndarray) -> None:
         """
+        FEM forward solver
+
         A good FEM forward solver should only depend on
         mesh structure and the position of electrodes
 
@@ -75,90 +70,11 @@ class Forward:
         self._r_matrix = None
         self._ke = None
 
-    def solve_eit(
-        self,
-        ex_mat: np.ndarray = None,
-        step: int = 1,
-        perm: np.ndarray = None,
-        parser: Union[str, list[str]] = None,
-        **kwargs,
-    ) -> FwdResult:
-        """
-        (Deprecated)
-        Use new implementation for back compatibility but is not optmize!!!!
-
-        EIT simulation, generate perturbation matrix and forward v
-
-        Parameters
-        ----------
-        ex_mat: np.ndarray
-            numLines x n_el array, stimulation matrix
-        step: int
-            the configuration of measurement electrodes (default: apposition)
-        perm: np.ndarray
-            Mx1 array, initial x0. must be the same size with self.tri_perm
-        parser: str
-            see voltage_meter for more details.
-
-        Returns
-        -------
-        fwd_results: FwdResult
-            PDE results from solving the fwd problem (see `FwdResult`)
-
-        Note
-        ----
-        Single PDE results are:
-        - fwd_results.jac: np.ndarray
-            number of measures x n_E complex array, the Jacobian
-        - fwd_results.v: np.ndarray
-            number of measures x 1 array, simulated boundary measures
-        - fwd_results.b_matrix: np.ndarray
-            back-projection mappings (smear matrix)
-
-        (see `FwdResult` for more details)
-
-
-        """
-        f = self.compute_potential_distribution(ex_mat=ex_mat, perm=perm, memory_4_jac=True)
-        r_el = self._r_matrix[self.el_pos]
-        f_el = f[:, self.el_pos]
-
-        # Build Jacobian matrix column wise (element wise)
-        #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
-        jac = np.zeros((ex_mat.shape[0], self.n_el, self.n_tri), dtype=perm.dtype)
-
-        def jac_init(jac, k):
-            for (i, e) in enumerate(self.tri):
-                jac[:, i] = np.dot(np.dot(r_el[:, e], self._ke[i]), f[k, e])
-            return jac
-
-        jac = np.array(list(map(jac_init, jac, np.arange(ex_mat.shape[0]))))
-
-        self._r_matrix=None # clear for memory
-        self._ke=None # clear for memory
-
-        # boundary measurements, subtract_row-voltages on electrodes
-        diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
-        v = subtract_row(f_el, diff_op)
-        jac = subtract_row(jac, diff_op)
-        # build bp projection matrix
-        # 1. we can either smear at the center of elements, using
-        #    >> fe = np.mean(f[:, self.tri], axis=1)
-        # 2. or, simply smear at the nodes using f
-        b_matrix = smear(
-            f, f_el, diff_op, new=True
-        )  # set new to `False` to get computation from ChabaneAmaury
-        # update output, now you can call p.jac, p.v, p.b_matrix
-        return FwdResult(
-            jac=np.vstack(jac), v=np.hstack(v), b_matrix=np.vstack(b_matrix)
-        )
-
     def solve(
         self,
         ex_mat: np.ndarray = None,
         perm: np.ndarray = None,
     ) -> np.ndarray:
-
         """
         Calculate and compute the potential distribution (complex-valued)
         corresponding to the permittivity distribution `perm ` for all
@@ -179,7 +95,6 @@ class Forward:
         f: np.ndarray
             potential on nodes ; shape (n_exc, n_pts)
 
-
         Notes
         -------
         For compatibility with some scripts in /examples a single excitation
@@ -189,7 +104,7 @@ class Forward:
         """
         return self.compute_potential_distribution(ex_mat=ex_mat, perm=perm)
 
-    def solve_eit_new(
+    def solve_eit(
         self,
         ex_mat: np.ndarray = None,
         step: int = 1,
@@ -209,13 +124,12 @@ class Forward:
          number of measures x 1 array, simulated boundary measures; shape(n_exc, n_el)
 
         """
-        f = self.compute_potential_distribution(ex_mat=ex_mat, perm=perm, memory_4_jac=True)
+        f = self.compute_potential_distribution(ex_mat=ex_mat, perm=perm)
         # boundary measurements, subtract_row-voltages on electrodes
         diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
         f_el = f[:, self.el_pos]
         v = subtract_row(f_el, diff_op)
-        return np.hstack(v)
-        
+        return FwdResult(v= np.hstack(v))
     
     def compute_jac(
         self,

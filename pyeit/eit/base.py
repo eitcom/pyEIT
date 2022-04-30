@@ -189,40 +189,7 @@ class EitBase(ABC):
         self._check_solver_is_ready()
         return -np.dot(self.H, dv.transpose())
 
-    def _solve_fwd(
-        self, allow_jac_norm: bool = True
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Compute the Jacobian, BP matrix, and simulated boundary measurements
-        by solving fwd problem
-
-        Parameters
-        ----------
-        allow_jac_norm : bool, optional
-            flag allowing the Jacobian to be normalized according to
-            `self.jac_normalized` intern flag, by default True
-            e.g. for `jac.gn` or `greit` no normalization is needed!
-
-        Returns
-        -------
-        Tuple[np.ndarray, np.ndarray, np.ndarray]
-            Jacobian, BP matrix and simulated boundary measurements
-        """
-
-        # solving Jacobian using uniform sigma distribution
-        res = self.fwd.solve_eit(
-           ex_mat= self.ex_mat, step=self.step, perm=self.perm, parser=self.parser
-        )
-        # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])
-        jac = (
-            res.jac / np.abs(res.v[:, None])
-            if self.jac_normalized and allow_jac_norm
-            else res.jac
-        )
-
-        return jac, res.b_matrix, res.v
-
-    def _compute_jac_matrix(self, allow_jac_norm: bool = True) -> np.ndarray:
+    def _compute_jac_matrix(self, x0:np.ndarray=None, allow_jac_norm: bool = True) -> np.ndarray:
         """
         Return Jacobian matrix correspoding to the fwd
         
@@ -239,11 +206,11 @@ class EitBase(ABC):
             Jacobian
         """
         return self.fwd.compute_jac(
-            ex_mat=self.ex_mat,
-            step=self.step, 
-            perm=self.perm, 
-            parser=self.parser, 
-            normalize= self.jac_normalized and allow_jac_norm,
+            ex_mat = self.ex_mat,
+            step = self.step, 
+            perm = x0 or self.perm, 
+            parser = self.parser, 
+            normalize = self.jac_normalized and allow_jac_norm,
         )
 
     def _compute_b_matrix(self) -> np.ndarray:
