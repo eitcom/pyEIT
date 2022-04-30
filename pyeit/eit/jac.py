@@ -7,7 +7,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
-from typing import Tuple,Union
+from typing import Tuple, Union
 
 import numpy as np
 import scipy.linalg as la
@@ -238,7 +238,7 @@ class JAC(EitBase):
 
         for i in range(maxiter):
 
-            # forward solver, 
+            # forward solver,
             jac, v0 = self._gn_single_jac_v0(x0)
             # Residual
             r0 = v - v0
@@ -263,10 +263,12 @@ class JAC(EitBase):
             lamb *= lamb_decay
             lamb = max(lamb, lamb_min)
         return x0
-    
-    def _gn_single_jac_v0(self, perm0:Union[int, float, np.ndarray])->Tuple[np.ndarray, np.ndarray]:
+
+    def _gn_single_jac_v0(
+        self, perm0: Union[int, float, np.ndarray]
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Compute Jacobian and first meas. extimation for gn single step 
+        Compute Jacobian and first meas. extimation for gn single step
 
         Parameters
         ----------
@@ -278,12 +280,11 @@ class JAC(EitBase):
         -------
         Tuple[np.ndarray, np.ndarray]
             _description_
-        """        
-        
-        jac = self._compute_jac_matrix(perm= perm0, allow_jac_norm=False)
-        v0=self.fwd.v0
-        return jac, v0
+        """
 
+        jac = self._compute_jac_matrix(perm=perm0, allow_jac_norm=False)
+        v0 = self.fwd.v0
+        return jac, v0
 
     def project(self, ds: np.ndarray) -> np.ndarray:
         """

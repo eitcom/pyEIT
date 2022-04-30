@@ -9,7 +9,7 @@ writing your own reconstruction algorithms.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 from abc import ABC, abstractmethod
-from typing import Tuple,Union
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -189,9 +189,11 @@ class EitBase(ABC):
         self._check_solver_is_ready()
         return -np.dot(self.H, dv.transpose())
 
-    def _compute_jac_matrix(self, perm:Union[int, float, np.ndarray]=None, allow_jac_norm: bool = True) -> np.ndarray:
+    def _compute_jac_matrix(
+        self, perm: Union[int, float, np.ndarray] = None, allow_jac_norm: bool = True
+    ) -> np.ndarray:
         """
-        Return Jacobian matrix correspoding to the fwd 
+        Return Jacobian matrix correspoding to the fwd
 
         Parameters
         ----------
@@ -208,13 +210,13 @@ class EitBase(ABC):
         np.ndarray
             Jacobian matrix
         """
-       
+
         return self.fwd.compute_jac(
-            ex_mat = self.ex_mat,
-            step = self.step, 
-            perm = perm if perm is not None else self.perm, 
-            parser = self.parser, 
-            normalize = self.jac_normalized and allow_jac_norm,
+            ex_mat=self.ex_mat,
+            step=self.step,
+            perm=perm if perm is not None else self.perm,
+            parser=self.parser,
+            normalize=self.jac_normalized and allow_jac_norm,
         )
 
     def _compute_b_matrix(self) -> np.ndarray:
@@ -227,7 +229,7 @@ class EitBase(ABC):
             BP matrix
         """
         return self.fwd.compute_b_matrix(
-           ex_mat= self.ex_mat, step=self.step, perm=self.perm, parser=self.parser
+            ex_mat=self.ex_mat, step=self.step, perm=self.perm, parser=self.parser
         )
 
     def _check_solver_is_ready(self) -> None:
