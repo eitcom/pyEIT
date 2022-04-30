@@ -85,14 +85,19 @@ class Forward:
 
         Parameters
         ----------
-        ex_mat: np.ndarray
-            stimulation/excitation matrix ; shape (n_exc, 2)
-        perm: np.ndarray
-            permittivity on elements (initial) ; shape (n_tri,)
+        ex_mat : np.ndarray, optional
+            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
+            (see _get_ex_mat for more details)
+        perm : Union[int, float, np.ndarray], optional
+            permittivity on elements ; shape (n_tri,), by default `None`. 
+            Must be the same size with self.tri_perm
+            If `None`, `self.tri_perm` will be used
+            If perm is int or float, uniform permittivity on elements will be used
+            (see _get_perm for more details)
 
         Returns
         -------
-        f: np.ndarray
+        np.ndarray
             potential on nodes ; shape (n_exc, n_pts)
 
         Notes
@@ -102,29 +107,42 @@ class Forward:
         (e.g. [0,7] or np.array([0,7]) or ex_mat[0].ravel). In that case a
         simplified version of `f` with shape (n_pts,)
         """
-        return self.compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        return self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
 
     def solve_eit(
         self,
         ex_mat: np.ndarray = None,
         step: int = 1,
-        perm: np.ndarray = None,
+        perm: Union[int, float, np.ndarray] = None,
         parser: Union[str, list[str]] = None,
     ) -> FwdResult:
         """
-        EIT simulation, generate forward v measurement 
+        EIT simulation, generate forward v measurement
 
         Parameters
         ----------
-        TODO
+        ex_mat : np.ndarray, optional
+            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
+            (see _get_ex_mat for more details)
+        step: int, optional
+            the configuration of measurement electrodes, by default 1 (adjacent).
+        perm : Union[int, float, np.ndarray], optional
+            permittivity on elements ; shape (n_tri,), by default `None`. 
+            Must be the same size with self.tri_perm
+            If `None`, `self.tri_perm` will be used
+            If perm is int or float, uniform permittivity on elements will be used
+            (see _get_perm for more details)
+        parser: Union[str, list[str]], optional
+            see voltage_meter for more details, by default `None`.
 
         Returns
         -------
-        v: np.ndarray
-         number of measures x 1 array, simulated boundary measures; shape(n_exc, n_el)
-
-        """
-        f = self.compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        FwdResult
+            Foward results comprising
+                v: np.ndarray
+                    simulated boundary measures; shape(n_exc, n_el)
+        """    
+        f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
         # boundary measurements, subtract_row-voltages on electrodes
         diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
         f_el = f[:, self.el_pos]
@@ -135,18 +153,49 @@ class Forward:
         self,
         ex_mat: np.ndarray = None,
         step: int = 1,
-        perm: np.ndarray = None,
+        perm: Union[int, float, np.ndarray] = None,
         parser: Union[str, list[str]] = None,
         normalize:bool=False,
     ) -> np.ndarray:
+        """
+        Compute the Jacobian matrix
+
+        Parameters
+        ----------
+        ex_mat : np.ndarray, optional
+            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
+            (see _get_ex_mat for more details)
+        step: int, optional
+            the configuration of measurement electrodes, by default 1 (adjacent).
+        perm : Union[int, float, np.ndarray], optional
+            permittivity on elements ; shape (n_tri,), by default `None`. 
+            Must be the same size with self.tri_perm
+            If `None`, `self.tri_perm` will be used
+            If perm is int or float, uniform permittivity on elements will be used
+            (see _get_perm for more details)
+        parser: Union[str, list[str]], optional
+            see voltage_meter for more details, by default `None`.
+        normalize : bool, optional
+            flag for Jacobian normalization, by default False.
+            If True the Jacobian is normalized
+            
+
+        Returns
+        -------
+        np.ndarray
+            Jacobian matrix
+        """    
         """
         EIT simulation, generate perturbation matrix and forward v
 
         Parameters
         ----------
+        ex_mat : np.ndarray, optional
+            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
+            (see `_get_ex_mat` for more details)
         TODO
         """
-        f= self.compute_potential_distribution(ex_mat=ex_mat, perm=perm, memory_4_jac=True)
+        f= self._compute_potential_distribution(ex_mat=ex_mat, perm=perm, memory_4_jac=True)
         
         # Build Jacobian matrix column wise (element wise)
         #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
@@ -160,8 +209,8 @@ class Forward:
 
         jac = np.array(list(map(jac_init, jac, np.arange(ex_mat.shape[0]))))
 
-        self._r_matrix=None # clear for memory
-        self._ke=None # clear for memory
+        self._r_matrix=None # clear memory
+        self._ke=None # clear memory
 
         diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
         f_el = f[:, self.el_pos]
@@ -184,15 +233,17 @@ class Forward:
 
         Parameters
         ----------
-        ex_mat: np.ndarray, optional
-            stimulation matrix, of shape (n_exc, 2), by default `None`.
+        ex_mat : np.ndarray, optional
+            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
+            (see _get_ex_mat for more details)
         step: int, optional
             the configuration of measurement electrodes, by default 1 (adjacent).
-        perm: Union[int, float, np.ndarray], optional
-            permittivity on elements (initial) ; shape (n_tri,)
-            Mx1 array, initial x0. must be the same size with self.tri_perm, by default `None`.
-            If `None` perm will be set to `self.tri_perm`
-            If perm is int or float
+        perm : Union[int, float, np.ndarray], optional
+            permittivity on elements ; shape (n_tri,), by default `None`. 
+            Must be the same size with self.tri_perm
+            If `None`, `self.tri_perm` will be used
+            If perm is int or float, uniform permittivity on elements will be used
+            (see _get_perm for more details)
         parser: Union[str, list[str]], optional
             see voltage_meter for more details, by default `None`.
 
@@ -201,7 +252,7 @@ class Forward:
         np.ndarray
             back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
         """
-        f= self.compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        f= self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
         f_el = f[:, self.el_pos]
         # build bp projection matrix
         # 1. we can either smear at the center of elements, using
@@ -212,8 +263,11 @@ class Forward:
         return  smear(f, f_el, diff_op, new=True )  
 
     
-    def compute_potential_distribution(
-        self, ex_mat: np.ndarray, perm: np.ndarray, memory_4_jac:bool=False
+    def _compute_potential_distribution(
+        self, 
+        ex_mat: np.ndarray, 
+        perm: np.ndarray, 
+        memory_4_jac:bool=False
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculate and compute the potential distribution (complex-valued)
@@ -225,18 +279,17 @@ class Forward:
 
         Parameters
         ----------
-        TODO
         ex_mat: np.ndarray
             stimulation/excitation matrix ; shape (n_exc, 2)
         perm: np.ndarray
-            permittivity on elements (initial) ; shape (n_tri,)
+            permittivity on elements ; shape (n_tri,)
         memory_4_jac : bool, optional
-            flag to memory r_matrix to self._r_matrix and ke to self._ke, by default False.
-
+            flag to memory r_matrix to self._r_matrix and ke to self._ke, 
+            by default False.
 
         Returns
         -------
-        f: np.ndarray
+        np.ndarray
             potential on nodes ; shape (n_exc, n_pts)
 
         Notes
@@ -273,30 +326,51 @@ class Forward:
         return f
 
     def _get_perm(self, perm:Union[int, float, np.ndarray]=None) -> np.ndarray:
+        """
+        Check/init the permittivity on element
 
-        # initialize the permittivity on element
+        Parameters
+        ----------
+        perm : Union[int, float, np.ndarray], optional
+            permittivity on elements ; shape (n_tri,), by default `None`. 
+            Must be the same size with self.tri_perm
+            If `None`, `self.tri_perm` will be used
+            If perm is int or float, uniform permittivity on elements will be used
+
+        Returns
+        -------
+        np.ndarray
+            permittivity on elements ; shape (n_tri,)
+
+        Raises
+        ------
+        TypeError
+            raised if perm is not ndarray and of shape (n_tri,)
+        """
 
         if perm is None:
             return self.tri_perm
         elif isinstance(perm, (int, float)):
             return np.ones(self.n_tri, dtype=float)*perm
-        elif not isinstance(perm, np.ndarray) or perm.shape != (self.n_tri,):
+        
+        if not isinstance(perm, np.ndarray) or perm.shape != (self.n_tri,):
             raise TypeError(
-                f"Wrong type/shape of {perm=}; {perm.shape=}, expected an ndarray; shape (n_tri, )"
+                f"Wrong type/shape of {perm=}, expected an ndarray; shape (n_tri, )"
             )
         return perm
     
     def _get_ex_mat(self, ex_mat:np.ndarray= None) -> np.ndarray:
         """
-        _summary_
+        Check/init stimulation
 
         Parameters
         ----------
         ex_mat : np.ndarray, optional
-            stimulation matrix, of shape (n_exc, 2), by default `None`.
+            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
             If `None` initialize stimulation matrix for 16 electrode and 
             apposition mode (see function `eit_scan_lines(16, 8)`)
-            Otherwise return it! or test it!TODO
+            If single stimulation (ex_line) is passed only a list of length 2 
+            and np.ndarray of size 2 will be treated.
 
         Returns
         -------
@@ -306,24 +380,24 @@ class Forward:
         Raises
         ------
         TypeError
-            Only accept, `None`, list of length 2, or np.ndarray of shape (n_exc, 2)
+            Only accept, `None`, list of length 2, np.ndarray of size 2, 
+            or np.ndarray of shape (n_exc, 2)
         """        
         if ex_mat is None:
             # initialize the scan lines for 16 electrodes (default: apposition)
             ex_mat = eit_scan_lines(16, 8)
-
         elif isinstance(ex_mat, list) and len(ex_mat) == 2:
             # case ex_line has been passed instead of ex_mat
             ex_mat = np.array([ex_mat]).reshape((1, 2))  # build a 2D array
-        # elif isinstance(ex_mat, np.ndarray) and ex_mat.ndim == 1:
-        #     # case ex_line np.ndarray has been passed instead of ex_mat
-        #     ex_mat = ex_mat.reshape((-1, 2))
-        elif not isinstance(ex_mat, np.ndarray) or ex_mat.ndim != 2 or ex_mat.shape[1] != 2:
+        elif isinstance(ex_mat, np.ndarray) and ex_mat.size == 2:
+        #     case ex_line np.ndarray has been passed instead of ex_mat
+            ex_mat = ex_mat.reshape((-1, 2))
+
+        if not isinstance(ex_mat, np.ndarray) or ex_mat.ndim != 2 or ex_mat.shape[1] != 2:
             raise TypeError(
-                f"Wrong value of {ex_mat=} expected an ndarray ; shape (n_exc, 2)"
+                f"Wrong shape of {ex_mat=} expected an ndarray ; shape (n_exc, 2)"
             )
 
-        # initialize/extract the scan lines (default: apposition)
         return ex_mat
 
     def _natural_boundary(self, ex_mat: np.ndarray) -> np.ndarray:
@@ -340,7 +414,7 @@ class Forward:
 
         Returns
         ----------
-        b: np.ndarray
+        np.ndarray
             Global boundary condition on pts ; shape (n_exc, n_pts, 1)
         """
         drv_a_global = self.el_pos[ex_mat[:, 0]]
@@ -357,6 +431,8 @@ class Forward:
 def _smear(f: np.ndarray, fb: np.ndarray, pairs: np.ndarray) -> np.ndarray:
     """
     Build smear matrix B for bp for one exitation
+
+    used for the smear matrix computation by @ChabaneAmaury
 
     Parameters
     ----------
@@ -392,11 +468,14 @@ def smear(
         potential on adjacent electrodes; shape (n_exc, n_el)
     meas_pattern: np.ndarray
         electrodes numbering pairs; shape (n_exc, n_meas, 2)
+    new : bool, optional
+        flag to use new matrices based computation, by default False.
+        If `False` to smear-computation from ChabaneAmaury is used
 
     Returns
     -------
-    B: np.ndarray
-        back-projection matrix; shape (n_exc, n_meas, n_pts), dtype= bool
+    np.ndarray
+        back-projection (smear) matrix; shape (n_exc, n_meas, n_pts), dtype= bool
     """
     if new:
         # new implementation not much faster! :(
@@ -440,8 +519,8 @@ def subtract_row(v: np.ndarray, meas_pattern: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    v_diff: np.ndarray
-        difference measurements
+    np.ndarray
+        difference measurements v_diff
     """
 
     if v.shape[:1] != meas_pattern.shape[:1]:
@@ -480,13 +559,14 @@ def voltage_meter(
 
     Parameters
     ----------
-    ex_mat: np.ndarray
+    ex_mat : np.ndarray
         Nx2 array, [positive electrode, negative electrode]. ; shape (n_exc, 2)
-    n_el: int
-        number of total electrodes.
-    step: int
-        measurement method (two adjacent electrodes are used for measuring).
-    parser: str | list[str]
+    n_el : int, optional
+        number of total electrodes, by default 16
+    step : int, optional
+        measurement method (two adjacent electrodes are used for measuring), by default 1 (adjacent)
+    parser : Union[str, list[str]], optional
+        parsing the format of each frame in measurement/file, by default None
         if parser contains 'fmmu', or 'rotate_meas' then data are trimmed,
         boundary voltage measurements are re-indexed and rotated,
         start from the positive stimulus electrode start index 'A'.
@@ -498,8 +578,8 @@ def voltage_meter(
 
     Returns
     -------
-    meas_pattern : np.ndarray
-        subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+    np.ndarray
+        measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
     """
     # local node
     ex_mat = ex_mat.astype(int)
@@ -544,12 +624,12 @@ def assemble(
         n_tri x 1 conductivities on elements
     n_pts: int
         number of nodes
-    ref: int
-        reference electrode
+    ref: int, optional
+        reference electrode, by default 0
 
     Returns
     -------
-    K: np.ndarray
+    np.ndarray
         NxN array of complex stiffness matrix
 
     Notes
@@ -605,7 +685,7 @@ def calculate_ke(pts: np.ndarray, tri: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    ke_array: np.ndarray
+    np.ndarray
         n_tri x (n_dim x n_dim) 3d matrix
     """
     n_tri, n_vertices = tri.shape
@@ -635,7 +715,7 @@ def calculate_ke(pts: np.ndarray, tri: np.ndarray) -> np.ndarray:
 
 def _k_triangle(xy: np.ndarray) -> np.ndarray:
     """
-    given a point-matrix of an element, solving for Kij analytically
+    Given a point-matrix of an element, solving for Kij analytically
     using barycentric coordinates (simplex coordinates)
 
     Parameters
@@ -645,7 +725,7 @@ def _k_triangle(xy: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    ke_matrix: np.ndarray
+    np.ndarray
         local stiffness matrix
     """
     # edges (vector) of triangles
@@ -678,7 +758,7 @@ def _k_tetrahedron(xy: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    ke_matrix: np.ndarray
+    np.ndarray
         local stiffness matrix
 
     Notes

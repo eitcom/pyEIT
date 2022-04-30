@@ -6,6 +6,8 @@
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
+from ctypes import Union
+from typing import Tuple
 
 import numpy as np
 import scipy.linalg as la
@@ -163,7 +165,7 @@ class JAC(EitBase):
     def gn(
         self,
         v: np.ndarray,
-        x0: np.ndarray = None,
+        x0: Union[int, float, np.ndarray] = None,
         maxiter: int = 1,
         gtol: float = 1e-4,
         p: float = None,
@@ -182,12 +184,13 @@ class JAC(EitBase):
         ----------
         v : np.ndarray
             boundary measurement
-        x0 : np.ndarray, optional
-            initial guess, by default None
+        x0 : Union[int, float, np.ndarray], optional
+            initial permittivity guess, by default None
+            (see Foward._get_perm for more details, in fem.py)
         maxiter : int, optional
             number of maximum iterations, by default 1
         gtol : float, optional
-            _description_, by default 1e-4
+            convergence threshold, by default 1e-4
         p : float, optional
             JAC parameters (can be overridden), by default None
         lamb : float, optional
@@ -236,7 +239,7 @@ class JAC(EitBase):
         for i in range(maxiter):
 
             # forward solver, 
-            jac, v0 = self._gn_fwd_single_step(x0 = x0)
+            jac, v0 = self._gn_single_jac_v0(x0)
             # Residual
             r0 = v - v0
 
@@ -261,9 +264,23 @@ class JAC(EitBase):
             lamb = max(lamb, lamb_min)
         return x0
     
-    def _gn_fwd_single_step(self, x0):
-        """"""
-        jac = self._compute_jac_matrix(x0= x0, allow_jac_norm=False)
+    def _gn_single_jac_v0(self, perm0:Union[int, float, np.ndarray])->Tuple[np.ndarray, np.ndarray]:
+        """
+        Compute Jacobian and first meas. extimation for gn single step 
+
+        Parameters
+        ----------
+        x0 : Union[int, float, np.ndarray]
+            previous permittivity guess, by default None
+            (see Foward._get_perm for more details, in fem.py)
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray]
+            _description_
+        """        
+        
+        jac = self._compute_jac_matrix(perm= perm0, allow_jac_norm=False)
         v0=self.fwd.v0
         return jac, v0
 
