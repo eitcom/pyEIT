@@ -212,7 +212,7 @@ class EitBase(ABC):
         return self.fwd.compute_jac(
             ex_mat = self.ex_mat,
             step = self.step, 
-            perm = perm or self.perm, 
+            perm = perm if perm is not None else self.perm, 
             parser = self.parser, 
             normalize = self.jac_normalized and allow_jac_norm,
         )
