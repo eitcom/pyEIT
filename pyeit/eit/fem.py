@@ -108,7 +108,12 @@ class Forward:
         (e.g. [0,7] or np.array([0,7]) or ex_mat[0].ravel). In that case a
         simplified version of `f` with shape (n_pts,)
         """
-        return self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        f= self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        # case ex_line has been passed instead of ex_mat
+        # we return simplified version of f with shape (n_pts,)
+        if ex_mat.shape[0] == 1:
+            return f[0, :].ravel()
+        return f
 
     def solve_eit(
         self,
@@ -180,27 +185,16 @@ class Forward:
             flag for Jacobian normalization, by default False.
             If True the Jacobian is normalized
             
-
         Returns
         -------
         np.ndarray
             Jacobian matrix
-        """    
-        """
-        EIT simulation, generate perturbation matrix and forward v
-
-        Parameters
-        ----------
-        ex_mat : np.ndarray, optional
-            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
-            (see `_get_ex_mat` for more details)
-        TODO
-        """
+        """ 
         f= self._compute_potential_distribution(ex_mat=ex_mat, perm=perm, memory_4_jac=True)
         
         # Build Jacobian matrix column wise (element wise)
         #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
-        jac = np.zeros((ex_mat.shape[0], self.n_el, self.n_tri), dtype=perm.dtype)
+        jac_i = np.zeros((ex_mat.shape[0], self.n_el, self.n_tri), dtype=perm.dtype)
 
         r_el = self._r_matrix[self.el_pos]
         def jac_init(jac, k):
@@ -208,7 +202,7 @@ class Forward:
                 jac[:, i] = np.dot(np.dot(r_el[:, e], self._ke[i]), f[k, e])
             return jac
 
-        jac = np.array(list(map(jac_init, jac, np.arange(ex_mat.shape[0]))))
+        jac_i = np.array(list(map(jac_init, jac_i, np.arange(ex_mat.shape[0]))))
 
         self._r_matrix=None # clear memory
         self._ke=None # clear memory
@@ -216,7 +210,8 @@ class Forward:
         diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
         f_el = f[:, self.el_pos]
         self.v0 = subtract_row(f_el, diff_op)
-        jac =subtract_row(jac, diff_op)
+        jac =subtract_row(jac_i, diff_op)
+        jac=np.vstack(jac)
 
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])
 
@@ -261,7 +256,8 @@ class Forward:
         # 2. or, simply smear at the nodes using f
         diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
         # set new to `False` to get smear-computation from ChabaneAmaury
-        return  smear(f, f_el, diff_op, new=True )  
+        b_matrix=smear(f, f_el, diff_op, new=True ) 
+        return  np.vstack(b_matrix)
 
     def set_ref_el(self, val:int=None)->None:
         """
@@ -280,7 +276,7 @@ class Forward:
         ex_mat: np.ndarray, 
         perm: np.ndarray, 
         memory_4_jac:bool=False
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> np.ndarray:
         """
         Calculate and compute the potential distribution (complex-valued)
         corresponding to the permittivity distribution `perm ` for all
@@ -304,12 +300,6 @@ class Forward:
         np.ndarray
             potential on nodes ; shape (n_exc, n_pts)
 
-        Notes
-        -------
-        For compatibility with some scripts in /examples a single excitation
-        line can be passed instead of the whole excitation pattern `ex_mat`
-        (e.g. [0,7] or np.array([0,7]) or ex_mat[0].ravel). In that case a
-        simplified version of `f` with shape (n_pts,)
         """
         ex_mat= self._get_ex_mat(ex_mat) # check/init stimulation
         perm= self._get_perm(perm) # check/init permitivity
@@ -328,14 +318,7 @@ class Forward:
         # 4. solving nodes potential using boundary conditions
         b = self._natural_boundary(ex_mat)
 
-        f = np.dot(r_matrix, b[:, None]).T.reshape(b.shape[:-1])
-
-        # case ex_line has been passed instead of ex_mat
-        # we return simplified version of f with shape (n_pts,)
-        if ex_mat.shape[0] == 1:
-            return f[0, :].ravel()
-
-        return f
+        return np.dot(r_matrix, b[:, None]).T.reshape(b.shape[:-1])
 
     def _get_perm(self, perm:Union[int, float, np.ndarray]=None) -> np.ndarray:
         """
