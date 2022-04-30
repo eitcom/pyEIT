@@ -70,7 +70,7 @@ fwd = Forward(mesh_obj, el_pos)
 ex_line = ex_mat[0].ravel()
 
 # solving once using fem
-f, _ = fwd.solve(ex_line, perm=tri_perm)
+f = fwd.solve(ex_line, perm=tri_perm)
 f = np.real(f)
 vf = np.linspace(min(f), max(f), 32)
 

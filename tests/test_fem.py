@@ -143,16 +143,18 @@ def test_solve():
     """test solve using a simple mesh structure"""
     mesh, el_pos = _mesh_obj()
     f_truth = np.array([-0.27027027, 2.59459459, -0.93693694, 0.0])
-    jac_truth = np.array([[-0.02556611, 2.67129291], [-0.28431134, -0.08400292]])
+    # jac_truth = np.array([[-0.02556611, 2.67129291], [-0.28431134, -0.08400292]])
 
     # testing solve
     ex_mat = np.array([[0, 1]])
     fwd = pyeit.eit.fem.Forward(mesh, el_pos)
     # fix ref to be exactly the one in mesh
     fwd.ref = mesh["ref"]
-    f, jac = fwd.solve(ex_mat, perm=mesh["perm"])
+    # f, jac = fwd.solve(ex_mat, perm=mesh["perm"])
+    # assert np.allclose(f, f_truth)
+    # assert np.allclose(jac, jac_truth) >> need new test_compute_jac...
+    f= fwd.solve(ex_mat, perm=mesh["perm"])
     assert np.allclose(f, f_truth)
-    assert np.allclose(jac, jac_truth)
 
     # testing solve_eit
     ex_mat = np.array([[0, 1], [1, 0]])
