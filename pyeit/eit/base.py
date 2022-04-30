@@ -211,7 +211,7 @@ class EitBase(ABC):
 
         # solving Jacobian using uniform sigma distribution
         res = self.fwd.solve_eit(
-            self.ex_mat, step=self.step, perm=self.perm, parser=self.parser
+           ex_mat= self.ex_mat, step=self.step, perm=self.perm, parser=self.parser
         )
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])
         jac = (
@@ -222,31 +222,42 @@ class EitBase(ABC):
 
         return jac, res.b_matrix, res.v
 
-    def _compute_jac(self, **kwargs) -> np.ndarray:
+    def _compute_jac_matrix(self, allow_jac_norm: bool = True) -> np.ndarray:
         """
-        Similar to `self._solve_fwd()`, exept that only Jacobian matrix
-        is returned
+        Return Jacobian matrix correspoding to the fwd
+        
+        Parameters
+        ----------
+        allow_jac_norm : bool, optional
+            flag allowing the Jacobian to be normalized according to
+            `self.jac_normalized` intern flag, by default True
+            e.g. for `jac.gn` or `greit` no normalization is needed!
 
         Returns
         -------
         np.ndarray
             Jacobian
         """
-        jac, _, _ = self._solve_fwd(**kwargs)
-        return jac
+        return self.fwd.compute_jac(
+            ex_mat=self.ex_mat,
+            step=self.step, 
+            perm=self.perm, 
+            parser=self.parser, 
+            normalize= self.jac_normalized and allow_jac_norm,
+        )
 
-    def _compute_b(self, **kwargs) -> np.ndarray:
+    def _compute_b_matrix(self) -> np.ndarray:
         """
-        Similar to `self._solve_fwd()`, exept that only BP matrix
-        is returned
+        Return BP matrix correspoding to the fwd
 
         Returns
         -------
         np.ndarray
             BP matrix
         """
-        _, b, _ = self._solve_fwd(**kwargs)
-        return b
+        return self.fwd.compute_b_matrix(
+           ex_mat= self.ex_mat, step=self.step, perm=self.perm, parser=self.parser
+        )
 
     def _check_solver_is_ready(self) -> None:
         """

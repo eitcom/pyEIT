@@ -29,7 +29,7 @@ class SVD(JAC):
             'pinv': pseudo inverse
         """
         # correct n_ord
-        self.J = self._compute_jac()
+        self.J = self._compute_jac_matrix()
         nm, ne = self.J.shape
         n_ord = np.min([nm, ne, n])
 

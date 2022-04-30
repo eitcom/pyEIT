@@ -37,7 +37,7 @@ class JAC(EitBase):
         self.params = {"p": p, "lamb": lamb, "method": method}
         # pre-compute H0 for dynamical imaging
         # H = (J.T*J + R)^(-1) * J.T
-        self.J = self._compute_jac()
+        self.J = self._compute_jac_matrix()
         self.H = self._compute_h(self.J, p, lamb, method)
         self.is_ready = True
 
@@ -236,6 +236,8 @@ class JAC(EitBase):
         for i in range(maxiter):
 
             # forward solver
+            jac = self._compute_jac_matrix(allow_jac_norm=False) # Why is jyc her computed and not outside the loop....
+
             jac, _, v0 = self._solve_fwd(allow_jac_norm=False)
             # Residual
             r0 = v - v0

@@ -80,7 +80,7 @@ class GREIT(EitBase):
         self.xg, self.yg, self.mask = meshgrid(self.pts, n=n)
 
         w_mat = self._compute_grid_weights(self.xg, self.yg)
-        self.J = self._compute_jac()
+        self.J = self._compute_jac_matrix()
         self.H = self._compute_h(jac=self.J, w_mat=w_mat)
         self.is_ready = True
 

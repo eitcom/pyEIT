@@ -25,7 +25,7 @@ class BP(EitBase):
 
         # build the weighting matrix
         # BP: in node imaging, H is the smear matrix (transpose of B)
-        self.B = self._compute_b()
+        self.B = self._compute_b_matrix()
         self.H = self._compute_h(b_matrix=self.B)
         self.is_ready = True
 
