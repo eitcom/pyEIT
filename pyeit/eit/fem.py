@@ -313,15 +313,15 @@ class Forward:
         kg = assemble(ke, self.tri, perm, self.n_pts, ref=self.ref_el)
 
         if memory_4_jac:
-            # save 
+            # save
             # 3. calculate electrode impedance matrix R = K^{-1}
             self._r_matrix = la.inv(kg)
             self._ke = ke
 
         # 4. solving nodes potential using boundary conditions
         b = self._natural_boundary(ex_mat)
-        
-        return scipy.linalg.solve(kg, b.swapaxes(0,1)).swapaxes(0,1)
+
+        return scipy.linalg.solve(kg, b.swapaxes(0, 1)).swapaxes(0, 1)
 
     def _get_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
         """
