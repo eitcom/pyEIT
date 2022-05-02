@@ -301,7 +301,7 @@ class Forward:
         Returns
         -------
         np.ndarray
-            potential on nodes ; shape (n_exc, n_pts, 1)
+            potential on nodes ; shape (n_exc, n_pts)
 
         """
         ex_mat = self._get_ex_mat(ex_mat)  # check/init stimulation
@@ -321,7 +321,11 @@ class Forward:
         # 4. solving nodes potential using boundary conditions
         b = self._natural_boundary(ex_mat)
 
-        return scipy.linalg.solve(kg, b.swapaxes(0, 1)).swapaxes(0, 1)
+        return (
+            scipy.linalg.solve(kg, b.swapaxes(0, 1))
+            .swapaxes(0, 1)
+            .reshape(b.shape[0:2])
+        )
 
     def _get_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
         """
