@@ -11,6 +11,7 @@ from typing import Union
 import numpy as np
 import numpy.linalg as la
 from scipy import sparse
+import scipy.linalg
 
 from .utils import eit_scan_lines
 
@@ -111,7 +112,7 @@ class Forward:
         f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
         # case ex_line has been passed instead of ex_mat
         # we return simplified version of f with shape (n_pts,)
-        if ex_mat.shape[0] == 1:
+        if f.shape[0] == 1:
             return f[0, :].ravel()
         return f
 
@@ -300,7 +301,7 @@ class Forward:
         Returns
         -------
         np.ndarray
-            potential on nodes ; shape (n_exc, n_pts)
+            potential on nodes ; shape (n_exc, n_pts, 1)
 
         """
         ex_mat = self._get_ex_mat(ex_mat)  # check/init stimulation
@@ -310,17 +311,17 @@ class Forward:
         ke = calculate_ke(self.pts, self.tri)
         # 2. assemble to global K
         kg = assemble(ke, self.tri, perm, self.n_pts, ref=self.ref_el)
-        # 3. calculate electrode impedance matrix R = K^{-1}
-        r_matrix = la.inv(kg)
 
         if memory_4_jac:
-            self._r_matrix = r_matrix
+            # save 
+            # 3. calculate electrode impedance matrix R = K^{-1}
+            self._r_matrix = la.inv(kg)
             self._ke = ke
 
         # 4. solving nodes potential using boundary conditions
         b = self._natural_boundary(ex_mat)
-
-        return np.dot(r_matrix, b[:, None]).T.reshape(b.shape[:-1])
+        
+        return scipy.linalg.solve(kg, b.swapaxes(0,1)).swapaxes(0,1)
 
     def _get_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
         """
