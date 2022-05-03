@@ -147,14 +147,32 @@ class Forward:
         FwdResult
             Foward results comprising
                 v: np.ndarray
-                    simulated boundary measures; shape(n_exc, n_el)
+                    simulated boundary voltage measurements; shape(n_exc, n_el)
         """
         f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
         # boundary measurements, subtract_row-voltages on electrodes
         diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
+        return FwdResult(v=self._get_boundary_voltages(f, diff_op))
+
+    def _get_boundary_voltages(self, f:np.ndarray, diff_op:np.ndarray)->np.ndarray:
+        """
+        Compute boundary voltages from potential distribution
+
+        Parameters
+        ----------
+        f : np.ndarray
+            potential on nodes ; shape (n_exc, n_pts)
+        diff_op : np.ndarray
+            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+
+        Returns
+        -------
+        np.ndarray
+            simulated boundary voltage measurements; shape(n_exc, n_el)
+        """        
         f_el = f[:, self.el_pos]
         v = subtract_row(f_el, diff_op)
-        return FwdResult(v=np.hstack(v))
+        return np.hstack(v)
 
     def compute_jac(
         self,
@@ -190,6 +208,12 @@ class Forward:
         -------
         np.ndarray
             Jacobian matrix
+        
+        Notes
+        -----
+            - initial boundary voltage meas. extimation v0 can be accessed 
+            after computation through call fwd.v0
+
         """
         f = self._compute_potential_distribution(
             ex_mat=ex_mat, perm=perm, memory_4_jac=True
@@ -212,9 +236,8 @@ class Forward:
         self._ke = None  # clear memory
 
         diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
-        f_el = f[:, self.el_pos]
-        self.v0 = subtract_row(f_el, diff_op)
         jac = subtract_row(jac_i, diff_op)
+        self.v0 = self._get_boundary_voltages(f, diff_op)
         jac = np.vstack(jac)
 
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])

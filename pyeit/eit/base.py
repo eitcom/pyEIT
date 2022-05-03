@@ -209,6 +209,11 @@ class EitBase(ABC):
         -------
         np.ndarray
             Jacobian matrix
+        
+        Notes
+        -----
+            - initial boundary voltage meas. extimation v0 can be accessed 
+            after computation through call self.fwd.v0
         """
 
         return self.fwd.compute_jac(
