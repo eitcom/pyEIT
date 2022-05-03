@@ -154,7 +154,7 @@ class Forward:
         diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
         return FwdResult(v=self._get_boundary_voltages(f, diff_op))
 
-    def _get_boundary_voltages(self, f:np.ndarray, diff_op:np.ndarray)->np.ndarray:
+    def _get_boundary_voltages(self, f: np.ndarray, diff_op: np.ndarray) -> np.ndarray:
         """
         Compute boundary voltages from potential distribution
 
@@ -169,7 +169,7 @@ class Forward:
         -------
         np.ndarray
             simulated boundary voltage measurements; shape(n_exc, n_el)
-        """        
+        """
         f_el = f[:, self.el_pos]
         v = subtract_row(f_el, diff_op)
         return np.hstack(v)
@@ -208,10 +208,10 @@ class Forward:
         -------
         np.ndarray
             Jacobian matrix
-        
+
         Notes
         -----
-            - initial boundary voltage meas. extimation v0 can be accessed 
+            - initial boundary voltage meas. extimation v0 can be accessed
             after computation through call fwd.v0
 
         """
