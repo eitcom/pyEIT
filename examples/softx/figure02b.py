@@ -27,17 +27,18 @@ x, y = pts[:, 0], pts[:, 1]
 quality.stats(pts, tri)
 
 
-def calc_sens(fwd, ex_mat):
+def calc_sens(fwd:Forward, ex_mat):
     """
     see Adler2017 on IEEE TBME, pp 5, figure 6,
     Electrical Impedance Tomography: Tissue Properties to Image Measures
     """
     # solving EIT problem
-    p = fwd.solve_eit(ex_mat=ex_mat, parser="fmmu")
-    v0 = p.v
+    # p = fwd.solve_eit(ex_mat=ex_mat, parser="fmmu")
+    jac= fwd.compute_jac(ex_mat=ex_mat, parser="fmmu")
+    v0 = fwd.v0
     # normalized jacobian (note: normalize affect sensitivity)
     v0 = v0[:, np.newaxis]
-    jac = p.jac  # / v0
+    jac = jac  # / v0
     # calculate sensitivity matrix
     s = np.linalg.norm(jac, axis=0)
     ae = tri_area(pts, tri)
