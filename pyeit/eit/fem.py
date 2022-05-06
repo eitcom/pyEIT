@@ -418,9 +418,10 @@ class Forward:
             measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
 
         """
-        return self._check_meas_pattern(ex_mat.shape[0], **kwargs) or voltage_meter(
-            ex_mat, n_el, step, parser
-        )
+        meas_pattern = self._check_meas_pattern(ex_mat.shape[0], **kwargs)
+        if meas_pattern is not None:
+            return meas_pattern
+        return voltage_meter(ex_mat, n_el, step, parser)
 
     def _check_meas_pattern(
         self, n_exc: int, meas_pattern: np.ndarray = None
