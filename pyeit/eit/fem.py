@@ -505,8 +505,8 @@ class Forward:
         ----------
         ex_mat : np.ndarray, optional
             stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
-            If `None` initialize stimulation matrix for 16 electrode and
-            apposition mode (see function `eit_scan_lines(16, 8)`)
+            If `None` initialize stimulation matrix for n_el electrode and
+            adjacent mode (see function `eit_scan_lines`)
             If single stimulation (ex_line) is passed only a list of length 2
             and np.ndarray of size 2 will be treated.
 
@@ -522,8 +522,8 @@ class Forward:
             or np.ndarray of shape (n_exc, 2)
         """
         if ex_mat is None:
-            # initialize the scan lines for 16 electrodes (default: apposition)
-            ex_mat = eit_scan_lines(16, 8)
+            # initialize the scan lines for 16 electrodes (default: adjacent)
+            ex_mat = eit_scan_lines(self.n_el, 1)
         elif isinstance(ex_mat, list) and len(ex_mat) == 2:
             # case ex_line has been passed instead of ex_mat
             ex_mat = np.array([ex_mat]).reshape((1, 2))  # build a 2D array
