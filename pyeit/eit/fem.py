@@ -151,6 +151,12 @@ class Forward:
             Foward results comprising
                 v: np.ndarray
                     simulated boundary voltage measurements; shape(n_exc, n_el)
+                    
+        Note
+        ----
+            To pass a custom measurement pattern use the kwarg meas_pattern
+            pay attenteion that the meas_pattern should be an nd.array of shape
+            (n_exc, n_meas_per_exc, 2). If not TypeError will be raised.
         """
         ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
         perm = self._check_perm(perm)  # check/init permitivity
@@ -220,6 +226,9 @@ class Forward:
         -----
             - initial boundary voltage meas. extimation v0 can be accessed
             after computation through call fwd.v0
+            - To pass a custom measurement pattern use the kwarg meas_pattern
+            pay attenteion that the meas_pattern should be an nd.array of shape
+            (n_exc, n_meas_per_exc, 2). If not TypeError will be raised.
 
         """
         ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
@@ -289,7 +298,9 @@ class Forward:
         
         Note
         ----
-            To use special meas. pattern pass meas_pattern as kwargs
+            To pass a custom measurement pattern use the kwarg meas_pattern
+            pay attenteion that the meas_pattern should be an nd.array of shape
+            (n_exc, n_meas_per_exc, 2). If not TypeError will be raised.
         """
         ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
         perm = self._check_perm(perm)  # check/init permitivity
@@ -366,8 +377,6 @@ class Forward:
             .reshape(b.shape[0:2])
         )
     
-
-    
     def _build_meas_pattern(
         self,
         ex_mat: np.ndarray,
@@ -377,34 +386,62 @@ class Forward:
         **kwargs,
     ) -> np.ndarray:
         """
+        Build the measurement pattern (subtract_row-voltage pairs [N, M])
+        for all excitations on boundary electrodes.
+
+        Note
+        ----
+            To pass a custom measurement pattern use the kwarg meas_pattern
+            pay attenteion that the meas_pattern should be an nd.array of shape
+            (n_exc, n_meas_per_exc, 2). If not TypeError will be raised.
 
         Parameters
         ----------
         ex_mat : np.ndarray
             Nx2 array, [positive electrode, negative electrode]. ; shape (n_exc, 2)
+            (see "voltage_meter")
+        n_el : int, optional
+            number of total electrodes, by default 16
+            (see "voltage_meter")
+        step : int, optional
+            measurement method, by default 1
+            (see "voltage_meter")
+        parser : Union[str, list[str]], optional
+            parsing the format of each frame in measurement/file, by default None
+            (see "voltage_meter")
 
         Returns
         -------
         np.ndarray
             measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+        
         """
         return (
             self._build_meas_pattern(ex_mat.shape[0], **kwargs) or 
             voltage_meter(ex_mat, n_el, step, parser)
         )
     
-    def _check_meas_pattern(self,n_exc: np.ndarray,meas_pattern: np.ndarray= None)->np.ndarray:
+    def _check_meas_pattern(self,n_exc: int, meas_pattern: np.ndarray= None)->np.ndarray:
         """
+        Check measurement pattern
 
         Parameters
         ----------
-        ex_mat : np.ndarray
-            Nx2 array, [positive electrode, negative electrode]. ; shape (n_exc, 2)
+        n_exc : int
+            number of excitations/stimulations
+        meas_pattern : np.ndarray, optional
+           measurements pattern / subtract_row pairs [N, M] to check; shape (n_exc, n_meas_per_exc, 2), by default None
+           if None (no meas_pattern has been passed) None is returned
 
         Returns
         -------
         np.ndarray
             measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+        
+        Raises
+        ------
+        TypeError
+            raised if meas_pattern is not a nd.array of shape (n_exc, : , 2)
         """
 
         if meas_pattern is None:
@@ -412,12 +449,12 @@ class Forward:
 
         if not isinstance(meas_pattern, np.ndarray):
             raise TypeError(
-                f"Wrong type of {meas_pattern=}, expected an ndarray;  shape (n_exc, n_meas_per_exc, 2)"
+                f"Wrong type of {meas_pattern=}, expected an ndarray;  shape ({n_exc}, n_meas_per_exc, 2)"
             )
-        # test shape is something like (n_exc, x, 2)
+        # test shape is something like (n_exc, :, 2)
         if meas_pattern.ndim !=3 or meas_pattern.shape[::2] != (n_exc, 2): 
             raise TypeError(
-                f"Wrong shape of {meas_pattern=}, expected an ndarray; shape (n_exc, n_meas_per_exc, 2)"
+                f"Wrong shape of {meas_pattern=}, expected an ndarray; shape ({n_exc}, n_meas_per_exc, 2)"
             )
 
         return meas_pattern
