@@ -124,6 +124,7 @@ class Forward:
         step: int = 1,
         perm: Union[int, float, np.ndarray] = None,
         parser: Union[str, list[str]] = None,
+        **kwargs,
     ) -> FwdResult:
         """
         EIT simulation, generate forward v measurement
@@ -155,7 +156,8 @@ class Forward:
         perm = self._check_perm(perm)  # check/init permitivity
         f = self._compute_potential_distribution(ex_mat, perm)
         # boundary measurements, subtract_row-voltages on electrodes
-        diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
+        diff_op= self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
+
         return FwdResult(v=self._get_boundary_voltages(f, diff_op))
 
     def _get_boundary_voltages(self, f: np.ndarray, diff_op: np.ndarray) -> np.ndarray:
@@ -185,6 +187,7 @@ class Forward:
         perm: Union[int, float, np.ndarray] = None,
         parser: Union[str, list[str]] = None,
         normalize: bool = False,
+        **kwargs,
     ) -> np.ndarray:
         """
         Compute the Jacobian matrix
@@ -221,9 +224,8 @@ class Forward:
         """
         ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
         perm = self._check_perm(perm)  # check/init permitivity
-        f = self._compute_potential_distribution(
-            ex_mat=ex_mat, perm=perm, memory_4_jac=True
-        )
+
+        f = self._compute_potential_distribution(ex_mat, perm, memory_4_jac=True)
 
         # Build Jacobian matrix column wise (element wise)
         #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
@@ -240,8 +242,10 @@ class Forward:
 
         self._r_matrix = None  # clear memory
         self._ke = None  # clear memory
+        
 
-        diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
+        diff_op= self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
+
         jac = subtract_row(jac_i, diff_op)
         self.v0 = self._get_boundary_voltages(f, diff_op)
         jac = np.vstack(jac)
@@ -256,6 +260,7 @@ class Forward:
         step: int = 1,
         perm: Union[int, float, np.ndarray] = None,
         parser: Union[str, list[str]] = None,
+        **kwargs,
     ) -> np.ndarray:
         """
         Compute back-projection mappings (smear matrix)
@@ -275,22 +280,27 @@ class Forward:
             (see _get_perm for more details)
         parser: Union[str, list[str]], optional
             see voltage_meter for more details, by default `None`.
+        
 
         Returns
         -------
         np.ndarray
             back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
+        
+        Note
+        ----
+            To use special meas. pattern pass meas_pattern as kwargs
         """
         ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
         perm = self._check_perm(perm)  # check/init permitivity
 
-        f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        f = self._compute_potential_distribution(ex_mat, perm)
         f_el = f[:, self.el_pos]
         # build bp projection matrix
         # 1. we can either smear at the center of elements, using
         #    >> fe = np.mean(f[:, self.tri], axis=1)
         # 2. or, simply smear at the nodes using f
-        diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
+        diff_op= self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
         # set new to `False` to get smear-computation from ChabaneAmaury
         b_matrix = smear(f, f_el, diff_op, new=True)
         return np.vstack(b_matrix)
@@ -355,6 +365,63 @@ class Forward:
             .swapaxes(0, 1)
             .reshape(b.shape[0:2])
         )
+    
+
+    
+    def _build_meas_pattern(
+        self,
+        ex_mat: np.ndarray,
+        n_el: int = 16,
+        step: int = 1,
+        parser: Union[str, list[str]] = None,
+        **kwargs,
+    ) -> np.ndarray:
+        """
+
+        Parameters
+        ----------
+        ex_mat : np.ndarray
+            Nx2 array, [positive electrode, negative electrode]. ; shape (n_exc, 2)
+
+        Returns
+        -------
+        np.ndarray
+            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+        """
+        return (
+            self._build_meas_pattern(ex_mat.shape[0], **kwargs) or 
+            voltage_meter(ex_mat, n_el, step, parser)
+        )
+    
+    def _check_meas_pattern(self,n_exc: np.ndarray,meas_pattern: np.ndarray= None)->np.ndarray:
+        """
+
+        Parameters
+        ----------
+        ex_mat : np.ndarray
+            Nx2 array, [positive electrode, negative electrode]. ; shape (n_exc, 2)
+
+        Returns
+        -------
+        np.ndarray
+            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+        """
+
+        if meas_pattern is None:
+                return None
+
+        if not isinstance(meas_pattern, np.ndarray):
+            raise TypeError(
+                f"Wrong type of {meas_pattern=}, expected an ndarray;  shape (n_exc, n_meas_per_exc, 2)"
+            )
+        # test shape is something like (n_exc, x, 2)
+        if meas_pattern.ndim !=3 or meas_pattern.shape[::2] != (n_exc, 2): 
+            raise TypeError(
+                f"Wrong shape of {meas_pattern=}, expected an ndarray; shape (n_exc, n_meas_per_exc, 2)"
+            )
+
+        return meas_pattern
+    
 
     def _check_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
         """
