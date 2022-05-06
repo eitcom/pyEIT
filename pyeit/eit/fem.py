@@ -151,7 +151,7 @@ class Forward:
             Foward results comprising
                 v: np.ndarray
                     simulated boundary voltage measurements; shape(n_exc, n_el)
-                    
+
         Note
         ----
             To pass a custom measurement pattern use the kwarg meas_pattern
@@ -162,29 +162,9 @@ class Forward:
         perm = self._check_perm(perm)  # check/init permitivity
         f = self._compute_potential_distribution(ex_mat, perm)
         # boundary measurements, subtract_row-voltages on electrodes
-        diff_op= self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
+        diff_op = self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
 
         return FwdResult(v=self._get_boundary_voltages(f, diff_op))
-
-    def _get_boundary_voltages(self, f: np.ndarray, diff_op: np.ndarray) -> np.ndarray:
-        """
-        Compute boundary voltages from potential distribution
-
-        Parameters
-        ----------
-        f : np.ndarray
-            potential on nodes ; shape (n_exc, n_pts)
-        diff_op : np.ndarray
-            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
-
-        Returns
-        -------
-        np.ndarray
-            simulated boundary voltage measurements; shape(n_exc, n_el)
-        """
-        f_el = f[:, self.el_pos]
-        v = subtract_row(f_el, diff_op)
-        return np.hstack(v)
 
     def compute_jac(
         self,
@@ -251,9 +231,8 @@ class Forward:
 
         self._r_matrix = None  # clear memory
         self._ke = None  # clear memory
-        
 
-        diff_op= self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
+        diff_op = self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
 
         jac = subtract_row(jac_i, diff_op)
         self.v0 = self._get_boundary_voltages(f, diff_op)
@@ -289,13 +268,13 @@ class Forward:
             (see _get_perm for more details)
         parser: Union[str, list[str]], optional
             see voltage_meter for more details, by default `None`.
-        
+
 
         Returns
         -------
         np.ndarray
             back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
-        
+
         Note
         ----
             To pass a custom measurement pattern use the kwarg meas_pattern
@@ -311,7 +290,7 @@ class Forward:
         # 1. we can either smear at the center of elements, using
         #    >> fe = np.mean(f[:, self.tri], axis=1)
         # 2. or, simply smear at the nodes using f
-        diff_op= self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
+        diff_op = self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
         # set new to `False` to get smear-computation from ChabaneAmaury
         b_matrix = smear(f, f_el, diff_op, new=True)
         return np.vstack(b_matrix)
@@ -329,6 +308,29 @@ class Forward:
         self.ref_el = (
             val if val is not None and val not in self.el_pos else max(self.el_pos) + 1
         )
+
+    ############################################################################
+    # Intern methods
+    ############################################################################
+    def _get_boundary_voltages(self, f: np.ndarray, diff_op: np.ndarray) -> np.ndarray:
+        """
+        Compute boundary voltages from potential distribution
+
+        Parameters
+        ----------
+        f : np.ndarray
+            potential on nodes ; shape (n_exc, n_pts)
+        diff_op : np.ndarray
+            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+
+        Returns
+        -------
+        np.ndarray
+            simulated boundary voltage measurements; shape(n_exc, n_el)
+        """
+        f_el = f[:, self.el_pos]
+        v = subtract_row(f_el, diff_op)
+        return np.hstack(v)
 
     def _compute_potential_distribution(
         self, ex_mat: np.ndarray, perm: np.ndarray, memory_4_jac: bool = False
@@ -376,7 +378,7 @@ class Forward:
             .swapaxes(0, 1)
             .reshape(b.shape[0:2])
         )
-    
+
     def _build_meas_pattern(
         self,
         ex_mat: np.ndarray,
@@ -414,14 +416,15 @@ class Forward:
         -------
         np.ndarray
             measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
-        
+
         """
-        return (
-            self._build_meas_pattern(ex_mat.shape[0], **kwargs) or 
-            voltage_meter(ex_mat, n_el, step, parser)
+        return self._check_meas_pattern(ex_mat.shape[0], **kwargs) or voltage_meter(
+            ex_mat, n_el, step, parser
         )
-    
-    def _check_meas_pattern(self,n_exc: int, meas_pattern: np.ndarray= None)->np.ndarray:
+
+    def _check_meas_pattern(
+        self, n_exc: int, meas_pattern: np.ndarray = None
+    ) -> np.ndarray:
         """
         Check measurement pattern
 
@@ -437,7 +440,7 @@ class Forward:
         -------
         np.ndarray
             measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
-        
+
         Raises
         ------
         TypeError
@@ -445,20 +448,19 @@ class Forward:
         """
 
         if meas_pattern is None:
-                return None
+            return None
 
         if not isinstance(meas_pattern, np.ndarray):
             raise TypeError(
                 f"Wrong type of {meas_pattern=}, expected an ndarray;  shape ({n_exc}, n_meas_per_exc, 2)"
             )
         # test shape is something like (n_exc, :, 2)
-        if meas_pattern.ndim !=3 or meas_pattern.shape[::2] != (n_exc, 2): 
+        if meas_pattern.ndim != 3 or meas_pattern.shape[::2] != (n_exc, 2):
             raise TypeError(
                 f"Wrong shape of {meas_pattern=}, expected an ndarray; shape ({n_exc}, n_meas_per_exc, 2)"
             )
 
         return meas_pattern
-    
 
     def _check_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
         """

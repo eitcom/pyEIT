@@ -76,7 +76,7 @@ class EitBase(ABC):
 
         # build forward solver
         self.fwd = Forward(mesh, el_pos)
-        self.meas_pattern= kwargs.pop("meas_pattern", None)
+        self.meas_pattern = kwargs.pop("meas_pattern", None)
 
         # solving mesh structure
         self.mesh = mesh
