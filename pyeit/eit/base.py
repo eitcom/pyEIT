@@ -63,8 +63,11 @@ class EitBase(ABC):
 
         Notes
         -----
-        parser is required for your code to be compatible with
-        (a) simulation data set or (b) FMMU data set
+            - parser is required for your code to be compatible with
+            (a) simulation data set or (b) FMMU data set
+            - To pass a custom measurement pattern use the kwarg meas_pattern
+            pay attenteion that the meas_pattern should be an nd.array of shape
+            (n_exc, n_meas_per_exc, 2). If not TypeError will be raised.
         """
         if ex_mat is None:
             ex_mat = eit_scan_lines(len(el_pos), 8)
@@ -73,6 +76,7 @@ class EitBase(ABC):
 
         # build forward solver
         self.fwd = Forward(mesh, el_pos)
+        self.meas_pattern= kwargs.pop("meas_pattern", None)
 
         # solving mesh structure
         self.mesh = mesh
@@ -222,6 +226,7 @@ class EitBase(ABC):
             perm=perm if perm is not None else self.perm,
             parser=self.parser,
             normalize=self.jac_normalized and allow_jac_norm,
+            meas_pattern=self.meas_pattern,
         )
 
     def _compute_b_matrix(self) -> np.ndarray:
@@ -234,7 +239,11 @@ class EitBase(ABC):
             BP matrix
         """
         return self.fwd.compute_b_matrix(
-            ex_mat=self.ex_mat, step=self.step, perm=self.perm, parser=self.parser
+            ex_mat=self.ex_mat,
+            step=self.step,
+            perm=self.perm,
+            parser=self.parser,
+            meas_pattern=self.meas_pattern,
         )
 
     def _check_solver_is_ready(self) -> None:
