@@ -127,6 +127,15 @@ def edge_list(tri):
     return bars[np.array(ix)].view("i")
 
 
+def check_ccw(no2xy, el2no):
+    """
+    check whether the simplices are CCW ordered, triangles only
+    """
+    xys = no2xy[el2no]
+    a = [tri_area(xy) > 0 for xy in xys]
+    return np.all(a)
+
+
 def check_order(no2xy, el2no):
     """
     loop over all elements, calculate the Area of Elements (aoe)

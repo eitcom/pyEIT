@@ -7,6 +7,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
+from typing import Tuple, Union
+
 import numpy as np
 import scipy.linalg as la
 
@@ -16,48 +18,142 @@ from .base import EitBase
 class JAC(EitBase):
     """A sensitivity-based EIT imaging class"""
 
-    def setup(self, p=0.20, lamb=0.001, method="kotre"):
+    def setup(
+        self, p: float = 0.20, lamb: float = 0.001, method: str = "kotre"
+    ) -> None:
         """
-        JAC, Jacobian matrix based reconstruction.
+        Setup JAC solver
+
+        Jacobian matrix based reconstruction.
 
         Parameters
         ----------
-        p, lamb: float
-            JAC parameters
-        method: str
-            regularization methods
+        p : float, optional
+            JAC parameters, by default 0.20
+        lamb : float, optional
+            JAC parameters, by default 0.001
+        method : str, optional
+            regularization methods ("kotre", "lm", "dgn" ), by default "kotre"
         """
         # passing imaging parameters
         self.params = {"p": p, "lamb": lamb, "method": method}
         # pre-compute H0 for dynamical imaging
         # H = (J.T*J + R)^(-1) * J.T
-        self.H = h_matrix(self.J, p, lamb, method)
+        self.J = self._compute_jac_matrix()
+        self.H = self._compute_h(self.J, p, lamb, method)
+        self.is_ready = True
 
-    def map(self, dv):
-        """return Hv"""
-        return -np.dot(self.H, dv.transpose())
+    def _compute_h(
+        self, jac: np.ndarray, p: float, lamb: float, method: str = "kotre"
+    ) -> np.ndarray:
+        """
+        Compute self.H matrix for JAC solver
 
-    def solve_gs(self, v1, v0):
-        """solving by weighted frequency"""
+        JAC method of dynamic EIT solver:
+            H = (J.T*J + lamb*R)^(-1) * J.T
+
+        Parameters
+        ----------
+        jac : np.ndarray
+            Jacobian
+        p : float
+            regularization parameter
+        lamb : float
+            regularization parameter
+        method : str, optional
+            regularization method, ("kotre", "lm", "dgn" ), by default "kotre"
+
+        Returns
+        -------
+        np.ndarray
+            H matrix, pseudo-inverse matrix of JAC
+        """
+        j_w_j = np.dot(jac.transpose(), jac)
+        if method == "kotre":
+            # see adler-dai-lionheart-2007
+            # p=0   : noise distribute on the boundary ('dgn')
+            # p=0.5 : noise distribute on the middle
+            # p=1   : noise distribute on the center ('lm')
+            r_mat = np.diag(np.diag(j_w_j)) ** p
+        elif method == "lm":
+            # Marquardt–Levenberg, 'lm' for short
+            # or can be called NOSER, DLS
+            r_mat = np.diag(np.diag(j_w_j))
+        else:
+            # Damped Gauss Newton, 'dgn' for short
+            r_mat = np.eye(jac.shape[1])
+
+        # build H
+        return np.dot(la.inv(j_w_j + lamb * r_mat), jac.transpose())
+
+    # --------------------------------------------------------------------------
+    # Special method for JAC
+    # --------------------------------------------------------------------------
+
+    def solve_gs(self, v1: np.ndarray, v0: np.ndarray) -> np.ndarray:
+        """
+        Solving by weighted frequency
+
+        Parameters
+        ----------
+        v1: np.ndarray
+            current frame
+        v0: np.ndarray
+            referenced frame
+
+        Raises
+        ------
+        SolverNotReadyError
+            raised if solver not ready (see self._check_solver_is_ready())
+
+        Returns
+        -------
+        np.ndarray
+            complex-valued np.ndarray, changes of conductivities
+        """
+        self._check_solver_is_ready()
         a = np.dot(v1, v0) / np.dot(v0, v0)
         dv = v1 - a * v0
-        ds = -np.dot(self.H, dv.transpose())
-        # return average epsilon on element
-        return ds
+        # return ds average epsilon on element
+        return -np.dot(self.H, dv.transpose())
 
-    def jt_solve(self, v1, v0, normalize=True):
+    def jt_solve(
+        self, v1: np.ndarray, v0: np.ndarray, normalize: bool = True
+    ) -> np.ndarray:
         """
         a 'naive' back projection using the transpose of Jac.
         This scheme is the one published by kotre (1989):
 
-        [1] Kotre, C. J. (1989).
-            A sensitivity coefficient method for the reconstruction of
-            electrical impedance tomograms.
-            Clinical Physics and Physiological Measurement,
-            10(3), 275–281. doi:10.1088/0143-0815/10/3/008
+        Parameters
+        ----------
+        v1: np.ndarray
+            current frame
+        v0: np.ndarray
+            referenced frame
+        normalize : bool, optional
+            flag to log-normalize the current frame difference dv, by default
+            True. The input (dv) and output (ds) is log-normalized.
 
-        The input (dv) and output (ds) is log-normalized.
+        Raises
+        ------
+        SolverNotReadyError
+            raised if solver not ready (see self._check_solver_is_ready())
+
+        Returns
+        -------
+        np.ndarray
+            complex-valued np.ndarray, changes of conductivities
+
+        Notes
+        -----
+            [1] Kotre, C. J. (1989).
+                A sensitivity coefficient method for the reconstruction of
+                electrical impedance tomograms.
+                Clinical Physics and Physiological Measurement,
+                10(3), 275–281. doi:10.1088/0143-0815/10/3/008
+
         """
+        self._check_solver_is_ready()
         if normalize:
             dv = np.log(np.abs(v1) / np.abs(v0)) * np.sign(v0.real)
         else:
@@ -68,45 +164,56 @@ class JAC(EitBase):
 
     def gn(
         self,
-        v,
-        x0=None,
-        maxiter=1,
-        gtol=1e-4,
-        p=None,
-        lamb=None,
-        lamb_decay=1.0,
-        lamb_min=0,
-        method="kotre",
-        verbose=False,
+        v: np.ndarray,
+        x0: Union[int, float, np.ndarray] = None,
+        maxiter: int = 1,
+        gtol: float = 1e-4,
+        p: float = None,
+        lamb: float = None,
+        lamb_decay: float = 1.0,
+        lamb_min: float = 0.0,
+        method: str = "kotre",
+        verbose: bool = False,
         **kwargs,
-    ):
+    ) -> np.ndarray:
         """
         Gaussian Newton Static Solver
         You can use a different p, lamb other than the default ones in setup
 
         Parameters
         ----------
-        v: NDArray
+        v : np.ndarray
             boundary measurement
-        x0: NDArray, optional
-            initial guess
-        maxiter: int, optional
-            number of maximum iterations
-        p, lamb: float
-            JAC parameters (can be overridden)
-        lamb_decay: float
-            decay of lamb0, i.e., lamb0 = lamb0 * lamb_delay of each iteration
-        lamb_min: float
-            minimal value of lamb
-        method: str, optional
-            'kotre' or 'lm'
-        verbose: bool, optional
-            print debug information
+        x0 : Union[int, float, np.ndarray], optional
+            initial permittivity guess, by default None
+            (see Foward._get_perm for more details, in fem.py)
+        maxiter : int, optional
+            number of maximum iterations, by default 1
+        gtol : float, optional
+            convergence threshold, by default 1e-4
+        p : float, optional
+            JAC parameters (can be overridden), by default None
+        lamb : float, optional
+            JAC parameters (can be overridden), by default None
+        lamb_decay : float, optional
+            decay of lamb0, i.e., lamb0 = lamb0 * lamb_delay of each iteration,
+            by default 1.0
+        lamb_min : float, optional
+            minimal value of lamb, by default 0.0
+        method : str, optional
+            regularization methods ("kotre", "lm", "dgn" ), by default "kotre"
+        verbose : bool, optional
+            verbose flag, by default False
+
+        Raises
+        ------
+        SolverNotReadyError
+            raised if solver not ready (see self._check_solver_is_ready())
 
         Returns
         -------
-        sigma: NDArray
-            Complex-valued conductivities
+        np.ndarray
+            Complex-valued conductivities, sigma
 
         Note
         ----
@@ -116,6 +223,7 @@ class JAC(EitBase):
             R = diag(J^TJ)**p
             r0 (residual) = real_measure - forward_v
         """
+        self._check_solver_is_ready()
         if x0 is None:
             x0 = self.perm
         if p is None:
@@ -130,16 +238,13 @@ class JAC(EitBase):
 
         for i in range(maxiter):
 
-            # forward solver
-            fs = self.fwd.solve_eit(
-                self.ex_mat, step=self.step, perm=x0, parser=self.parser
-            )
+            # forward solver,
+            jac, v0 = self._gn_single_jac_v0(x0)
             # Residual
-            r0 = v - fs.v
-            jac = fs.jac
+            r0 = v - v0
 
             # Damped Gaussian-Newton
-            h_mat = h_matrix(jac, p, lamb, method)
+            h_mat = self._compute_h(jac, p, lamb, method)
 
             # update
             d_k = np.dot(h_mat, r0)
@@ -156,45 +261,83 @@ class JAC(EitBase):
             # update regularization parameter
             # lambda can be given in user defined decreasing lists
             lamb *= lamb_decay
-            if lamb < lamb_min:
-                lamb = lamb_min
-
+            lamb = max(lamb, lamb_min)
         return x0
 
-    def project(self, ds):
-        """project ds using spatial difference filter (deprecated)
+    def _gn_single_jac_v0(
+        self, perm0: Union[int, float, np.ndarray]
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Compute Jacobian and first meas. extimation for gn single step
 
         Parameters
         ----------
-        ds: NDArray
+        x0 : Union[int, float, np.ndarray]
+            previous permittivity guess, by default None
+            (see Foward._get_perm for more details, in fem.py)
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray]
+            _description_
+        """
+
+        jac = self._compute_jac_matrix(perm=perm0, allow_jac_norm=False)
+        v0 = self.fwd.v0
+        return jac, v0
+
+    def project(self, ds: np.ndarray) -> np.ndarray:
+        """
+        Project ds using spatial difference filter (deprecated)
+
+        Parameters
+        ----------
+        ds : np.ndarray
             delta sigma (conductivities)
 
         Returns
         -------
-        NDArray
+        np.ndarray
+            _description_
+        """
+        """project ds using spatial difference filter (deprecated)
+
+        Parameters
+        ----------
+        ds: np.ndarray
+            delta sigma (conductivities)
+
+        Returns
+        -------
+        np.ndarray
         """
         d_mat = sar(self.tri)
         return np.dot(d_mat, ds)
 
 
-def h_matrix(jac, p, lamb, method="kotre"):
+def h_matrix(
+    jac: np.ndarray, p: float, lamb: float, method: str = "kotre"
+) -> np.ndarray:
     """
+    (NOT USED in JAC solver)
     JAC method of dynamic EIT solver:
         H = (J.T*J + lamb*R)^(-1) * J.T
 
     Parameters
     ----------
-    jac: NDArray
+    jac : np.ndarray
         Jacobian
-    p, lamb: float
-        regularization parameters
-    method: str, optional
-        regularization method
+    p : float
+        regularization parameter
+    lamb : float
+        regularization parameter
+    method : str, optional
+        regularization method, ("kotre", "lm", "dgn" ), by default "kotre"
 
     Returns
     -------
-    H: NDArray
-        pseudo-inverse matrix of JAC
+    np.ndarray
+        H matrix, pseudo-inverse matrix of JAC
     """
     j_w_j = np.dot(jac.transpose(), jac)
     if method == "kotre":
@@ -212,23 +355,22 @@ def h_matrix(jac, p, lamb, method="kotre"):
         r_mat = np.eye(jac.shape[1])
 
     # build H
-    h_mat = np.dot(la.inv(j_w_j + lamb * r_mat), jac.transpose())
-    return h_mat
+    return np.dot(la.inv(j_w_j + lamb * r_mat), jac.transpose())
 
 
-def sar(el2no):
+def sar(el2no: np.ndarray) -> np.ndarray:
     """
-    extract spatial difference matrix on the neighbors of each element
+    Extract spatial difference matrix on the neighbors of each element
     in 2D fem using triangular mesh.
 
     Parameters
     ----------
-    el2no: NDArray
+    el2no : np.ndarray
         triangle structures
 
     Returns
     -------
-    D: NDArray
+    np.ndarray
         SAR matrix
     """
     ne = el2no.shape[0]

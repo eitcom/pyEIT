@@ -37,7 +37,7 @@ ex_line = ex_mat[0].ravel()
 
 # calculate simulated data using FEM
 fwd = Forward(mesh_obj, el_pos)
-f, _ = fwd.solve(ex_line, perm=perm)
+f = fwd.solve(ex_line, perm=perm)
 f = np.real(f)
 
 """ 2. plot """

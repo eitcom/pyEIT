@@ -13,21 +13,23 @@ from .jac import JAC
 class SVD(JAC):
     """implementing a sensitivity-based EIT imaging class"""
 
-    def setup(self, n=25, rcond=1e-2, method="svd"):
+    def setup(self, n: int = 25, rcond: float = 1e-2, method: str = "svd") -> None:
         """
-        SVD, singular value decomposition based reconstruction.
+        Setup of SVD solver, singular value decomposition based reconstruction.
 
         Parameters
         ----------
-        n: int
-            largest n eigenvalues to be kept
-        rcond: double
-            r-condition number of pinv
-        method: string
+        n : int, optional
+            largest n eigenvalues to be kept, by default 25
+        rcond : float, optional
+            r-condition number of pinv, by default 1e-2
+        method : str, optional
+            reconstruction method, by default "svd"
             'svd': SVD truncation,
             'pinv': pseudo inverse
         """
         # correct n_ord
+        self.J = self._compute_jac_matrix()
         nm, ne = self.J.shape
         n_ord = np.min([nm, ne, n])
 
@@ -35,7 +37,10 @@ class SVD(JAC):
         self.params = {"n": n_ord, "rcond": rcond, "method": method}
 
         # pre-compute H0 for dynamical imaging
-        if method == "svd":
+        if method == "pinv":
+            self.H = np.linalg.pinv(self.J, rcond=rcond)
+
+        elif method == "svd":
             JtJ = np.dot(self.J.T, self.J)
 
             # using svd
@@ -52,5 +57,16 @@ class SVD(JAC):
             # pseudo inverse
             JtJ_inv = np.dot(U, np.dot(np.diag(s**-1), U.T))
             self.H = np.dot(JtJ_inv, self.J.T)
-        elif method == "pinv":
-            self.H = np.linalg.pinv(self.J, rcond=rcond)
+        self.is_ready = True
+
+    def gn(self):
+        """deactivate gn"""
+        raise NotImplementedError()
+
+    def solve_gs(self):
+        """deactivate solve_gs"""
+        raise NotImplementedError()
+
+    def jt_solve(self):
+        """deactivate jt_solve"""
+        raise NotImplementedError()

@@ -11,27 +11,22 @@ from typing import Union
 import numpy as np
 import numpy.linalg as la
 from scipy import sparse
+import scipy.linalg
 
 from .utils import eit_scan_lines
 
 
 @dataclass
 class FwdResult:
-    """Summarize the PDE results from solving the fwd problem
+    """Summarize the results from solving the eit fwd problem
 
     Attributes
     ----------
-    jac: np.ndarray
-        number of measures x n_E complex array, the Jacobian; shape(n_exc, n_el, n_tri)
     v: np.ndarray
         number of measures x 1 array, simulated boundary measures; shape(n_exc, n_el)
-    b_matrix: np.ndarray
-        back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
     """
 
     v: np.ndarray  # number of measures x 1 array, simulated boundary measures
-    jac: np.ndarray  # number of measures x n_E complex array, the Jacobian
-    b_matrix: np.ndarray  # back-projection mappings (smear matrix)
 
 
 class Forward:
@@ -39,6 +34,8 @@ class Forward:
 
     def __init__(self, mesh: dict[str, np.ndarray], el_pos: np.ndarray) -> None:
         """
+        FEM forward solver
+
         A good FEM forward solver should only depend on
         mesh structure and the position of electrodes
 
@@ -64,97 +61,253 @@ class Forward:
         self.el_pos = el_pos
 
         # reference electrodes [ref node should not be on electrodes]
-        ref_el = 0
-        while ref_el in self.el_pos:
-            ref_el += 1
-        self.ref = ref_el
+        self.set_ref_el()
 
         # infer dimensions from mesh
         self.n_pts, self.n_dim = self.pts.shape
         self.n_tri, self.n_vertices = self.tri.shape
         self.n_el = el_pos.size
 
-    def solve_eit(
-        self,
-        ex_mat: np.ndarray = None,
-        step: int = 1,
-        perm: np.ndarray = None,
-        parser: Union[str, list[str]] = None,
-        **kwargs,
-    ) -> FwdResult:
-        """
-        EIT simulation, generate perturbation matrix and forward v
-
-        Parameters
-        ----------
-        ex_mat: np.ndarray
-            numLines x n_el array, stimulation matrix
-        step: int
-            the configuration of measurement electrodes (default: apposition)
-        perm: np.ndarray
-            Mx1 array, initial x0. must be the same size with self.tri_perm
-        parser: str
-            see voltage_meter for more details.
-
-        Returns
-        -------
-        fwd_results: FwdResult
-            PDE results from solving the fwd problem (see `FwdResult`)
-
-        Note
-        ----
-        Single PDE results are:
-        - fwd_results.jac: np.ndarray
-            number of measures x n_E complex array, the Jacobian
-        - fwd_results.v: np.ndarray
-            number of measures x 1 array, simulated boundary measures
-        - fwd_results.b_matrix: np.ndarray
-            back-projection mappings (smear matrix)
-
-        (see `FwdResult` for more details)
-
-
-        """
-        # initialize/extract the scan lines (default: apposition)
-        if ex_mat is None:
-            ex_mat = eit_scan_lines(16, 8)
-
-        # initialize the permittivity on element
-        if perm is None:
-            perm0 = self.tri_perm
-        elif np.isscalar(perm):
-            perm0 = np.ones(self.n_tri, dtype=np.float)
-        else:
-            assert perm.shape == (self.n_tri,)
-            perm0 = perm
-
-        f, jac_i = self.solve(ex_mat, perm0)
-        f_el = f[:, self.el_pos]
-        # boundary measurements, subtract_row-voltages on electrodes
-        diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
-        v = subtract_row(f_el, diff_op)
-        jac = subtract_row(jac_i, diff_op)
-        # build bp projection matrix
-        # 1. we can either smear at the center of elements, using
-        #    >> fe = np.mean(f[:, self.tri], axis=1)
-        # 2. or, simply smear at the nodes using f
-        b_matrix = smear(
-            f, f_el, diff_op, new=True
-        )  # set new to `False` to get computation from ChabaneAmaury
-        # update output, now you can call p.jac, p.v, p.b_matrix
-        return FwdResult(
-            jac=np.vstack(jac), v=np.hstack(v), b_matrix=np.vstack(b_matrix)
-        )
+        # temporary memory attributes for computation (e.g. jac)
+        self._r_matrix = None
+        self._ke = None
 
     def solve(
-        self, ex_mat: np.ndarray, perm: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self,
+        ex_mat: np.ndarray = None,
+        perm: np.ndarray = None,
+    ) -> np.ndarray:
         """
         Calculate and compute the potential distribution (complex-valued)
         corresponding to the permittivity distribution `perm ` for all
         excitations contained in the excitation pattern `ex_mat`
 
-        The calculation of Jacobian can be skipped.
+        Currently, only simple electrode model is supported,
+        CEM (complete electrode model) is under development.
+
+        Parameters
+        ----------
+        ex_mat : np.ndarray, optional
+            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
+            (see _get_ex_mat for more details)
+        perm : Union[int, float, np.ndarray], optional
+            permittivity on elements ; shape (n_tri,), by default `None`.
+            Must be the same size with self.tri_perm
+            If `None`, `self.tri_perm` will be used
+            If perm is int or float, uniform permittivity on elements will be used
+            (see _get_perm for more details)
+
+        Returns
+        -------
+        np.ndarray
+            potential on nodes ; shape (n_exc, n_pts)
+
+        Notes
+        -------
+        For compatibility with some scripts in /examples a single excitation
+        line can be passed instead of the whole excitation pattern `ex_mat`
+        (e.g. [0,7] or np.array([0,7]) or ex_mat[0].ravel). In that case a
+        simplified version of `f` with shape (n_pts,)
+        """
+        f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        # case ex_line has been passed instead of ex_mat
+        # we return simplified version of f with shape (n_pts,)
+        if f.shape[0] == 1:
+            return f[0, :].ravel()
+        return f
+
+    def solve_eit(
+        self,
+        ex_mat: np.ndarray = None,
+        step: int = 1,
+        perm: Union[int, float, np.ndarray] = None,
+        parser: Union[str, list[str]] = None,
+    ) -> FwdResult:
+        """
+        EIT simulation, generate forward v measurement
+
+        Parameters
+        ----------
+        ex_mat : np.ndarray, optional
+            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
+            (see _get_ex_mat for more details)
+        step: int, optional
+            the configuration of measurement electrodes, by default 1 (adjacent).
+        perm : Union[int, float, np.ndarray], optional
+            permittivity on elements ; shape (n_tri,), by default `None`.
+            Must be the same size with self.tri_perm
+            If `None`, `self.tri_perm` will be used
+            If perm is int or float, uniform permittivity on elements will be used
+            (see _get_perm for more details)
+        parser: Union[str, list[str]], optional
+            see voltage_meter for more details, by default `None`.
+
+        Returns
+        -------
+        FwdResult
+            Foward results comprising
+                v: np.ndarray
+                    simulated boundary voltage measurements; shape(n_exc, n_el)
+        """
+        f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        # boundary measurements, subtract_row-voltages on electrodes
+        diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
+        return FwdResult(v=self._get_boundary_voltages(f, diff_op))
+
+    def _get_boundary_voltages(self, f: np.ndarray, diff_op: np.ndarray) -> np.ndarray:
+        """
+        Compute boundary voltages from potential distribution
+
+        Parameters
+        ----------
+        f : np.ndarray
+            potential on nodes ; shape (n_exc, n_pts)
+        diff_op : np.ndarray
+            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+
+        Returns
+        -------
+        np.ndarray
+            simulated boundary voltage measurements; shape(n_exc, n_el)
+        """
+        f_el = f[:, self.el_pos]
+        v = subtract_row(f_el, diff_op)
+        return np.hstack(v)
+
+    def compute_jac(
+        self,
+        ex_mat: np.ndarray = None,
+        step: int = 1,
+        perm: Union[int, float, np.ndarray] = None,
+        parser: Union[str, list[str]] = None,
+        normalize: bool = False,
+    ) -> np.ndarray:
+        """
+        Compute the Jacobian matrix
+
+        Parameters
+        ----------
+        ex_mat : np.ndarray, optional
+            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
+            (see _get_ex_mat for more details)
+        step: int, optional
+            the configuration of measurement electrodes, by default 1 (adjacent).
+        perm : Union[int, float, np.ndarray], optional
+            permittivity on elements ; shape (n_tri,), by default `None`.
+            Must be the same size with self.tri_perm
+            If `None`, `self.tri_perm` will be used
+            If perm is int or float, uniform permittivity on elements will be used
+            (see _get_perm for more details)
+        parser: Union[str, list[str]], optional
+            see voltage_meter for more details, by default `None`.
+        normalize : bool, optional
+            flag for Jacobian normalization, by default False.
+            If True the Jacobian is normalized
+
+        Returns
+        -------
+        np.ndarray
+            Jacobian matrix
+
+        Notes
+        -----
+            - initial boundary voltage meas. extimation v0 can be accessed
+            after computation through call fwd.v0
+
+        """
+        f = self._compute_potential_distribution(
+            ex_mat=ex_mat, perm=perm, memory_4_jac=True
+        )
+
+        # Build Jacobian matrix column wise (element wise)
+        #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
+        jac_i = np.zeros((ex_mat.shape[0], self.n_el, self.n_tri), dtype=perm.dtype)
+
+        r_el = self._r_matrix[self.el_pos]
+
+        def jac_init(jac, k):
+            for (i, e) in enumerate(self.tri):
+                jac[:, i] = np.dot(np.dot(r_el[:, e], self._ke[i]), f[k, e])
+            return jac
+
+        jac_i = np.array(list(map(jac_init, jac_i, np.arange(ex_mat.shape[0]))))
+
+        self._r_matrix = None  # clear memory
+        self._ke = None  # clear memory
+
+        diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
+        jac = subtract_row(jac_i, diff_op)
+        self.v0 = self._get_boundary_voltages(f, diff_op)
+        jac = np.vstack(jac)
+
+        # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])
+
+        return jac / np.abs(self.v0[:, None]) if normalize else jac
+
+    def compute_b_matrix(
+        self,
+        ex_mat: np.ndarray = None,
+        step: int = 1,
+        perm: Union[int, float, np.ndarray] = None,
+        parser: Union[str, list[str]] = None,
+    ) -> np.ndarray:
+        """
+        Compute back-projection mappings (smear matrix)
+
+        Parameters
+        ----------
+        ex_mat : np.ndarray, optional
+            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
+            (see _get_ex_mat for more details)
+        step: int, optional
+            the configuration of measurement electrodes, by default 1 (adjacent).
+        perm : Union[int, float, np.ndarray], optional
+            permittivity on elements ; shape (n_tri,), by default `None`.
+            Must be the same size with self.tri_perm
+            If `None`, `self.tri_perm` will be used
+            If perm is int or float, uniform permittivity on elements will be used
+            (see _get_perm for more details)
+        parser: Union[str, list[str]], optional
+            see voltage_meter for more details, by default `None`.
+
+        Returns
+        -------
+        np.ndarray
+            back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
+        """
+        f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        f_el = f[:, self.el_pos]
+        # build bp projection matrix
+        # 1. we can either smear at the center of elements, using
+        #    >> fe = np.mean(f[:, self.tri], axis=1)
+        # 2. or, simply smear at the nodes using f
+        diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
+        # set new to `False` to get smear-computation from ChabaneAmaury
+        b_matrix = smear(f, f_el, diff_op, new=True)
+        return np.vstack(b_matrix)
+
+    def set_ref_el(self, val: int = None) -> None:
+        """
+        Set reference electrode node
+
+        Parameters
+        ----------
+        val : int, optional
+            node number of reference electrode, by default None
+
+        """
+        self.ref_el = (
+            val if val is not None and val not in self.el_pos else max(self.el_pos) + 1
+        )
+
+    def _compute_potential_distribution(
+        self, ex_mat: np.ndarray, perm: np.ndarray, memory_4_jac: bool = False
+    ) -> np.ndarray:
+        """
+        Calculate and compute the potential distribution (complex-valued)
+        corresponding to the permittivity distribution `perm ` for all
+        excitations contained in the excitation pattern `ex_mat`
+
         Currently, only simple electrode model is supported,
         CEM (complete electrode model) is under development.
 
@@ -163,69 +316,118 @@ class Forward:
         ex_mat: np.ndarray
             stimulation/excitation matrix ; shape (n_exc, 2)
         perm: np.ndarray
-            permittivity on elements (initial) ; shape (n_tri,)
+            permittivity on elements ; shape (n_tri,)
+        memory_4_jac : bool, optional
+            flag to memory r_matrix to self._r_matrix and ke to self._ke,
+            by default False.
 
         Returns
         -------
-        f: np.ndarray
+        np.ndarray
             potential on nodes ; shape (n_exc, n_pts)
-        jac: np.ndarray
-            Jacobian ; shape (n_exc, n_el, n_tri)
 
-        Notes
-        -------
-        For compatibility with some scripts in /examples a single excitation
-        line can be passed instead of the whole excitation pattern `ex_mat`
-        (e.g. [0,7] or np.array([0,7]) or ex_mat[0].ravel). In that case a
-        simplified version of `f` with shape (n_pts,) and of
-        `jac` with shape (n_el, n_tri) are returned
         """
-        # case ex_line has been passed instead of ex_mat
-        if isinstance(ex_mat, list) and len(ex_mat) == 2:
-            ex_mat = np.array([ex_mat]).reshape((1, 2))  # build a 2D array
-        elif isinstance(ex_mat, np.ndarray) and ex_mat.ndim == 1:
-            ex_mat = ex_mat.reshape((-1, 2))
-        elif (
-            isinstance(ex_mat, np.ndarray) and ex_mat.ndim == 2 and ex_mat.shape[1] == 2
-        ):
-            pass  # correct value
-        else:
-            raise TypeError(
-                f"Wrong value of {ex_mat=} expected an ndarray ; shape (n_exc, 2)"
-            )
+        ex_mat = self._get_ex_mat(ex_mat)  # check/init stimulation
+        perm = self._get_perm(perm)  # check/init permitivity
 
         # 1. calculate local stiffness matrix (on each element)
         ke = calculate_ke(self.pts, self.tri)
-
         # 2. assemble to global K
-        kg = assemble(ke, self.tri, perm, self.n_pts, ref=self.ref)
+        kg = assemble(ke, self.tri, perm, self.n_pts, ref=self.ref_el)
 
-        # 3. calculate electrode impedance matrix R = K^{-1}
-        r_matrix = la.inv(kg)
-        r_el = r_matrix[self.el_pos]
+        if memory_4_jac:
+            # save
+            # 3. calculate electrode impedance matrix R = K^{-1}
+            self._r_matrix = la.inv(kg)
+            self._ke = ke
 
         # 4. solving nodes potential using boundary conditions
         b = self._natural_boundary(ex_mat)
 
-        f = np.dot(r_matrix, b[:, None]).T.reshape(b.shape[:-1])
+        return (
+            scipy.linalg.solve(kg, b.swapaxes(0, 1))
+            .swapaxes(0, 1)
+            .reshape(b.shape[0:2])
+        )
 
-        # 5. build Jacobian matrix column wise (element wise)
-        #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
-        jac = np.zeros((ex_mat.shape[0], self.n_el, self.n_tri), dtype=perm.dtype)
+    def _get_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
+        """
+        Check/init the permittivity on element
 
-        def jac_init(jac, k):
-            for (i, e) in enumerate(self.tri):
-                jac[:, i] = np.dot(np.dot(r_el[:, e], ke[i]), f[k, e])
-            return jac
+        Parameters
+        ----------
+        perm : Union[int, float, np.ndarray], optional
+            permittivity on elements ; shape (n_tri,), by default `None`.
+            Must be the same size with self.tri_perm
+            If `None`, `self.tri_perm` will be used
+            If perm is int or float, uniform permittivity on elements will be used
 
-        jac = np.array(list(map(jac_init, jac, np.arange(ex_mat.shape[0]))))
+        Returns
+        -------
+        np.ndarray
+            permittivity on elements ; shape (n_tri,)
 
-        # case ex_line has been passed instead of ex_mat
-        # we return simplified version of f with shape (n_pts,) and jac with shape (ne, n_tri)
-        if ex_mat.shape[0] == 1:
-            return f[0, :].ravel(), jac[0, :, :]
+        Raises
+        ------
+        TypeError
+            raised if perm is not ndarray and of shape (n_tri,)
+        """
 
-        return f, jac
+        if perm is None:
+            return self.tri_perm
+        elif isinstance(perm, (int, float)):
+            return np.ones(self.n_tri, dtype=float) * perm
+
+        if not isinstance(perm, np.ndarray) or perm.shape != (self.n_tri,):
+            raise TypeError(
+                f"Wrong type/shape of {perm=}, expected an ndarray; shape (n_tri, )"
+            )
+        return perm
+
+    def _get_ex_mat(self, ex_mat: np.ndarray = None) -> np.ndarray:
+        """
+        Check/init stimulation
+
+        Parameters
+        ----------
+        ex_mat : np.ndarray, optional
+            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
+            If `None` initialize stimulation matrix for 16 electrode and
+            apposition mode (see function `eit_scan_lines(16, 8)`)
+            If single stimulation (ex_line) is passed only a list of length 2
+            and np.ndarray of size 2 will be treated.
+
+        Returns
+        -------
+        np.ndarray
+            stimulation matrix
+
+        Raises
+        ------
+        TypeError
+            Only accept, `None`, list of length 2, np.ndarray of size 2,
+            or np.ndarray of shape (n_exc, 2)
+        """
+        if ex_mat is None:
+            # initialize the scan lines for 16 electrodes (default: apposition)
+            ex_mat = eit_scan_lines(16, 8)
+        elif isinstance(ex_mat, list) and len(ex_mat) == 2:
+            # case ex_line has been passed instead of ex_mat
+            ex_mat = np.array([ex_mat]).reshape((1, 2))  # build a 2D array
+        elif isinstance(ex_mat, np.ndarray) and ex_mat.size == 2:
+            #     case ex_line np.ndarray has been passed instead of ex_mat
+            ex_mat = ex_mat.reshape((-1, 2))
+
+        if (
+            not isinstance(ex_mat, np.ndarray)
+            or ex_mat.ndim != 2
+            or ex_mat.shape[1] != 2
+        ):
+            raise TypeError(
+                f"Wrong shape of {ex_mat=} expected an ndarray ; shape (n_exc, 2)"
+            )
+
+        return ex_mat
 
     def _natural_boundary(self, ex_mat: np.ndarray) -> np.ndarray:
         """
@@ -241,7 +443,7 @@ class Forward:
 
         Returns
         ----------
-        b: np.ndarray
+        np.ndarray
             Global boundary condition on pts ; shape (n_exc, n_pts, 1)
         """
         drv_a_global = self.el_pos[ex_mat[:, 0]]
@@ -258,6 +460,8 @@ class Forward:
 def _smear(f: np.ndarray, fb: np.ndarray, pairs: np.ndarray) -> np.ndarray:
     """
     Build smear matrix B for bp for one exitation
+
+    used for the smear matrix computation by @ChabaneAmaury
 
     Parameters
     ----------
@@ -293,11 +497,14 @@ def smear(
         potential on adjacent electrodes; shape (n_exc, n_el)
     meas_pattern: np.ndarray
         electrodes numbering pairs; shape (n_exc, n_meas, 2)
+    new : bool, optional
+        flag to use new matrices based computation, by default False.
+        If `False` to smear-computation from ChabaneAmaury is used
 
     Returns
     -------
-    B: np.ndarray
-        back-projection matrix; shape (n_exc, n_meas, n_pts), dtype= bool
+    np.ndarray
+        back-projection (smear) matrix; shape (n_exc, n_meas, n_pts), dtype= bool
     """
     if new:
         # new implementation not much faster! :(
@@ -341,8 +548,8 @@ def subtract_row(v: np.ndarray, meas_pattern: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    v_diff: np.ndarray
-        difference measurements
+    np.ndarray
+        difference measurements v_diff
     """
 
     if v.shape[:1] != meas_pattern.shape[:1]:
@@ -381,13 +588,14 @@ def voltage_meter(
 
     Parameters
     ----------
-    ex_mat: np.ndarray
+    ex_mat : np.ndarray
         Nx2 array, [positive electrode, negative electrode]. ; shape (n_exc, 2)
-    n_el: int
-        number of total electrodes.
-    step: int
-        measurement method (two adjacent electrodes are used for measuring).
-    parser: str | list[str]
+    n_el : int, optional
+        number of total electrodes, by default 16
+    step : int, optional
+        measurement method (two adjacent electrodes are used for measuring), by default 1 (adjacent)
+    parser : Union[str, list[str]], optional
+        parsing the format of each frame in measurement/file, by default None
         if parser contains 'fmmu', or 'rotate_meas' then data are trimmed,
         boundary voltage measurements are re-indexed and rotated,
         start from the positive stimulus electrode start index 'A'.
@@ -399,8 +607,8 @@ def voltage_meter(
 
     Returns
     -------
-    meas_pattern : np.ndarray
-        subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+    np.ndarray
+        measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
     """
     # local node
     ex_mat = ex_mat.astype(int)
@@ -445,12 +653,12 @@ def assemble(
         n_tri x 1 conductivities on elements
     n_pts: int
         number of nodes
-    ref: int
-        reference electrode
+    ref: int, optional
+        reference electrode, by default 0
 
     Returns
     -------
-    K: np.ndarray
+    np.ndarray
         NxN array of complex stiffness matrix
 
     Notes
@@ -506,7 +714,7 @@ def calculate_ke(pts: np.ndarray, tri: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    ke_array: np.ndarray
+    np.ndarray
         n_tri x (n_dim x n_dim) 3d matrix
     """
     n_tri, n_vertices = tri.shape
@@ -536,7 +744,7 @@ def calculate_ke(pts: np.ndarray, tri: np.ndarray) -> np.ndarray:
 
 def _k_triangle(xy: np.ndarray) -> np.ndarray:
     """
-    given a point-matrix of an element, solving for Kij analytically
+    Given a point-matrix of an element, solving for Kij analytically
     using barycentric coordinates (simplex coordinates)
 
     Parameters
@@ -546,7 +754,7 @@ def _k_triangle(xy: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    ke_matrix: np.ndarray
+    np.ndarray
         local stiffness matrix
     """
     # edges (vector) of triangles
@@ -579,7 +787,7 @@ def _k_tetrahedron(xy: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    ke_matrix: np.ndarray
+    np.ndarray
         local stiffness matrix
 
     Notes

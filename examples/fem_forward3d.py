@@ -40,7 +40,7 @@ tri_perm = mesh_new["perm"]
 node_perm = sim2pts(pts, tri, np.real(tri_perm))
 
 # solving once using fem
-f, _ = fwd.solve(ex_line, perm=tri_perm)
+f = fwd.solve(ex_line, perm=tri_perm)
 f = np.real(f)
 
 # mplot.tetplot(p, t, edge_color=(0.2, 0.2, 1.0, 1.0), alpha=0.01)
