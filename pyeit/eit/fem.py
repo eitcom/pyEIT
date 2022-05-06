@@ -109,8 +109,8 @@ class Forward:
         (e.g. [0,7] or np.array([0,7]) or ex_mat[0].ravel). In that case a
         simplified version of `f` with shape (n_pts,)
         """
-        ex_mat = self._get_ex_mat(ex_mat)  # check/init stimulation
-        perm = self._get_perm(perm)  # check/init permitivity
+        ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
+        perm = self._check_perm(perm)  # check/init permitivity
         f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
         # case ex_line has been passed instead of ex_mat
         # we return simplified version of f with shape (n_pts,)
@@ -151,9 +151,9 @@ class Forward:
                 v: np.ndarray
                     simulated boundary voltage measurements; shape(n_exc, n_el)
         """
-        ex_mat = self._get_ex_mat(ex_mat)  # check/init stimulation
-        perm = self._get_perm(perm)  # check/init permitivity
-        f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
+        perm = self._check_perm(perm)  # check/init permitivity
+        f = self._compute_potential_distribution(ex_mat, perm)
         # boundary measurements, subtract_row-voltages on electrodes
         diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
         return FwdResult(v=self._get_boundary_voltages(f, diff_op))
@@ -219,8 +219,8 @@ class Forward:
             after computation through call fwd.v0
 
         """
-        ex_mat = self._get_ex_mat(ex_mat)  # check/init stimulation
-        perm = self._get_perm(perm)  # check/init permitivity
+        ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
+        perm = self._check_perm(perm)  # check/init permitivity
         f = self._compute_potential_distribution(
             ex_mat=ex_mat, perm=perm, memory_4_jac=True
         )
@@ -281,8 +281,8 @@ class Forward:
         np.ndarray
             back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
         """
-        ex_mat = self._get_ex_mat(ex_mat)  # check/init stimulation
-        perm = self._get_perm(perm)  # check/init permitivity
+        ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
+        perm = self._check_perm(perm)  # check/init permitivity
 
         f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
         f_el = f[:, self.el_pos]
@@ -356,7 +356,7 @@ class Forward:
             .reshape(b.shape[0:2])
         )
 
-    def _get_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
+    def _check_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
         """
         Check/init the permittivity on element
 
@@ -390,7 +390,7 @@ class Forward:
             )
         return perm
 
-    def _get_ex_mat(self, ex_mat: np.ndarray = None) -> np.ndarray:
+    def _check_ex_mat(self, ex_mat: np.ndarray = None) -> np.ndarray:
         """
         Check/init stimulation
 
