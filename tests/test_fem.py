@@ -168,6 +168,10 @@ class TestFem(unittest.TestCase):
         res= fwd.solve_eit()
         self.assertTrue(isinstance(res.v, np.ndarray))
 
+        # test passing meas_pattern
+        res= fwd.solve_eit(ex_mat, meas_pattern=np.array([[[0, 1]],[[1, 0]]]))
+        self.assertTrue(isinstance(res.v, np.ndarray))
+
     def test_compute_jac(self):
         """test compute_jac using a simple mesh structure"""
         #TODO @ liubenyuan please checkt this test
@@ -189,6 +193,10 @@ class TestFem(unittest.TestCase):
         jac = fwd.compute_jac()
         self.assertTrue(isinstance(jac, np.ndarray))
 
+        # test passing meas_pattern
+        jac = fwd.compute_jac(ex_mat, meas_pattern=np.array([[[0, 1]]]))
+        self.assertTrue(isinstance(jac, np.ndarray))
+
     def test_compute_b_matrix(self):
         """test compute_jac using a simple mesh structure"""
 
@@ -206,6 +214,11 @@ class TestFem(unittest.TestCase):
         # test without passing any argument
         b = fwd.compute_b_matrix()
         self.assertTrue(isinstance(b, np.ndarray))
+
+        # test passing meas_pattern
+        b = fwd.compute_b_matrix(ex_mat, meas_pattern=np.array([[[0, 1]]]))
+        self.assertTrue(isinstance(b, np.ndarray))
+
 
 
 if __name__ == "__main__":

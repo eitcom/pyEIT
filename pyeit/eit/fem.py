@@ -458,7 +458,7 @@ class Forward:
         # test shape is something like (n_exc, :, 2)
         if meas_pattern.ndim != 3 or meas_pattern.shape[::2] != (n_exc, 2):
             raise TypeError(
-                f"Wrong shape of {meas_pattern=}, expected an ndarray; shape ({n_exc}, n_meas_per_exc, 2)"
+                f"Wrong shape of {meas_pattern=}: {meas_pattern.shape=}, expected an ndarray; shape ({n_exc}, n_meas_per_exc, 2)"
             )
 
         return meas_pattern
