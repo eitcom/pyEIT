@@ -109,6 +109,8 @@ class Forward:
         (e.g. [0,7] or np.array([0,7]) or ex_mat[0].ravel). In that case a
         simplified version of `f` with shape (n_pts,)
         """
+        ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
+        perm = self._check_perm(perm)  # check/init permitivity
         f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
         # case ex_line has been passed instead of ex_mat
         # we return simplified version of f with shape (n_pts,)
@@ -122,6 +124,7 @@ class Forward:
         step: int = 1,
         perm: Union[int, float, np.ndarray] = None,
         parser: Union[str, list[str]] = None,
+        **kwargs,
     ) -> FwdResult:
         """
         EIT simulation, generate forward v measurement
@@ -148,31 +151,20 @@ class Forward:
             Foward results comprising
                 v: np.ndarray
                     simulated boundary voltage measurements; shape(n_exc, n_el)
+
+        Note
+        ----
+            To pass a custom measurement pattern use the kwarg meas_pattern
+            pay attenteion that the meas_pattern should be an nd.array of shape
+            (n_exc, n_meas_per_exc, 2). If not TypeError will be raised.
         """
-        f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
+        perm = self._check_perm(perm)  # check/init permitivity
+        f = self._compute_potential_distribution(ex_mat, perm)
         # boundary measurements, subtract_row-voltages on electrodes
-        diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
+        diff_op = self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
+
         return FwdResult(v=self._get_boundary_voltages(f, diff_op))
-
-    def _get_boundary_voltages(self, f: np.ndarray, diff_op: np.ndarray) -> np.ndarray:
-        """
-        Compute boundary voltages from potential distribution
-
-        Parameters
-        ----------
-        f : np.ndarray
-            potential on nodes ; shape (n_exc, n_pts)
-        diff_op : np.ndarray
-            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
-
-        Returns
-        -------
-        np.ndarray
-            simulated boundary voltage measurements; shape(n_exc, n_el)
-        """
-        f_el = f[:, self.el_pos]
-        v = subtract_row(f_el, diff_op)
-        return np.hstack(v)
 
     def compute_jac(
         self,
@@ -181,6 +173,7 @@ class Forward:
         perm: Union[int, float, np.ndarray] = None,
         parser: Union[str, list[str]] = None,
         normalize: bool = False,
+        **kwargs,
     ) -> np.ndarray:
         """
         Compute the Jacobian matrix
@@ -213,11 +206,15 @@ class Forward:
         -----
             - initial boundary voltage meas. extimation v0 can be accessed
             after computation through call fwd.v0
+            - To pass a custom measurement pattern use the kwarg meas_pattern
+            pay attenteion that the meas_pattern should be an nd.array of shape
+            (n_exc, n_meas_per_exc, 2). If not TypeError will be raised.
 
         """
-        f = self._compute_potential_distribution(
-            ex_mat=ex_mat, perm=perm, memory_4_jac=True
-        )
+        ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
+        perm = self._check_perm(perm)  # check/init permitivity
+
+        f = self._compute_potential_distribution(ex_mat, perm, memory_4_jac=True)
 
         # Build Jacobian matrix column wise (element wise)
         #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
@@ -235,7 +232,8 @@ class Forward:
         self._r_matrix = None  # clear memory
         self._ke = None  # clear memory
 
-        diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
+        diff_op = self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
+
         jac = subtract_row(jac_i, diff_op)
         self.v0 = self._get_boundary_voltages(f, diff_op)
         jac = np.vstack(jac)
@@ -250,6 +248,7 @@ class Forward:
         step: int = 1,
         perm: Union[int, float, np.ndarray] = None,
         parser: Union[str, list[str]] = None,
+        **kwargs,
     ) -> np.ndarray:
         """
         Compute back-projection mappings (smear matrix)
@@ -270,18 +269,28 @@ class Forward:
         parser: Union[str, list[str]], optional
             see voltage_meter for more details, by default `None`.
 
+
         Returns
         -------
         np.ndarray
             back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
+
+        Note
+        ----
+            To pass a custom measurement pattern use the kwarg meas_pattern
+            pay attenteion that the meas_pattern should be an nd.array of shape
+            (n_exc, n_meas_per_exc, 2). If not TypeError will be raised.
         """
-        f = self._compute_potential_distribution(ex_mat=ex_mat, perm=perm)
+        ex_mat = self._check_ex_mat(ex_mat)  # check/init stimulation
+        perm = self._check_perm(perm)  # check/init permitivity
+
+        f = self._compute_potential_distribution(ex_mat, perm)
         f_el = f[:, self.el_pos]
         # build bp projection matrix
         # 1. we can either smear at the center of elements, using
         #    >> fe = np.mean(f[:, self.tri], axis=1)
         # 2. or, simply smear at the nodes using f
-        diff_op = voltage_meter(ex_mat, n_el=self.n_el, step=step, parser=parser)
+        diff_op = self._build_meas_pattern(ex_mat, self.n_el, step, parser, **kwargs)
         # set new to `False` to get smear-computation from ChabaneAmaury
         b_matrix = smear(f, f_el, diff_op, new=True)
         return np.vstack(b_matrix)
@@ -299,6 +308,29 @@ class Forward:
         self.ref_el = (
             val if val is not None and val not in self.el_pos else max(self.el_pos) + 1
         )
+
+    ############################################################################
+    # Intern methods
+    ############################################################################
+    def _get_boundary_voltages(self, f: np.ndarray, diff_op: np.ndarray) -> np.ndarray:
+        """
+        Compute boundary voltages from potential distribution
+
+        Parameters
+        ----------
+        f : np.ndarray
+            potential on nodes ; shape (n_exc, n_pts)
+        diff_op : np.ndarray
+            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+
+        Returns
+        -------
+        np.ndarray
+            simulated boundary voltage measurements; shape(n_exc, n_el)
+        """
+        f_el = f[:, self.el_pos]
+        v = subtract_row(f_el, diff_op)
+        return np.hstack(v)
 
     def _compute_potential_distribution(
         self, ex_mat: np.ndarray, perm: np.ndarray, memory_4_jac: bool = False
@@ -327,9 +359,6 @@ class Forward:
             potential on nodes ; shape (n_exc, n_pts)
 
         """
-        ex_mat = self._get_ex_mat(ex_mat)  # check/init stimulation
-        perm = self._get_perm(perm)  # check/init permitivity
-
         # 1. calculate local stiffness matrix (on each element)
         ke = calculate_ke(self.pts, self.tri)
         # 2. assemble to global K
@@ -350,7 +379,91 @@ class Forward:
             .reshape(b.shape[0:2])
         )
 
-    def _get_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
+    def _build_meas_pattern(
+        self,
+        ex_mat: np.ndarray,
+        n_el: int = 16,
+        step: int = 1,
+        parser: Union[str, list[str]] = None,
+        **kwargs,
+    ) -> np.ndarray:
+        """
+        Build the measurement pattern (subtract_row-voltage pairs [N, M])
+        for all excitations on boundary electrodes.
+
+        Note
+        ----
+            To pass a custom measurement pattern use the kwarg meas_pattern
+            pay attenteion that the meas_pattern should be an nd.array of shape
+            (n_exc, n_meas_per_exc, 2). If not TypeError will be raised.
+
+        Parameters
+        ----------
+        ex_mat : np.ndarray
+            Nx2 array, [positive electrode, negative electrode]. ; shape (n_exc, 2)
+            (see "voltage_meter")
+        n_el : int, optional
+            number of total electrodes, by default 16
+            (see "voltage_meter")
+        step : int, optional
+            measurement method, by default 1
+            (see "voltage_meter")
+        parser : Union[str, list[str]], optional
+            parsing the format of each frame in measurement/file, by default None
+            (see "voltage_meter")
+
+        Returns
+        -------
+        np.ndarray
+            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+
+        """
+        meas_pattern = self._check_meas_pattern(ex_mat.shape[0], **kwargs)
+        if meas_pattern is not None:
+            return meas_pattern
+        return voltage_meter(ex_mat, n_el, step, parser)
+
+    def _check_meas_pattern(
+        self, n_exc: int, meas_pattern: np.ndarray = None
+    ) -> np.ndarray:
+        """
+        Check measurement pattern
+
+        Parameters
+        ----------
+        n_exc : int
+            number of excitations/stimulations
+        meas_pattern : np.ndarray, optional
+           measurements pattern / subtract_row pairs [N, M] to check; shape (n_exc, n_meas_per_exc, 2), by default None
+           if None (no meas_pattern has been passed) None is returned
+
+        Returns
+        -------
+        np.ndarray
+            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+
+        Raises
+        ------
+        TypeError
+            raised if meas_pattern is not a nd.array of shape (n_exc, : , 2)
+        """
+
+        if meas_pattern is None:
+            return None
+
+        if not isinstance(meas_pattern, np.ndarray):
+            raise TypeError(
+                f"Wrong type of {meas_pattern=}, expected an ndarray;  shape ({n_exc}, n_meas_per_exc, 2)"
+            )
+        # test shape is something like (n_exc, :, 2)
+        if meas_pattern.ndim != 3 or meas_pattern.shape[::2] != (n_exc, 2):
+            raise TypeError(
+                f"Wrong shape of {meas_pattern=}: {meas_pattern.shape=}, expected an ndarray; shape ({n_exc}, n_meas_per_exc, 2)"
+            )
+
+        return meas_pattern
+
+    def _check_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
         """
         Check/init the permittivity on element
 
@@ -384,7 +497,7 @@ class Forward:
             )
         return perm
 
-    def _get_ex_mat(self, ex_mat: np.ndarray = None) -> np.ndarray:
+    def _check_ex_mat(self, ex_mat: np.ndarray = None) -> np.ndarray:
         """
         Check/init stimulation
 
@@ -392,8 +505,8 @@ class Forward:
         ----------
         ex_mat : np.ndarray, optional
             stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
-            If `None` initialize stimulation matrix for 16 electrode and
-            apposition mode (see function `eit_scan_lines(16, 8)`)
+            If `None` initialize stimulation matrix for n_el electrode and
+            adjacent mode (see function `eit_scan_lines`)
             If single stimulation (ex_line) is passed only a list of length 2
             and np.ndarray of size 2 will be treated.
 
@@ -409,8 +522,8 @@ class Forward:
             or np.ndarray of shape (n_exc, 2)
         """
         if ex_mat is None:
-            # initialize the scan lines for 16 electrodes (default: apposition)
-            ex_mat = eit_scan_lines(16, 8)
+            # initialize the scan lines for 16 electrodes (default: adjacent)
+            ex_mat = eit_scan_lines(self.n_el, 1)
         elif isinstance(ex_mat, list) and len(ex_mat) == 2:
             # case ex_line has been passed instead of ex_mat
             ex_mat = np.array([ex_mat]).reshape((1, 2))  # build a 2D array

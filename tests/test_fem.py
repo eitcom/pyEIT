@@ -145,6 +145,9 @@ class TestFem(unittest.TestCase):
         f= fwd.solve(ex_mat, perm=mesh["perm"])
 
         self.assertTrue(np.allclose(f, f_truth))
+        # test without passing any argument
+        f= fwd.solve()
+        self.assertTrue(isinstance(f, np.ndarray))
 
     def test_solve_eit(self):
         """test solve using a simple mesh structure"""
@@ -156,14 +159,21 @@ class TestFem(unittest.TestCase):
         fwd.set_ref_el(mesh["ref"])
         ex_mat = np.array([[0, 1], [1, 0]])
         # include voltage differences on driving electrodes
-        fwd = fwd.solve_eit(ex_mat, parser="meas_current")
+        res = fwd.solve_eit(ex_mat, parser="meas_current")
         vdiff_truth = f_truth[el_pos[1]] - f_truth[el_pos[0]]
         v_truth = vdiff_truth * np.array([1, -1, -1, 1])
 
-        self.assertTrue(np.allclose(fwd.v, v_truth))
+        self.assertTrue(np.allclose(res.v, v_truth))
+        # test without passing any argument
+        res= fwd.solve_eit()
+        self.assertTrue(isinstance(res.v, np.ndarray))
+
+        # test passing meas_pattern
+        res= fwd.solve_eit(ex_mat, meas_pattern=np.array([[[0, 1]],[[1, 0]]]))
+        self.assertTrue(isinstance(res.v, np.ndarray))
 
     def test_compute_jac(self):
-        """test solve using a simple mesh structure"""
+        """test compute_jac using a simple mesh structure"""
         #TODO @ liubenyuan please checkt this test
         # compute_jac return jac with the "subtract_row part" here you wanted to test only the jac_i get from old solve method
         # the jac_i_truth correspond to the jac_truth!
@@ -179,6 +189,36 @@ class TestFem(unittest.TestCase):
         jac = fwd.compute_jac(ex_mat, perm=mesh["perm"], parser="meas_current" )
         
         self.assertTrue(np.allclose(jac, jac_truth))
+        # test without passing any argument
+        jac = fwd.compute_jac()
+        self.assertTrue(isinstance(jac, np.ndarray))
+
+        # test passing meas_pattern
+        jac = fwd.compute_jac(ex_mat, meas_pattern=np.array([[[0, 1]]]))
+        self.assertTrue(isinstance(jac, np.ndarray))
+
+    def test_compute_b_matrix(self):
+        """test compute_jac using a simple mesh structure"""
+
+        mesh, el_pos = _mesh_obj()
+        b_truth = np.array([]) # TODO @ liubenyuan
+
+        # testing solve
+        ex_mat = np.array([[0, 1]])
+        fwd = pyeit.eit.fem.Forward(mesh, el_pos)
+        # fix ref to be exactly the one in mesh
+        fwd.set_ref_el(mesh["ref"])
+        b = fwd.compute_b_matrix(ex_mat, perm=mesh["perm"], parser="meas_current" )
+        
+        # self.assertTrue(np.allclose(b, b_truth)) # TODO @ liubenyuan
+        # test without passing any argument
+        b = fwd.compute_b_matrix()
+        self.assertTrue(isinstance(b, np.ndarray))
+
+        # test passing meas_pattern
+        b = fwd.compute_b_matrix(ex_mat, meas_pattern=np.array([[[0, 1]]]))
+        self.assertTrue(isinstance(b, np.ndarray))
+
 
 
 if __name__ == "__main__":
