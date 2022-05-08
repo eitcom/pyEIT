@@ -13,7 +13,8 @@ from pyeit.mesh.shape import thorax
 
 """ 0. create mesh """
 # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
-mesh_obj, el_pos = wrapper.create(16, h0=0.1, fd=thorax)
+mesh_obj = wrapper.create(16, h0=0.1, fd=thorax)
+el_pos = mesh_obj["el_pos"]
 
 # extract nodes and triangles (truss)
 pts = mesh_obj["node"]

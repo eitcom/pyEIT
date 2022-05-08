@@ -9,19 +9,43 @@ import matplotlib.pyplot as plt
 
 # pyEIT 2D algorithm modules
 import pyeit.mesh as mesh
-from pyeit.eit.fem import Forward
+from pyeit.eit.fem import EITForward
 from pyeit.eit.utils import eit_scan_lines
 
 from pyeit.mesh.shape import thorax
 import pyeit.eit.jac as jac
 
 """ 1. setup """
-# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
-mesh_obj, el_pos = mesh.create(16, fd=thorax)
+use_thorax_model = False
+if use_thorax_model:
+    # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
+    mesh_obj = mesh.create(16, h0=0.1, fd=thorax)
+else:
+    mesh_obj = mesh.layer_circle()
 
 # test function for altering the permittivity in mesh
 anomaly = [{"x": 0.4, "y": 0.4, "d": 0.2, "perm": 100}]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
+
+""" 2. calculate simulated data using stack ex_mat """
+el_dist, step = 7, 1
+n_el = len(mesh_obj["el_pos"])
+ex_mat1 = eit_scan_lines(n_el, el_dist)
+# TODO: a combinational el_dist of 1 and other value should also work.
+ex_mat2 = eit_scan_lines(n_el, 3)
+ex_mat = np.vstack([ex_mat1, ex_mat2])
+protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
+
+# forward solver
+fwd = EITForward(mesh_obj, protocol)
+v0 = fwd.solve_eit()
+v1 = fwd.solve_eit(perm=mesh_new["perm"], init=True)
+
+""" 3. solving using dynamic EIT """
+# number of stimulation lines/patterns
+eit = jac.JAC(mesh_obj, protocol)
+eit.setup(p=0.40, lamb=1e-3, method="kotre")
+ds = eit.solve(v1, v0, normalize=False)
 
 # extract node, element, alpha
 pts = mesh_obj["node"]
@@ -34,24 +58,6 @@ im = ax.tripcolor(pts[:, 0], pts[:, 1], tri, np.real(delta_perm), shading="flat"
 fig.colorbar(im)
 ax.set_aspect("equal")
 ax.set_title(r"$\Delta$ Permittivity")
-
-""" 2. calculate simulated data using stack ex_mat """
-el_dist, step = 7, 1
-n_el = len(el_pos)
-ex_mat1 = eit_scan_lines(n_el, el_dist)
-ex_mat2 = eit_scan_lines(n_el, 1)
-ex_mat = np.vstack([ex_mat1, ex_mat2])
-
-# forward solver
-fwd = Forward(mesh_obj, el_pos)
-f0 = fwd.solve_eit(ex_mat, step, perm=mesh_obj["perm"])
-f1 = fwd.solve_eit(ex_mat, step, perm=mesh_new["perm"])
-
-""" 3. solving using dynamic EIT """
-# number of stimulation lines/patterns
-eit = jac.JAC(mesh_obj, el_pos, ex_mat=ex_mat, step=step, parser="std")
-eit.setup(p=0.40, lamb=1e-3, method="kotre")
-ds = eit.solve(f1.v, f0.v, normalize=False)
 
 """ 4. plot """
 fig, ax = plt.subplots(figsize=(6, 4))

@@ -80,7 +80,7 @@ class GREIT(EitBase):
         self.xg, self.yg, self.mask = meshgrid(self.pts, n=n)
 
         w_mat = self._compute_grid_weights(self.xg, self.yg)
-        self.J = self._compute_jac_matrix()
+        self.J, self.v0 = self.fwd.compute_jac()
         self.H = self._compute_h(jac=self.J, w_mat=w_mat)
         self.is_ready = True
 
@@ -102,10 +102,6 @@ class GREIT(EitBase):
         jac_inv = la.inv(j_j_w + lamb * r_mat)
         # RM = E[xx^T] / E[yy^T]
         return np.dot(np.dot(w_mat.T, jac.T), jac_inv)
-
-    # --------------------------------------------------------------------------
-    # Special methods for GREIT
-    # --------------------------------------------------------------------------
 
     def get_grid(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """

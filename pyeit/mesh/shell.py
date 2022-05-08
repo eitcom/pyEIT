@@ -53,9 +53,9 @@ def multi_shell(n_fan=8, n_layer=8, n_el=16, r_layer=None, perm_per_layer=None):
         perm[idx] = a
 
     # 5. build output structure
-    mesh = {"element": e, "node": p, "perm": perm}
+    mesh = {"element": e, "node": p, "perm": perm, "el_pos": el_pos, "ref": 0}
 
-    return mesh, el_pos
+    return mesh
 
 
 def multi_circle(
@@ -137,6 +137,6 @@ def multi_circle(
         perm[idx] = a
 
     # 5. build output structure
-    mesh = {"element": t, "node": p, "perm": perm}
+    mesh = {"element": t, "node": p, "perm": perm, "el_pos": el_pos, "ref": 0}
 
-    return mesh, el_pos
+    return mesh

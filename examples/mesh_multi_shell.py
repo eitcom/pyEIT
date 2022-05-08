@@ -18,14 +18,14 @@ n_fan = 6
 n_layer = 12
 r_layers = [n_layer - 1]
 perm_layers = [0.01]
-mesh_obj, el_pos = multi_shell(
+mesh_obj = multi_shell(
     n_fan=n_fan, n_layer=n_layer, r_layer=r_layers, perm_per_layer=perm_layers
 )
 
 # (b) using multi-circle (calls create, slow, high-quality)
 r_layers = [[0.85, 0.925]]
 perm_layers = [0.01]
-mesh_obj, el_pos = multi_circle(
+mesh_obj = multi_circle(
     r=1.0,
     background=1.0,
     n_el=16,
@@ -39,6 +39,7 @@ mesh_obj, el_pos = multi_circle(
 pts = mesh_obj["node"]
 tri = mesh_obj["element"]
 tri_perm = mesh_obj["perm"]
+el_pos = mesh_obj["el_pos"]
 figsize = (6, 6)
 
 # plot
@@ -64,13 +65,13 @@ ex_dist, step = 7, 1
 ex_mat = eit_scan_lines(16, ex_dist)
 
 # calculate simulated data
-fwd = Forward(mesh_obj, el_pos)
+fwd = Forward(mesh_obj)
 
 # in python, index start from 0
 ex_line = ex_mat[0].ravel()
 
 # solving once using fem
-f = fwd.solve(ex_line, perm=tri_perm)
+f = fwd.solve(ex_line)
 f = np.real(f)
 vf = np.linspace(min(f), max(f), 32)
 

@@ -13,29 +13,28 @@ import matplotlib.gridspec as gridspec
 import pyeit.mesh as mesh
 from pyeit.eit.interp2d import tri_area, sim2pts
 from pyeit.mesh import quality
-from pyeit.eit.fem import Forward
+from pyeit.eit.fem import EITForward
 from pyeit.eit.utils import eit_scan_lines
 
 """ 0. build mesh """
 # mesh_obj, el_pos = mesh.layer_circle(n_layer=8, n_fan=6)
-mesh_obj, el_pos = mesh.create(h0=0.05)
+mesh_obj = mesh.create(h0=0.05)
 
 # extract node, element, alpha
 pts = mesh_obj["node"]
 tri = mesh_obj["element"]
+el_pos = mesh_obj["el_pos"]
 x, y = pts[:, 0], pts[:, 1]
 quality.stats(pts, tri)
 
 
-def calc_sens(fwd:Forward, ex_mat):
+def calc_sens(fwd: EITForward, ex_mat):
     """
     see Adler2017 on IEEE TBME, pp 5, figure 6,
     Electrical Impedance Tomography: Tissue Properties to Image Measures
     """
     # solving EIT problem
-    # p = fwd.solve_eit(ex_mat=ex_mat, parser="fmmu")
-    jac= fwd.compute_jac(ex_mat=ex_mat, parser="fmmu")
-    v0 = fwd.v0
+    jac, v0 = fwd.compute_jac()
     # normalized jacobian (note: normalize affect sensitivity)
     v0 = v0[:, np.newaxis]
     jac = jac  # / v0
@@ -51,14 +50,14 @@ def calc_sens(fwd:Forward, ex_mat):
 
 
 """ 1. FEM forward setup """
-# calculate simulated data using FEM
-fwd = Forward(mesh_obj, el_pos)
 # loop over EIT scan settings: vary the distance of stimulation nodes, AB
 ex_list = [1, 2, 5, 8]
 N = len(ex_list)
 s = []
 for ex_dist in ex_list:
     ex_mat = eit_scan_lines(16, ex_dist)
+    protocol = {"ex_mat": ex_mat, "step": 1, "parser": "fmmu"}
+    fwd = EITForward(mesh_obj, protocol)
     # TODO: ex_mat can also be stacked, see eit_dynamic_stack.py
     s0 = calc_sens(fwd, ex_mat)
     s.append(s0)

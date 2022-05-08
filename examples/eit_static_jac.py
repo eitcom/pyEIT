@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 # pyEIT 2D algorithms modules
 from pyeit.mesh import create, set_perm
-from pyeit.eit.fem import Forward
+from pyeit.eit.fem import EITForward
 from pyeit.eit.utils import eit_scan_lines
 import pyeit.eit.jac as jac
 
@@ -17,7 +17,7 @@ import pyeit.eit.jac as jac
 # from pyeit.mesh.shape import thorax
 # mesh_obj, el_pos = create(n_el, h0=0.05, fd=thorax)  # Default : fd=circle
 n_el = 64  # test fem_vectorize
-mesh_obj, el_pos = create(n_el, h0=0.05)
+mesh_obj = create(n_el, h0=0.05)
 # set anomaly (altering the permittivity in the mesh)
 anomaly = [
     {"x": 0.4, "y": 0.4, "d": 0.2, "perm": 10},
@@ -33,23 +33,24 @@ perm = mesh_new["perm"]
 # %% calculate simulated data
 el_dist, step = 1, 1
 ex_mat = eit_scan_lines(n_el, el_dist)
-fwd = Forward(mesh_obj, el_pos)
-f1 = fwd.solve_eit(ex_mat, step, perm=mesh_new["perm"], parser="std")
+protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
+fwd = EITForward(mesh_obj, protocol)
+v1 = fwd.solve_eit(perm=mesh_new["perm"], init=True)
 
 # plot
 fig, ax = plt.subplots(figsize=(9, 6))
 im = ax.tripcolor(xx, yy, tri, np.real(perm), cmap="viridis")
-for el in el_pos:
+for el in mesh_obj["el_pos"]:
     ax.plot(xx[el], yy[el], "ro")
 ax.axis("equal")
 ax.set_title(r"$\Delta$ Conductivities")
 
 # %% solve_eit using gaussian-newton (with regularization)
 # number of stimulation lines/patterns
-eit = jac.JAC(mesh_obj, el_pos, ex_mat, step, perm=1.0, parser="std")
+eit = jac.JAC(mesh_obj, protocol)
 eit.setup(p=0.25, lamb=1.0, method="lm")
 # lamb = lamb * lamb_decay
-ds = eit.gn(f1.v, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
+ds = eit.gn(v1, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
 
 # plot
 fig, ax = plt.subplots(figsize=(9, 6))

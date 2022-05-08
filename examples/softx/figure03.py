@@ -13,7 +13,7 @@ import matplotlib.gridspec as gridspec
 
 # pyEIT 2D algorithm modules
 import pyeit.mesh as mesh
-from pyeit.eit.fem import Forward
+from pyeit.eit.fem import EITForward
 from pyeit.eit.interp2d import sim2pts
 from pyeit.eit.utils import eit_scan_lines
 
@@ -22,11 +22,12 @@ import pyeit.eit.bp as bp
 import pyeit.eit.jac as jac
 
 """ 0. construct mesh structure """
-mesh_obj, el_pos = mesh.create(16, h0=0.1)
+mesh_obj = mesh.create(16, h0=0.1)
 
 # extract node, element, permittivity
 pts = mesh_obj["node"]
 tri = mesh_obj["element"]
+el_pos = mesh_obj["el_pos"]
 
 """ 1. problem setup """
 # test function for altering the permittivity in mesh
@@ -43,31 +44,32 @@ delta_perm = np.real(mesh_new["perm"] - mesh_obj["perm"])
 # setup EIT scan conditions
 el_dist, step = 1, 1
 ex_mat = eit_scan_lines(16, el_dist)
+protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
 
 # calculate simulated data
-fwd = Forward(mesh_obj, el_pos)
-f0 = fwd.solve_eit(ex_mat, step=step, perm=mesh_obj["perm"])
-f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new["perm"])
+fwd = EITForward(mesh_obj, protocol)
+v0 = fwd.solve_eit()
+v1 = fwd.solve_eit(perm=mesh_new["perm"], init=True)
 
 """ ax2. BP """
-eit = bp.BP(mesh_obj, el_pos, ex_mat=ex_mat, step=1, parser="std")
+eit = bp.BP(mesh_obj, protocol)
 eit.setup(weight="None")
-ds = eit.solve(f1.v, f0.v, normalize=True)
+ds = eit.solve(v1, v0, normalize=True)
 ds_bp = ds
 
 """ ax3. JAC """
-eit = jac.JAC(mesh_obj, el_pos, ex_mat=ex_mat, step=step, perm=1.0, parser="std")
+eit = jac.JAC(mesh_obj, protocol)
 # parameter tuning is needed for better EIT images
 eit.setup(p=0.5, lamb=0.1, method="kotre")
 # if the jacobian is not normalized, data may not to be normalized too.
-ds = eit.solve(f1.v, f0.v, normalize=False)
+ds = eit.solve(v1, v0, normalize=False)
 ds_jac = sim2pts(pts, tri, ds)
 
 """ ax4. GREIT """
-eit = greit.GREIT(mesh_obj, el_pos, ex_mat=ex_mat, step=step, parser="std")
+eit = greit.GREIT(mesh_obj, protocol)
 # parameter tuning is needed for better EIT images
 eit.setup(p=0.5, lamb=0.01)
-ds = eit.solve(f1.v, f0.v, normalize=False)
+ds = eit.solve(v1, v0, normalize=False)
 x, y, ds_greit = eit.mask_value(ds, mask_value=np.NAN)
 
 """ build figure """

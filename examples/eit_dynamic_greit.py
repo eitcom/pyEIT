@@ -8,14 +8,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import pyeit.mesh as mesh
-from pyeit.eit.fem import Forward
+from pyeit.eit.fem import EITForward
 from pyeit.eit.utils import eit_scan_lines
 from pyeit.mesh.shape import thorax
 import pyeit.eit.greit as greit
 
 """ 0. construct mesh """
-# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
-mesh_obj, el_pos = mesh.create(16, h0=0.1, fd=thorax)
+use_customize_shape = False
+if use_customize_shape:
+    # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax
+    mesh_obj = mesh.create(16, h0=0.1, fd=thorax)
+else:
+    mesh_obj = mesh.create(16, h0=0.1)
 
 # extract node, element, alpha
 pts = mesh_obj["node"]
@@ -35,35 +39,33 @@ anomaly = [
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 delta_perm = np.real(mesh_new["perm"] - mesh_obj["perm"])
 
+""" 2. FEM forward simulations """
+# setup EIT scan conditions
+el_dist, step = 1, 1
+ex_mat = eit_scan_lines(16, el_dist)
+protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
+
+# calculate simulated data
+fwd = EITForward(mesh_obj, protocol)
+v0 = fwd.solve_eit()
+v1 = fwd.solve_eit(perm=mesh_new["perm"], init=True)
+
+""" 3. Construct using GREIT """
+eit = greit.GREIT(mesh_obj, protocol)
+eit.setup(p=0.50, lamb=0.001)
+ds = eit.solve(v1, v0)
+x, y, ds = eit.mask_value(ds, mask_value=np.NAN)
+
 # show alpha
-fig, axes = plt.subplots(2, 1, constrained_layout=True)
-fig.set_size_inches(6, 4)
+fig, axes = plt.subplots(2, 1, constrained_layout=True, figsize=(6, 9))
 
 ax = axes[0]
-im = ax.tripcolor(
-    pts[:, 0], pts[:, 1], tri, delta_perm, shading="flat", cmap=plt.cm.viridis
-)
+im = ax.tripcolor(pts[:, 0], pts[:, 1], tri, delta_perm, shading="flat")
 ax.axis("equal")
 ax.set_xlim([-1.2, 1.2])
 ax.set_ylim([-1.2, 1.2])
 ax.set_title(r"$\Delta$ Conductivity")
 # fig.set_size_inches(6, 4)
-
-""" 2. FEM forward simulations """
-# setup EIT scan conditions
-el_dist, step = 1, 1
-ex_mat = eit_scan_lines(16, el_dist)
-
-# calculate simulated data
-fwd = Forward(mesh_obj, el_pos)
-f0 = fwd.solve_eit(ex_mat, step=step, perm=mesh_obj["perm"])
-f1 = fwd.solve_eit(ex_mat, step=step, perm=mesh_new["perm"])
-
-""" 3. Construct using GREIT """
-eit = greit.GREIT(mesh_obj, el_pos, ex_mat=ex_mat, step=step, parser="std")
-eit.setup(p=0.50, lamb=0.001)
-ds = eit.solve(f1.v, f0.v)
-x, y, ds = eit.mask_value(ds, mask_value=np.NAN)
 
 # plot
 """

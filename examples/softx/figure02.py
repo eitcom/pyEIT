@@ -12,11 +12,12 @@ from pyeit.mesh import quality
 from pyeit.eit.fem import Forward
 
 """ 0. build mesh """
-mesh_obj, el_pos = mesh.create(16, h0=0.08)
+mesh_obj = mesh.create(16, h0=0.08)
 
 # extract node, element, alpha
 pts = mesh_obj["node"]
 tri = mesh_obj["element"]
+el_pos = mesh_obj["el_pos"]
 x, y = pts[:, 0], pts[:, 1]
 quality.stats(pts, tri)
 
@@ -30,8 +31,8 @@ perm = mesh_new["perm"]
 ex_line = [0, 7]
 
 # calculate simulated data using FEM
-fwd = Forward(mesh_obj, el_pos)
-f = fwd.solve(ex_line, perm=perm)
+fwd = Forward(mesh_new)
+f = fwd.solve(ex_line)
 f = np.real(f)
 
 """ 2. plot """

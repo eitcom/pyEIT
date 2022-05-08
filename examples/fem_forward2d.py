@@ -14,8 +14,13 @@ from pyeit.eit.utils import eit_scan_lines
 from pyeit.mesh.shape import thorax
 
 """ 0. build mesh """
-# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
-mesh_obj, el_pos = mesh.create(16, h0=0.08, fd=thorax)
+use_thorax_model = False
+if use_thorax_model:
+    # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
+    mesh_obj = mesh.create(16, h0=0.1, fd=thorax)
+else:
+    mesh_obj = mesh.layer_circle()
+el_pos = mesh_obj["el_pos"]
 
 # extract node, element, alpha
 pts = mesh_obj["node"]
@@ -36,8 +41,8 @@ ex_mat = eit_scan_lines(16, ex_dist)
 ex_line = ex_mat[0].ravel()
 
 # calculate simulated data using FEM
-fwd = Forward(mesh_obj, el_pos)
-f = fwd.solve(ex_line, perm=perm)
+fwd = Forward(mesh_new)
+f = fwd.solve(ex_line)
 f = np.real(f)
 
 """ 2. plot """
@@ -45,6 +50,7 @@ fig = plt.figure()
 ax1 = fig.add_subplot(111)
 # draw equi-potential lines
 vf = np.linspace(min(f), max(f), 32)
+# vf = np.sort(f[el_pos])
 # Draw contour lines on an unstructured triangular grid.
 ax1.tricontour(x, y, tri, f, vf, cmap=plt.cm.viridis)
 

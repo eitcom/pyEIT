@@ -25,7 +25,7 @@ class BP(EitBase):
 
         # build the weighting matrix
         # BP: in node imaging, H is the smear matrix (transpose of B)
-        self.B = self._compute_b_matrix()
+        self.B = self.fwd.compute_b_matrix()
         self.H = self._compute_h(b_matrix=self.B)
         self.is_ready = True
 
@@ -47,10 +47,6 @@ class BP(EitBase):
             weights = self._simple_weight(b_matrix.shape[0])
             b_matrix = weights * b_matrix
         return b_matrix.T
-
-    # --------------------------------------------------------------------------
-    # Special methods for BP
-    # --------------------------------------------------------------------------
 
     def solve_gs(self, v1: np.ndarray, v0: np.ndarray) -> np.ndarray:
         """

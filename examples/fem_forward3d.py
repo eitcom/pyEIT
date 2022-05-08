@@ -15,7 +15,7 @@ from pyeit.eit.utils import eit_scan_lines
 # tetrahedron meshing in a 3D bbox
 bbox = [[-1, -1, -1], [1, 1, 1]]
 # 3D Mesh shape is specified with fd parameter in the instantiation, e.g : fd=ball , Default in 3D :fd=ball
-mesh_obj, el_pos = mesh.create(h0=0.15, bbox=bbox)
+mesh_obj = mesh.create(h0=0.15, bbox=bbox)
 
 # report the status of the 2D mesh
 pts = mesh_obj["node"]
@@ -28,7 +28,7 @@ el_dist, step = 4, 1
 ex_mat = eit_scan_lines(16, el_dist)
 
 # calculate simulated data
-fwd = Forward(mesh_obj, el_pos)
+fwd = Forward(mesh_obj)
 
 # in python, index start from 0
 ex_line = ex_mat[1].ravel()
@@ -40,7 +40,7 @@ tri_perm = mesh_new["perm"]
 node_perm = sim2pts(pts, tri, np.real(tri_perm))
 
 # solving once using fem
-f = fwd.solve(ex_line, perm=tri_perm)
+f = fwd.solve(ex_line)
 f = np.real(f)
 
 # mplot.tetplot(p, t, edge_color=(0.2, 0.2, 1.0, 1.0), alpha=0.01)

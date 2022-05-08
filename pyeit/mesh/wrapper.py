@@ -4,7 +4,7 @@
 # Copyright (c) Benyuan Liu. All rights reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
-
+from copy import deepcopy
 import numpy as np
 
 from .distmesh import build
@@ -84,9 +84,18 @@ def create(n_el=16, fd=None, fh=shape.area_uniform, h0=0.1, p_fix=None, bbox=Non
     el_pos = np.arange(n_el)
     # 4. init uniform element permittivity (sigma)
     perm = np.ones(t.shape[0], dtype=float)  # np.float is deprecated
-    # 5. build output structure
-    mesh = {"element": t, "node": p, "perm": perm}
-    return mesh, el_pos
+    # 5. place reference node
+    ref = set_reference_node(el_pos, p.shape[0])
+    # 6. build output structure
+    mesh = {"element": t, "node": p, "perm": perm, "el_pos": el_pos, "ref": ref}
+    return mesh
+
+
+def set_reference_node(el_pos, n_pts):
+    assert el_pos.size < n_pts - 1
+    ref_candidate = np.arange(el_pos.size + 1)
+    ref = np.setdiff1d(ref_candidate, el_pos)[0]
+    return ref
 
 
 def set_perm(mesh, anomaly=None, background=None):
@@ -161,7 +170,8 @@ def set_perm(mesh, anomaly=None, background=None):
             # update permittivity within indices
             perm[index] = attr["perm"]
 
-    mesh_new = {"node": tri, "element": pts, "perm": perm}
+    mesh_new = deepcopy(mesh)
+    mesh_new["perm"] = perm
     return mesh_new
 
 
@@ -170,6 +180,7 @@ def layer_circle(n_el=16, n_fan=8, n_layer=8):
     model = MeshCircle(n_fan=n_fan, n_layer=n_layer, n_el=n_el)
     p, e, el_pos = model.create()
     perm = np.ones(e.shape[0])
+    ref = set_reference_node(el_pos, p.shape[0])
+    mesh = {"element": e, "node": p, "perm": perm, "el_pos": el_pos, "ref": ref}
 
-    mesh = {"element": e, "node": p, "perm": perm}
-    return mesh, el_pos
+    return mesh
