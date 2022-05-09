@@ -47,15 +47,22 @@ class Forward:
         ----------
         perm : Union[int, float, np.ndarray], optional
             permittivity on elements ; shape (n_tri,), by default `None`.
-        kinit : bool, optional
+        init : bool, optional
             re-calculate kg
+
+        Raise
+        -------
+        Warning
+             if self.mesh.perm != perm and not init
+
         """
-        # if self.mesh.perm != perm and init = False, a warning message should
-        # be raised, telling a user that it should pass kinit = True
+        if self.mesh.perm != perm and not init:
+            raise Warning('You passed a new permittivity but you dont want to init')
+        # be raised, telling a user that it should pass init = True
         if not init:
             return
-        p = self._check_perm(perm)
-        self.kg = assemble(self.se, self.mesh.element, p, self.mesh.n_nodes, ref=self.mesh.ref_el)
+        perm = self._check_perm(perm)
+        self.kg = assemble(self.se, self.mesh.element, perm, self.mesh.n_nodes, ref=self.mesh.ref_el)
 
     def solve(self, ex_line: np.ndarray = None) -> np.ndarray:
         """
@@ -107,7 +114,6 @@ class Forward:
         """
         # here we let the mesh doing the cheking/init
         return self.mesh.perm if perm is None else self.mesh.get_valid_perm(perm)
-
 
 
 class EITForward(Forward):
@@ -540,10 +546,7 @@ def assemble(
         data = np.append(data, 1.0)
 
     # for efficient sparse inverse (csc)
-    k_matrix = sparse.csr_matrix((data, (row, col)), shape=(n_pts, n_pts))
-
-    return k_matrix
-
+    return sparse.csr_matrix((data, (row, col)), shape=(n_pts, n_pts))
 
 def calculate_ke(pts: np.ndarray, tri: np.ndarray) -> np.ndarray:
     """
