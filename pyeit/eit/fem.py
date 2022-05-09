@@ -11,6 +11,7 @@ import numpy as np
 import numpy.linalg as la
 from scipy import sparse
 import scipy.sparse.linalg
+from pyeit.eit.protocol import PyEITProtocol
 
 from pyeit.mesh.wrapper import PyEITMesh
 
@@ -120,7 +121,7 @@ class EITForward(Forward):
     """EIT Forward simulation, depends on mesh and protocol"""
 
     def __init__(
-        self, mesh: PyEITMesh, protocol: dict[str, np.ndarray]
+        self, mesh: PyEITMesh, protocol: PyEITProtocol
     ) -> None:
         """
         EIT Forward Solver
@@ -129,8 +130,8 @@ class EITForward(Forward):
         ----------
         mesh: PyEITMesh
             mesh object
-        protocol: dict or dataset
-            measurement protocol, {'ex_mat', 'step', 'parser'}
+        protocol: PyEITProtocol
+            measurement object
 
         Notes
         -----
@@ -143,141 +144,15 @@ class EITForward(Forward):
         super().__init__(mesh=mesh)
 
         # EIT measurement protocol
-        self.ex_mat = self._check_ex_mat(protocol["ex_mat"])
-        self.step = protocol["step"]
-        self.parser = protocol["parser"]
+        self.protocol= protocol
+        self._check_mesh_protocol_compatibility()
 
-        # setup boundary voltage measurement protocol
-        self.n_exe = self.ex_mat.shape[0]
-        self.diff_op = self.build_meas_pattern()
-        self.n_meas = self.diff_op[0].shape[0]
-
-    def build_meas_pattern(self) -> np.ndarray:
-        """
-        Build the measurement pattern (voltage pairs [N, M])
-        for all excitations on boundary electrodes.
-
-        We direct operate on measurements or Jacobian on electrodes,
-        so, we can use LOCAL index in this module, do not require el_pos.
-
-        This function runs once, so we favor clearity over speed (vectorization)
-
-        Notes
-        -----
-        ABMN Model.
-        A: current driving electrode,
-        B: current sink,
-        M, N: boundary electrodes, where v_diff = v_n - v_m.
-
-        Returns
-        -------
-        np.ndarray
-            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas, 2)
-        """
-        if not isinstance(self.parser, list):  # transform parser into list
-            parser = [self.parser]
-        meas_current = "meas_current" in parser
-        fmmu_rotate = any(p in ("fmmu", "rotate_meas") for p in parser)
-
-        diff_op = []
-        for ex_line in self.ex_mat:
-            a, b = ex_line[0], ex_line[1]
-            i0 = a if fmmu_rotate else 0
-            m = (i0 + np.arange(self.mesh.n_el)) %self.mesh.n_el
-            n = (m + self.step) %self.mesh.n_el
-            meas_pattern = np.vstack([n, m]).T
-
-            if not meas_current:
-                diff_keep = np.logical_and.reduce((m != a, m != b, n != a, n != b))
-                meas_pattern = meas_pattern[diff_keep]
-
-            diff_op.append(meas_pattern)
-
-        return diff_op
-
-    def _check_ex_mat(self, ex_mat: np.ndarray = None) -> np.ndarray:
-        """
-        Check/init stimulation
-
-        Parameters
-        ----------
-        ex_mat : np.ndarray, optional
-            stimulation/excitation matrix, of shape (n_exc, 2), by default `None`.
-            If `None` initialize stimulation matrix for n_el electrode and
-            adjacent mode (see function `eit_scan_lines`)
-            If single stimulation (ex_line) is passed only a list of length 2
-            and np.ndarray of size 2 will be treated.
-
-        Returns
-        -------
-        np.ndarray
-            stimulation matrix
-
-        Raises
-        ------
-        TypeError
-            Only accept, `None`, list of length 2, np.ndarray of size 2,
-            or np.ndarray of shape (n_exc, 2)
-        """
-        if ex_mat is None:
-            # initialize the scan lines for 16 electrodes (default: adjacent)
-            ex_mat = np.array([[i, np.mod(i + 1,self.mesh.n_el)] for i in range(self.mesh.n_el)])
-        elif isinstance(ex_mat, list) and len(ex_mat) == 2:
-            # case ex_line has been passed instead of ex_mat
-            ex_mat = np.array([ex_mat]).reshape((1, 2))  # build a 2D array
-        elif isinstance(ex_mat, np.ndarray) and ex_mat.size == 2:
-            #     case ex_line np.ndarray has been passed instead of ex_mat
-            ex_mat = ex_mat.reshape((-1, 2))
-
-        if (
-            not isinstance(ex_mat, np.ndarray)
-            or ex_mat.ndim != 2
-            or ex_mat.shape[1] != 2
-        ):
-            raise TypeError(
-                f"Wrong shape of {ex_mat=} expected an ndarray ; shape (n_exc, 2)"
+    def _check_mesh_protocol_compatibility(self) -> None:
+        compatible = True  # TODO
+        if not compatible:
+            raise ValueError(
+                "Passed protocol is not compatible to the passed mesh"
             )
-
-        return ex_mat
-
-    def _check_meas_pattern(
-        self, n_exc: int, meas_pattern: np.ndarray = None
-    ) -> np.ndarray:
-        """
-        Check measurement pattern
-
-        Parameters
-        ----------
-        n_exc : int
-            number of excitations/stimulations
-        meas_pattern : np.ndarray, optional
-           measurements pattern / subtract_row pairs [N, M] to check; shape (n_exc, n_meas_per_exc, 2), by default None
-           if None (no meas_pattern has been passed) None is returned
-
-        Returns
-        -------
-        np.ndarray
-            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
-
-        Raises
-        ------
-        TypeError
-            raised if meas_pattern is not a nd.array of shape (n_exc, : , 2)
-        """
-        if meas_pattern is None:
-            return None
-
-        if not isinstance(meas_pattern, np.ndarray):
-            raise TypeError(
-                f"Wrong type of {meas_pattern=}, expected an ndarray; shape ({n_exc}, n_meas_per_exc, 2)"
-            )
-        # test shape is something like (n_exc, :, 2)
-        if meas_pattern.ndim != 3 or meas_pattern.shape[::2] != (n_exc, 2):
-            raise TypeError(
-                f"Wrong shape of {meas_pattern=}: {meas_pattern.shape=}, expected an ndarray; shape ({n_exc}, n_meas_per_exc, 2)"
-            )
-
-        return meas_pattern
 
     def solve_eit(
         self,
@@ -300,10 +175,10 @@ class EITForward(Forward):
             simulated boundary voltage measurements; shape(n_exe*n_el,)
         """
         self.assemble_pde(perm=self._check_perm(perm), init=init)
-        v = np.zeros((self.n_exe, self.n_meas))
-        for i, ex_line in enumerate(self.ex_mat):
+        v = np.zeros((self.protocol.n_exc, self.protocol.n_meas))
+        for i, ex_line in enumerate(self.protocol.ex_mat):
             f = self.solve(ex_line)
-            v[i] = subtract_row(f[self.mesh.el_pos], self.diff_op[i])
+            v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
 
         return v.reshape(-1)
 
@@ -339,13 +214,13 @@ class EITForward(Forward):
 
         # calculate v, jac per excitation pattern (ex_line)
         _jac = np.zeros(
-            (self.n_exe, self.n_meas, self.mesh.n_elems), dtype=self.mesh.perm.dtype
+            (self.protocol.n_exc, self.protocol.n_meas, self.mesh.n_elems), dtype=self.mesh.perm.dtype
         )
-        v = np.zeros((self.n_exe, self.n_meas))
-        for i, ex_line in enumerate(self.ex_mat):
+        v = np.zeros((self.protocol.n_exc, self.protocol.n_meas))
+        for i, ex_line in enumerate(self.protocol.ex_mat):
             f = self.solve(ex_line)
-            v[i] = subtract_row(f[self.mesh.el_pos], self.diff_op[i])
-            ri = subtract_row(r_el, self.diff_op[i])
+            v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
+            ri = subtract_row(r_el, self.protocol.meas_mat[i])
             # Build Jacobian matrix column wise (element wise)
             #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
             for (e, ijk) in enumerate(self.mesh.element):
@@ -381,16 +256,16 @@ class EITForward(Forward):
             back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
         """
         self.assemble_pde(perm=self._check_perm(perm), init=init)
-        b_mat = np.zeros((self.n_exe, self.n_meas, self.mesh.n_nodes))
+        b_mat = np.zeros((self.protocol.n_exc, self.protocol.n_meas, self.mesh.n_nodes))
 
-        for i, ex_line in enumerate(self.ex_mat):
+        for i, ex_line in enumerate(self.protocol.ex_mat):
             f = self.solve(ex_line=ex_line)
             f_el = f[self.mesh.el_pos]
             # build bp projection matrix
             # 1. we can either smear at the center of elements, using
             #    >> fe = np.mean(f[:, self.tri], axis=1)
             # 2. or, simply smear at the nodes using f
-            b_mat[i] = _smear(f, f_el, self.diff_op[i])
+            b_mat[i] = _smear(f, f_el, self.protocol.meas_mat[i])
 
         return np.vstack(b_mat)
 

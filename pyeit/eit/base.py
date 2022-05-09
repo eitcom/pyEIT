@@ -10,6 +10,7 @@ writing your own reconstruction algorithms.
 from __future__ import division, absolute_import, print_function
 from abc import ABC, abstractmethod
 import numpy as np
+from pyeit.eit.protocol import PyEITProtocol
 
 from pyeit.mesh.wrapper import PyEITMesh
 from .fem import EITForward
@@ -27,9 +28,7 @@ class EitBase(ABC):
     def __init__(
         self,
         mesh: PyEITMesh,
-        protocol: dict,
-        jac_normalized: bool = False,
-        **kwargs,
+        protocol: PyEITProtocol,
     ) -> None:
         """
         An EIT solver.
@@ -40,31 +39,21 @@ class EitBase(ABC):
         ----------
         mesh: PyEITMesh
             mesh object
-        protocol: dict
-            measurement protocol {ex_mat, step, parser}
-        jac_normalized : bool, optional
-            normalize the jacobian using f0 computed from input perm, by
-            default False
-
-        Notes
-        -----
-            - parser is required for your code to be compatible with
-            (a) simulation data set or (b) FMMU data set
-            - To pass a custom measurement pattern use the kwarg meas_pattern
-            pay attenteion that the meas_pattern should be an nd.array of shape
-            (n_exc, n_meas_per_exc, 2). If not TypeError will be raised.
+        protocol: PyEITProtocol
+            measurement object
         """
         # build forward solver
         self.fwd = EITForward(mesh=mesh, protocol=protocol)
 
         # mesh structure
-        self.mesh = mesh
+        # self.mesh = mesh # Actually this mesh can also be accessed through, self.fwd.mesh
 
         # measurement protocol
-        self.ex_mat = protocol["ex_mat"]
-        self.step = protocol["step"]
-        self.parser = protocol["parser"]
-        self.jac_normalized = jac_normalized
+
+        # self.ex_mat = protocol["ex_mat"] # NOT USED
+        # self.step = protocol["step"] # NOT USED
+        # self.parser = protocol["parser"] # NOT USED
+        # self.jac_normalized = jac_normalized # NOT USED
 
         # initialize other parameters
         self.params = None
@@ -74,6 +63,16 @@ class EitBase(ABC):
         # user must run solver.setup() manually to get correct H
         self.H = None
         self.is_ready = False
+    
+    @property
+    def mesh(self)->PyEITMesh:
+        return self.fwd.mesh
+
+    # # if needed protocol attributes can be accessed by using self.protocol 
+    # # instead of self.fwd.protocol
+    # @property
+    # def protocol(self)->PyEITProtocol:
+    #     return self.fwd.protocol
 
     @abstractmethod
     def setup(self) -> None:
@@ -120,7 +119,7 @@ class EitBase(ABC):
         normalize: Bool, optional
             true for conducting normalization, by default False
         log_scale: Bool, optional
-            remap reconstructions in log scale,by default False
+            remap reconstructions in log scale, by default False
 
         Raises
         ------
