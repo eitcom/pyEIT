@@ -9,17 +9,18 @@ import matplotlib.pyplot as plt
 
 import pyeit.mesh as mesh
 from pyeit.eit.fem import EITForward
-from pyeit.eit.utils import eit_scan_lines
+import pyeit.eit.protocol as protocol
 from pyeit.mesh.shape import thorax
 import pyeit.eit.greit as greit
 
 """ 0. construct mesh """
+n_el= 16 # nb of electrodes
 use_customize_shape = False
 if use_customize_shape:
     # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax
-    mesh_obj = mesh.create(16, h0=0.1, fd=thorax)
+    mesh_obj = mesh.create(n_el, h0=0.1, fd=thorax)
 else:
-    mesh_obj = mesh.create(16, h0=0.1)
+    mesh_obj = mesh.create(n_el, h0=0.1)
 
 # extract node, element, alpha
 pts = mesh_obj.node
@@ -41,17 +42,15 @@ delta_perm = np.real(mesh_new.perm - mesh_obj.perm)
 
 """ 2. FEM forward simulations """
 # setup EIT scan conditions
-el_dist, step = 1, 1
-ex_mat = eit_scan_lines(16, el_dist)
-protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
+protocol_obj = protocol.create(n_el, dist_exc=1, step_meas=1, parser_meas="std")
 
 # calculate simulated data
-fwd = EITForward(mesh_obj, protocol)
+fwd = EITForward(mesh_obj, protocol_obj)
 v0 = fwd.solve_eit()
 v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
 
 """ 3. Construct using GREIT """
-eit = greit.GREIT(mesh_obj, protocol)
+eit = greit.GREIT(mesh_obj, protocol_obj)
 eit.setup(p=0.50, lamb=0.001)
 ds = eit.solve(v1, v0)
 x, y, ds = eit.mask_value(ds, mask_value=np.NAN)

@@ -3,13 +3,12 @@
 """ EIT protocol """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
+
 from dataclasses import dataclass
 from typing import Union
 
 import numpy as np
-from .utils import eit_scan_lines
-
 
 
 @dataclass
@@ -141,14 +140,50 @@ class PyEITProtocol:
         return max(max(self.ex_mat.flatten()), max(self.meas_mat.flatten())) + 1
     
 
-def create(n_el:int=16, dist_exc:int=1, step_meas:int=1, parser_meas:Union[str, list[str]]= 'std')->PyEITProtocol:
+def create(n_el:int=16, dist_exc:Union[int, list[int]]=1, step_meas:int=1, parser_meas:Union[str, list[str]]= 'std') -> PyEITProtocol:
+    """
+    Return an EIT protocol, comprising an excitation and a measuremnet pattern
 
-    ex_mat = eit_scan_lines(n_el, dist_exc)
-    meas_mat= build_meas_pattern(ex_mat, n_el, step_meas, parser_meas)
+    Parameters
+    ----------
+    n_el : int, optional
+        number of total electrodes, by default 16
+    dist_exc : Union[int, list[int]], optional
+        distance (number of electrodes) of A to B, by default 1
+        For 'adjacent'- or 'neighbore'-mode (default) use `1` , and
+        for 'apposition'-mode use `n_el/2`. (see `build_exc_pattern`)
+        if a list of integer is passed the excitation will bee stacked together.
+    step_meas : int, optional
+    measurement method (two adjacent electrodes are used for measuring), by default 1 (adjacent).
+        (see `build_meas_pattern`)
+    parser_meas : Union[str, list[str]], optional
+        parsing the format of each frame in measurement/file, by default 'std'.
+        (see `build_meas_pattern`)
+
+    Returns
+    -------
+    PyEITProtocol
+        EIT protocol object
+
+    Raises
+    ------
+    TypeError
+        if dist_exc is not list or an int
+    """
+    if isinstance(dist_exc, int):
+        dist_exc= [dist_exc]
+
+    if not isinstance(dist_exc, list):
+        raise TypeError(f"{dist_exc=}; {type(dist_exc)=} should be a list[int]")
+
+    _ex_mat = [build_exc_pattern_std(n_el, dist) for dist in dist_exc]
+    ex_mat = np.vstack(_ex_mat)
+
+    meas_mat= build_meas_pattern_std(ex_mat, n_el, step_meas, parser_meas)
     return PyEITProtocol(ex_mat, meas_mat)
 
 
-def build_meas_pattern(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[str, list[str]]= 'std') -> np.ndarray:
+def build_meas_pattern_std(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[str, list[str]]= 'std') -> np.ndarray:
     """
     Build the measurement pattern (subtract_row-voltage pairs [N, M])
     for all excitations on boundary electrodes.
@@ -172,7 +207,7 @@ def build_meas_pattern(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[
     step : int, optional
         measurement method (two adjacent electrodes are used for measuring), by default 1 (adjacent)
     parser : Union[str, list[str]], optional
-        parsing the format of each frame in measurement/file, by default None
+        parsing the format of each frame in measurement/file, by default 'std'
         if parser contains 'fmmu', or 'rotate_meas' then data are trimmed,
         boundary voltage measurements are re-indexed and rotated,
         start from the positive stimulus electrode start index 'A'.
@@ -207,9 +242,10 @@ def build_meas_pattern(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[
         diff_op.append(meas_pattern)
         
     return np.array(diff_op)
+    
 
 
-def eit_scan_lines(n_el: int = 16, dist: int = 1) -> np.ndarray:
+def build_exc_pattern_std(n_el: int = 16, dist: int = 1) -> np.ndarray:
     """
     Generate scan matrix, `ex_mat` ( or excitation pattern), see notes
 
@@ -239,9 +275,9 @@ def eit_scan_lines(n_el: int = 16, dist: int = 1) -> np.ndarray:
     --------
         n_el=16
         if mode=='neighbore':
-            ex_mat = eit_scan_lines(n_el=n_el)
+            ex_mat = build_exc_pattern(n_el=n_el)
         elif mode=='apposition':
-            ex_mat = eit_scan_lines(dist=n_el/2)
+            ex_mat = build_exc_pattern(dist=n_el/2)
 
     WARNING
     -------

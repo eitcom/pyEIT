@@ -9,9 +9,10 @@ import matplotlib.pyplot as plt
 from pyeit.mesh import create
 from pyeit.mesh import layer_circle
 
-mesh0 = create(n_el=16)
+n_el= 16 # nb of electrodes
+mesh0 = create(n_el)
 el_pos0 = mesh0.el_pos
-mesh1 = layer_circle(n_el=16, n_fan=8, n_layer=8)
+mesh1 = layer_circle(n_el, n_fan=8, n_layer=8)
 el_pos1 = mesh1.el_pos
 
 fig = plt.figure(figsize=(9, 4))

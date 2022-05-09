@@ -2,16 +2,14 @@
 """ demo on static solving using JAC (experimental) """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
-import numpy as np
 import matplotlib.pyplot as plt
-
-# pyEIT 2D algorithms modules
-from pyeit.mesh import create, set_perm
-from pyeit.eit.fem import EITForward
-from pyeit.eit.utils import eit_scan_lines
+import numpy as np
 import pyeit.eit.jac as jac
+import pyeit.eit.protocol as protocol
+from pyeit.eit.fem import EITForward
+from pyeit.mesh import create, set_perm
 
 # Mesh shape is specified with fd parameter in the instantiation, e.g:
 # from pyeit.mesh.shape import thorax
@@ -31,10 +29,8 @@ tri = mesh_obj.element
 perm = mesh_new.perm
 
 # %% calculate simulated data
-el_dist, step = 1, 1
-ex_mat = eit_scan_lines(n_el, el_dist)
-protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
-fwd = EITForward(mesh_obj, protocol)
+protocol_obj = protocol.create(n_el, dist_exc=1, step_meas=1, parser_meas="std")
+fwd = EITForward(mesh_obj, protocol_obj)
 v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
 
 # plot
@@ -47,7 +43,7 @@ ax.set_title(r"$\Delta$ Conductivities")
 
 # %% solve_eit using gaussian-newton (with regularization)
 # number of stimulation lines/patterns
-eit = jac.JAC(mesh_obj, protocol)
+eit = jac.JAC(mesh_obj, protocol_obj)
 eit.setup(p=0.25, lamb=1.0, method="lm")
 # lamb = lamb * lamb_decay
 ds = eit.gn(v1, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)

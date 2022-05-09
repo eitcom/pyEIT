@@ -2,23 +2,20 @@
 """ demo on sensitivity analysis of 2D mesh"""
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
-# numeric
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-
-# pyEIT
+import matplotlib.pyplot as plt
+import numpy as np
+import pyeit.eit.protocol as protocol
 import pyeit.mesh as mesh
-from pyeit.eit.interp2d import tri_area, sim2pts
-from pyeit.mesh import quality
 from pyeit.eit.fem import EITForward
-from pyeit.eit.utils import eit_scan_lines
+from pyeit.eit.interp2d import sim2pts, tri_area
 
 """ 0. build mesh """
 # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
-mesh_obj = mesh.layer_circle(n_layer=8, n_fan=6)
+n_el= 16 # nb of electrodes
+mesh_obj = mesh.layer_circle(n_el, n_layer=8, n_fan=6)
 
 # extract node, element, alpha
 pts = mesh_obj.node
@@ -27,7 +24,7 @@ x, y = pts[:, 0], pts[:, 1]
 mesh_obj.print_stats()
 
 
-def calc_sens(fwd: EITForward, ex_mat):
+def calc_sens(fwd: EITForward):
     """
     see Adler2017 on IEEE TBME, pp 5, figure 6,
     Electrical Impedance Tomography: Tissue Properties to Image Measures
@@ -54,12 +51,12 @@ ex_list = [1, 2, 4, 8]
 N = len(ex_list)
 s = []
 for ex_dist in ex_list:
-    ex_mat = eit_scan_lines(16, ex_dist)
-    protocol = {"ex_mat": ex_mat, "step": 1, "parser": "fmmu"}
+    # setup EIT scan conditions
+    protocol_obj = protocol.create(n_el, dist_exc=ex_dist, step_meas=1, parser_meas="fmmu")
     # calculate simulated data using FEM with different protocol
-    fwd = EITForward(mesh_obj, protocol)
+    fwd = EITForward(mesh_obj, protocol_obj)
     # Note: ex_mat can also be stacked, see demo_dynamic_stack.py
-    s0 = calc_sens(fwd, ex_mat)
+    s0 = calc_sens(fwd)
     s.append(s0)
 
 """ 2. Plot (elements) sensitivity """

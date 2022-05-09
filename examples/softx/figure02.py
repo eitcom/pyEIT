@@ -8,11 +8,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import pyeit.mesh as mesh
-from pyeit.mesh import quality
 from pyeit.eit.fem import Forward
 
 """ 0. build mesh """
-mesh_obj = mesh.create(16, h0=0.08)
+n_el= 16 # nb of electrodes
+mesh_obj = mesh.create(n_el, h0=0.08)
 
 # extract node, element, alpha
 pts = mesh_obj.node

@@ -2,47 +2,41 @@
 """ demo using stacked ex_mat (the devil is in the details) """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
-import numpy as np
 import matplotlib.pyplot as plt
-
+import numpy as np
+import pyeit.eit.jac as jac
+import pyeit.eit.protocol as protocol
 # pyEIT 2D algorithm modules
 import pyeit.mesh as mesh
 from pyeit.eit.fem import EITForward
-from pyeit.eit.utils import eit_scan_lines
-
 from pyeit.mesh.shape import thorax
-import pyeit.eit.jac as jac
 
 """ 1. setup """
-use_thorax_model = False
-if use_thorax_model:
-    # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
-    mesh_obj = mesh.create(16, h0=0.1, fd=thorax)
+n_el= 16 # nb of electrodes
+use_customize_shape = False
+if use_customize_shape:
+    # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax
+    mesh_obj = mesh.create(n_el, h0=0.1, fd=thorax)
 else:
-    mesh_obj = mesh.layer_circle()
+    mesh_obj = mesh.create(n_el, h0=0.1)
 
 # test function for altering the permittivity in mesh
 anomaly = [{"x": 0.4, "y": 0.4, "d": 0.2, "perm": 100}]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 
 """ 2. calculate simulated data using stack ex_mat """
-el_dist, step = 7, 1
-ex_mat1 = eit_scan_lines(mesh_obj.n_el, el_dist)
-# TODO: a combinational el_dist of 1 and other value should also work.
-ex_mat2 = eit_scan_lines(mesh_obj.n_el, 3)
-ex_mat = np.vstack([ex_mat1, ex_mat2])
-protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
+protocol_obj = protocol.create(n_el, dist_exc=[7,3], step_meas=1, parser_meas="std")
 
 # forward solver
-fwd = EITForward(mesh_obj, protocol)
+fwd = EITForward(mesh_obj, protocol_obj)
 v0 = fwd.solve_eit()
 v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
 
 """ 3. solving using dynamic EIT """
 # number of stimulation lines/patterns
-eit = jac.JAC(mesh_obj, protocol)
+eit = jac.JAC(mesh_obj, protocol_obj)
 eit.setup(p=0.40, lamb=1e-3, method="kotre")
 ds = eit.solve(v1, v0, normalize=False)
 
