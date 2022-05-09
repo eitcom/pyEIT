@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import pyeit.mesh as mesh
 from pyeit.eit.interp2d import sim2pts
 from pyeit.mesh.shape import thorax
+from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 
 """ 0. create mesh """
 # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
@@ -40,14 +41,14 @@ plt.show()
 
 """ 1. a simple function for adding anomaly regions """
 anomaly = [
-    {"x": 0.5, "y": 0.5, "d": 0.2, "perm": 10},
-    {"x": -0.2, "y": -0.2, "d": 0.4, "perm": 20},
+    PyEITAnomaly_Circle(center=[0.5, 0.5], r=0.2, perm=10.0),
+    PyEITAnomaly_Circle(center=[-0.2, -0.2], r=0.4, perm=20.0),
 ]
 ms0 = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 
 anomaly = [
-    {"x": 0.5, "y": 0.5, "d": 0.2, "perm": 20},
-    {"x": -0.2, "y": -0.2, "d": 0.4, "perm": 10},
+    PyEITAnomaly_Circle(center=[0.5, 0.5], r=0.2, perm=20.0),
+    PyEITAnomaly_Circle(center=[-0.2, -0.2], r=0.4, perm=10.0),
 ]
 ms1 = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 

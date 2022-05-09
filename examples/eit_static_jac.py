@@ -10,6 +10,7 @@ import pyeit.eit.jac as jac
 import pyeit.eit.protocol as protocol
 from pyeit.eit.fem import EITForward
 from pyeit.mesh import create, set_perm
+from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 
 # Mesh shape is specified with fd parameter in the instantiation, e.g:
 # from pyeit.mesh.shape import thorax
@@ -18,8 +19,8 @@ n_el = 64  # test fem_vectorize
 mesh_obj = create(n_el, h0=0.05)
 # set anomaly (altering the permittivity in the mesh)
 anomaly = [
-    {"x": 0.4, "y": 0.4, "d": 0.2, "perm": 10},
-    {"x": -0.4, "y": -0.4, "d": 0.2, "perm": 0.1},
+    PyEITAnomaly_Circle(center=[0.4, 0.4], r=0.2, perm=10.0),
+    PyEITAnomaly_Circle(center=[-0.4, -0.4], r=0.2, perm=0.1),
 ]
 # background changed to values other than 1.0 requires more iterations
 mesh_new = set_perm(mesh_obj, anomaly=anomaly, background=2.0)

@@ -12,13 +12,14 @@ from pyeit.eit.fem import EITForward
 from pyeit.eit.interp2d import sim2pts
 import pyeit.eit.protocol as protocol
 import pyeit.eit.jac as jac
+from pyeit.mesh.wrapper import PyEITAnomaly_Ball
 
 # build tetrahedron
 # 3D tetrahedron must have a bbox
 bbox = [[-1, -1, -1], [1, 1, 1]]
 # save calling convention as distmesh 2D
 # 3D Mesh shape is specified with fd parameter in the instantiation, e.g : fd=ball , Default in 3D :fd=ball
-n_el= 16 # nb of electrodes
+n_el = 16  # nb of electrodes
 mesh_obj = mesh.create(n_el, h0=0.2, bbox=bbox)
 pts = mesh_obj.node
 tri = mesh_obj.element
@@ -33,7 +34,7 @@ protocol_obj = protocol.create(n_el, dist_exc=7, step_meas=1, parser_meas="std")
 fwd = EITForward(mesh_obj, protocol_obj)
 
 # change alpha
-anomaly = [{"x": 0.40, "y": 0.40, "z": 0.0, "d": 0.30, "perm": 100.0}]
+anomaly = PyEITAnomaly_Ball(center=[0.4, 0.4, 0.0], r=0.3, perm=100.0)
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 tri_perm = mesh_new.perm
 node_perm = sim2pts(pts, tri, np.real(tri_perm))

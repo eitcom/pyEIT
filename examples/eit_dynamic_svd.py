@@ -13,9 +13,10 @@ import pyeit.eit.protocol as protocol
 from pyeit.mesh.shape import thorax
 import pyeit.eit.svd as svd
 from pyeit.eit.interp2d import sim2pts
+from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 
 """ 0. build mesh """
-n_el= 16 # nb of electrodes
+n_el = 16  # nb of electrodes
 use_customize_shape = False
 if use_customize_shape:
     # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax
@@ -30,7 +31,7 @@ x, y = pts[:, 0], pts[:, 1]
 
 """ 1. problem setup """
 # mesh_obj["alpha"] = np.ones(tri.shape[0]) * 10 # NOT USED
-anomaly = [{"x": 0.5, "y": 0.5, "d": 0.1, "perm": 100.0}]
+anomaly = PyEITAnomaly_Circle(center=[0.5, 0.5], r=0.1, perm=100.0)
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly)
 
 """ 2. FEM simulation """

@@ -9,9 +9,10 @@ import matplotlib.pyplot as plt
 
 import pyeit.mesh as mesh
 from pyeit.eit.fem import Forward
+from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 
 """ 0. build mesh """
-n_el= 16 # nb of electrodes
+n_el = 16  # nb of electrodes
 mesh_obj = mesh.create(n_el, h0=0.08)
 
 # extract node, element, alpha
@@ -22,7 +23,7 @@ x, y = pts[:, 0], pts[:, 1]
 mesh_obj.print_stats()
 
 # change permittivity
-anomaly = [{"x": 0.40, "y": 0.50, "d": 0.20, "perm": 100.0}]
+anomaly = PyEITAnomaly_Circle(center=[0.4, 0.5], r=0.2, perm=100.0)
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 perm = mesh_new.perm
 

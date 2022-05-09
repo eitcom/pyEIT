@@ -5,7 +5,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import absolute_import, division, print_function
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from typing import Callable, Union
 
 import numpy as np
@@ -13,6 +14,7 @@ import numpy as np
 from . import shape
 from .distmesh import build
 from .mesh_circle import MeshCircle
+from .shape import ball, circle
 from .utils import check_order
 
 
@@ -380,8 +382,59 @@ def create(
     return PyEITMesh(element=t, node=p, perm=None, el_pos=el_pos)
 
 
+@dataclass
+class PyEITAnomaly(ABC):
+    """
+    Pyeit Anomaly for simulation purpose
+    """
+
+    center: Union[np.ndarray, list]  # center of the anomaly
+    perm: float = 1.0  # permittivity of the anomaly
+
+    def __post_init__(self):
+        if isinstance(self.center, list):
+            self.center = np.array(self.center)
+
+    @abstractmethod
+    def mask(self, pts: np.ndarray) -> np.ndarray:
+        """
+        Return mask corresponding to the pts contained in the Anomaly
+        """
+
+
+@dataclass
+class PyEITAnomaly_Circle(PyEITAnomaly):
+    """
+    Pyeit Anomaly for simulation purpose, 2D circle
+
+    """
+
+    r: float = 1.0  # radius of the circle
+
+    def mask(self, pts: np.ndarray) -> np.ndarray:
+        pts = pts[:, :2].reshape((-1, 2))
+        pc = self.center[:2].reshape((1, 2))
+        return circle(pts, pc, self.r) < 0
+
+
+@dataclass
+class PyEITAnomaly_Ball(PyEITAnomaly):
+    """
+    Pyeit Anomaly for simulation purpose, 3D ball
+    """
+
+    r: float = 1.0  # radius of the ball
+
+    def mask(self, pts: np.ndarray) -> np.ndarray:
+        pts = pts.reshape((-1, 3))
+        pc = self.center.reshape((1, 3))
+        return ball(pts, pc, self.r) < 0
+
+
 def set_perm(
-    mesh: PyEITMesh, anomaly: dict = None, background: float = None
+    mesh: PyEITMesh,
+    anomaly: Union[PyEITAnomaly, list[PyEITAnomaly]] = None,
+    background: float = None,
 ) -> PyEITMesh:
     """wrapper for pyEIT interface
 
@@ -393,9 +446,8 @@ def set_perm(
     ----------
     mesh: PyEITMesh
         mesh object
-    anomaly: dict, optional
-        anomaly is a dictionary (or arrays of dictionary) contains,
-        {'x': val, 'y': val, 'd': val, 'perm': val}
+    anomaly: Union[PyEITAnomaly, list[PyEITAnomaly]], optional
+        anomaly object or list of anomalyobject contains,
         all permittivity on triangles whose distance to (x,y) are less than (d)
         will be replaced with a new value, 'perm' may be a complex value.
     background: float, optional
@@ -407,49 +459,27 @@ def set_perm(
         mesh object
     """
     perm = mesh.perm.copy()
-    tri_centers = mesh.elem_centers  # np.mean(tri[pts], axis=1)
-
-    # this code is equivalent to:
-    # >>> N = np.shape(tri)[0]
-    # >>> for i in range(N):
-    # >>>     tri_centers[i] = np.mean(pts[tri[i]], axis=0)
-    # >>> plt.plot(tri_centers[:,0], tri_centers[:,1], 'kx')
-
     # reset background if needed
     if background is not None:
         perm = background * np.ones_like(mesh.perm)
 
     # change dtype to 'complex' for complex-valued permittivity
-    if anomaly is not None:
-        for attr in anomaly:
-            if np.iscomplex(attr["perm"]):
-                perm = perm.astype("complex")
-                break
+    if anomaly is None:
+        return mesh
+
+    if isinstance(anomaly, PyEITAnomaly):
+        anomaly = [anomaly]
+
+    for an in anomaly:
+        if np.iscomplex(an.perm):
+            perm = perm.astype("complex")
+            break
 
     # assign anomaly values (for elements in regions)
-    if anomaly is not None:
-        for attr in anomaly:
-            d = attr["d"]
-            # find elements whose distance to (cx,cy) is smaller than d
-            if "z" in attr:
-                index = (
-                    np.sqrt(
-                        (tri_centers[:, 0] - attr["x"]) ** 2
-                        + (tri_centers[:, 1] - attr["y"]) ** 2
-                        + (tri_centers[:, 2] - attr["z"]) ** 2
-                    )
-                    < d
-                )
-            else:
-                index = (
-                    np.sqrt(
-                        (tri_centers[:, 0] - attr["x"]) ** 2
-                        + (tri_centers[:, 1] - attr["y"]) ** 2
-                    )
-                    < d
-                )
-            # update permittivity within indices
-            perm[index] = attr["perm"]
+    tri_centers = mesh.elem_centers
+    for an in anomaly:
+        mask = an.mask(tri_centers)
+        perm[mask] = an.perm
 
     return PyEITMesh(
         element=mesh.element,
@@ -466,3 +496,8 @@ def layer_circle(n_el: int = 16, n_fan: int = 8, n_layer: int = 8) -> PyEITMesh:
     pts, tri, el_pos = model.create()
     # perm = np.ones(tri.shape[0]) not need anymore as handled in PyEITMesh
     return PyEITMesh(element=tri, node=pts, perm=None, el_pos=el_pos)
+
+
+if __name__ == "__main__":
+    """"""
+    PyEITAnomaly_Circle()

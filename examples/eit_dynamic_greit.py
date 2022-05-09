@@ -12,9 +12,10 @@ from pyeit.eit.fem import EITForward
 import pyeit.eit.protocol as protocol
 from pyeit.mesh.shape import thorax
 import pyeit.eit.greit as greit
+from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 
 """ 0. construct mesh """
-n_el= 16 # nb of electrodes
+n_el = 16  # nb of electrodes
 use_customize_shape = False
 if use_customize_shape:
     # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax
@@ -32,10 +33,10 @@ tri = mesh_obj.element
 
 # test function for altering the 'permittivity' in mesh
 anomaly = [
-    {"x": 0.4, "y": 0, "d": 0.1, "perm": 10},
-    {"x": -0.4, "y": 0, "d": 0.1, "perm": 10},
-    {"x": 0, "y": 0.5, "d": 0.1, "perm": 0.1},
-    {"x": 0, "y": -0.5, "d": 0.1, "perm": 0.1},
+    PyEITAnomaly_Circle(center=[0.4, 0], r=0.1, perm=10.0),
+    PyEITAnomaly_Circle(center=[-0.4, 0], r=0.1, perm=10.0),
+    PyEITAnomaly_Circle(center=[0, 0.5], r=0.1, perm=0.1),
+    PyEITAnomaly_Circle(center=[0, -0.5], r=0.1, perm=0.1),
 ]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 delta_perm = np.real(mesh_new.perm - mesh_obj.perm)

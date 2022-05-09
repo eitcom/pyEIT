@@ -8,13 +8,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pyeit.eit.jac as jac
 import pyeit.eit.protocol as protocol
+
 # pyEIT 2D algorithm modules
 import pyeit.mesh as mesh
 from pyeit.eit.fem import EITForward
 from pyeit.mesh.shape import thorax
+from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 
 """ 1. setup """
-n_el= 16 # nb of electrodes
+n_el = 16  # nb of electrodes
 use_customize_shape = False
 if use_customize_shape:
     # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax
@@ -23,11 +25,11 @@ else:
     mesh_obj = mesh.create(n_el, h0=0.1)
 
 # test function for altering the permittivity in mesh
-anomaly = [{"x": 0.4, "y": 0.4, "d": 0.2, "perm": 100}]
+anomaly = PyEITAnomaly_Circle(center=[0.4, 0.4], r=0.2, perm=100.0)
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 
 """ 2. calculate simulated data using stack ex_mat """
-protocol_obj = protocol.create(n_el, dist_exc=[7,3], step_meas=1, parser_meas="std")
+protocol_obj = protocol.create(n_el, dist_exc=[7, 3], step_meas=1, parser_meas="std")
 
 # forward solver
 fwd = EITForward(mesh_obj, protocol_obj)

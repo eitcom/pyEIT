@@ -16,9 +16,10 @@ import pyeit.eit.protocol as protocol
 import pyeit.eit.greit as greit
 import pyeit.eit.bp as bp
 import pyeit.eit.jac as jac
+from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 
 """ 0. construct mesh structure """
-n_el= 16 # nb of electrodes
+n_el = 16  # nb of electrodes
 mesh_obj = mesh.create(n_el, h0=0.1)
 
 # extract node, element, permittivity
@@ -29,10 +30,10 @@ el_pos = mesh_obj.el_pos
 """ 1. problem setup """
 # test function for altering the permittivity in mesh
 anomaly = [
-    {"x": 0.4, "y": 0, "d": 0.1, "perm": 5},
-    {"x": -0.4, "y": 0, "d": 0.1, "perm": 5},
-    {"x": 0, "y": 0.5, "d": 0.1, "perm": 0.1},
-    {"x": 0, "y": -0.5, "d": 0.1, "perm": 0.1},
+    PyEITAnomaly_Circle(center=[0.4, 0], r=0.1, perm=5),
+    PyEITAnomaly_Circle(center=[-0.4, 0], r=0.1, perm=5),
+    PyEITAnomaly_Circle(center=[0, 0.5], r=0.1, perm=0.1),
+    PyEITAnomaly_Circle(center=[0, -0.5], r=0.1, perm=0.1),
 ]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 delta_perm = np.real(mesh_new.perm - mesh_obj.perm)

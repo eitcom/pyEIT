@@ -537,6 +537,8 @@ def pdegrad(
 
 
 def demo() -> None:
+    from pyeit.mesh.wrapper import PyEITAnomaly_Circle
+
     """demo shows how to interpolate on regular/irregular grids"""
     # 1. create mesh
     mesh_obj = layer_circle(n_layer=8, n_fan=6)
@@ -544,7 +546,7 @@ def demo() -> None:
     tri = mesh_obj.element
 
     # set anomaly
-    anomaly = [{"x": 0.5, "y": 0.5, "d": 0.2, "perm": 100.0}]
+    anomaly = PyEITAnomaly_Circle(center=[0.5, 0.5], r=0.2, perm=100.0)
     mesh_new = set_perm(mesh_obj, anomaly=anomaly)
 
     # 2. interpolate using averaged neighbor triangle area
