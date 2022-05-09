@@ -127,16 +127,17 @@ def _hull_points(pts: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     pts: np.ndarray
-        nx2 array of points (x, y)
+        nx2 array of points (x, y) (can be also (x,y,z))
 
     Returns
     -------
     np.ndarray
         convex hull points (edge points)
     """
-    cv = ConvexHull(pts)
+    pts_2D= pts[:,:2] # get only x and y 
+    cv = ConvexHull(pts_2D)
     hull_nodes = cv.vertices
-    return pts[hull_nodes, :]
+    return pts_2D[hull_nodes, :]
 
 
 def _distance2d(
@@ -400,7 +401,7 @@ def tri_area(pts: np.ndarray, sim: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     pts: np.ndarray
-        Nx2 array, (x,y) locations for points
+        Nx2 array, (x,y) locations for points (can be also (x,y,z))
     sim: np.ndarray
         Mx3 array, elements (triangles) connectivity
 
@@ -409,9 +410,10 @@ def tri_area(pts: np.ndarray, sim: np.ndarray) -> np.ndarray:
     a: np.ndarray
         Areas of triangles
     """
+    pts_2D= pts[:,:2] # get only x and y 
     a = np.zeros(np.shape(sim)[0])
     for i, e in enumerate(sim):
-        xy = pts[e]
+        xy = pts_2D[e]
         # which can be simplified to
         # s = xy[[2, 0, 1]] - xy[[1, 2, 0]]
         s = xy[[2, 0]] - xy[[1, 2]]
