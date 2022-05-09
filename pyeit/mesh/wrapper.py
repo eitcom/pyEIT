@@ -30,13 +30,14 @@ class PyEITMesh:
     node: np.ndarray  # node of the mesh of shape (n_nodes, 2), (n_nodes, 3)
     el_pos: np.ndarray # node corresponding to each electrodes of shape (n_el, 1)
     perm: Union[int, float, np.ndarray] = None  # permittivity on element
-    ref_el: int = None # node of the reference electrode
+    ref_el: int = None # node of the reference electrode # ref node should not be on electrodes, it is up to the user to decide
 
     def __post_init__(self) -> None:
         """Checking of the inputs"""
         self.element = self._check_element(self.element)
         self.node = self._check_node(self.node)
         self.perm = self.get_valid_perm(self.perm)
+        self.ref_el = self._check_ref_el(self.ref_el)
 
     def print_stats(self):
         """
@@ -162,6 +163,40 @@ class PyEITMesh:
             )
         return perm
 
+    def _check_ref_el(self, ref_el: int=None) -> int:
+        """
+        Return a valid reference electrode node
+
+        Parameters
+        ----------
+        ref_el : int, optional
+            node number of reference electrode, by default None
+            If None, a default node will be assigned
+            If the choosen node is on electrode node, a default node will be assigned
+        
+        eturns
+        -------
+        int
+            valid reference electrode node
+
+        """
+        return (
+            ref_el if ref_el is not None and ref_el not in self.el_pos else max(self.el_pos) + 1
+        )
+    
+    def set_ref_el(self, ref_el: int) -> None:
+        """
+        Set reference electrode node
+
+        Parameters
+        ----------
+        ref_el : int, optional
+            node number of reference electrode
+            If the choosen node is on electrode node, a default node will be assigned
+
+        """
+        self.ref_el= self._check_ref_el(ref_el)
+
     @property
     def x_coor(self) -> np.ndarray:
         """
@@ -221,6 +256,16 @@ class PyEITMesh:
             number of vertices of the elements contained in the mesh
         """
         return self.element.shape[1]
+    
+    @property
+    def n_el(self) -> int:
+        """
+        Returns
+        -------
+        int
+            number of electrodes
+        """
+        return self.el_pos.shape[0]
 
     @property
     def elem_centers(self) -> np.ndarray:
