@@ -203,36 +203,6 @@ class PyEITMesh:
         self.ref_el = self._check_ref_el(ref_el)
 
     @property
-    def x_coor(self) -> np.ndarray:
-        """
-        Returns
-        -------
-        np.ndarray
-            x coordinates of the nodes; shape (n_nodes,)
-        """
-        return self.node[:, 0]
-
-    @property
-    def y_coor(self) -> np.ndarray:
-        """
-        Returns
-        -------
-        np.ndarray
-            y coordinates of the nodes; shape (n_nodes,)
-        """
-        return self.node[:, 1]
-
-    @property
-    def z_coor(self) -> np.ndarray:
-        """
-        Returns
-        -------
-        np.ndarray
-            z coordinates of the nodes; shape (n_nodes,)
-        """
-        return self.node[:, 2]
-
-    @property
     def n_nodes(self) -> int:
         """
         Returns
