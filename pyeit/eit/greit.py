@@ -11,7 +11,8 @@ Note, that, the advantages of greit is NOT on simulated data, but
 """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
+
 from typing import Tuple
 
 import numpy as np
@@ -167,7 +168,9 @@ class GREIT(EitBase):
             weights
         """
         # mapping from values on triangles to values on grids
-        xy = self.mesh.elem_centers #np.mean(self.mesh.node[self.mesh.element], axis=1)
+        xy = (
+            self.mesh.elem_centers
+        )  # np.mean(self.mesh.node[self.mesh.element], axis=1)
         xyi = np.vstack((xg.flatten(), yg.flatten())).T
         # GREIT is using sigmod as weighting function (global)
         ratio, s = self.params["ratio"], self.params["s"]

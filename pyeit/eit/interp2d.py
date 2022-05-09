@@ -3,18 +3,19 @@
 """ interpolation on 2D/3D irregular/regular grids """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
+
 from typing import Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as la
-from scipy.sparse import coo_matrix
-from scipy.spatial import ConvexHull
 from matplotlib.path import Path
-import matplotlib.pyplot as plt
 
 # for debugging
 from pyeit.mesh import layer_circle, set_perm
+from scipy.sparse import coo_matrix
+from scipy.spatial import ConvexHull
 
 
 def meshgrid(
@@ -134,7 +135,7 @@ def _hull_points(pts: np.ndarray) -> np.ndarray:
     np.ndarray
         convex hull points (edge points)
     """
-    pts_2D= pts[:,:2] # get only x and y 
+    pts_2D = pts[:, :2]  # get only x and y
     cv = ConvexHull(pts_2D)
     hull_nodes = cv.vertices
     return pts_2D[hull_nodes, :]
@@ -410,7 +411,7 @@ def tri_area(pts: np.ndarray, sim: np.ndarray) -> np.ndarray:
     a: np.ndarray
         Areas of triangles
     """
-    pts_2D= pts[:,:2] # get only x and y 
+    pts_2D = pts[:, :2]  # get only x and y
     a = np.zeros(np.shape(sim)[0])
     for i, e in enumerate(sim):
         xy = pts_2D[e]

@@ -7,12 +7,15 @@ writing your own reconstruction algorithms.
 """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
+
+import warnings
 from abc import ABC, abstractmethod
+
 import numpy as np
 from pyeit.eit.protocol import PyEITProtocol
-import warnings
 from pyeit.mesh.wrapper import PyEITMesh
+
 from .fem import EITForward
 
 
@@ -55,14 +58,14 @@ class EitBase(ABC):
         self.is_ready = False
         warnings.warn(
             f"Before using {type(self).__name__}-EITSolver run solver.setup() to set the solver ready!",
-            stacklevel=2
+            stacklevel=2,
         )
-    
+
     @property
-    def mesh(self)->PyEITMesh:
+    def mesh(self) -> PyEITMesh:
         return self.fwd.mesh
 
-    # # if needed protocol attributes can be accessed by using self.protocol 
+    # # if needed protocol attributes can be accessed by using self.protocol
     # # instead of self.fwd.protocol
     # @property
     # def protocol(self)->PyEITProtocol:

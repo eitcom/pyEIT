@@ -3,16 +3,17 @@
 """ wrapper function of distmesh for EIT """
 # Copyright (c) Benyuan Liu. All rights reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
+
 from dataclasses import dataclass
 from typing import Callable, Union
 
 import numpy as np
 
+from . import shape
 from .distmesh import build
 from .mesh_circle import MeshCircle
 from .utils import check_order
-from . import shape
 
 
 @dataclass
@@ -28,9 +29,9 @@ class PyEITMesh:
 
     element: np.ndarray  # elements of the mesh of shape (n_elem, 3) for 2D mesh, (n_elem, 4) for 3D mesh
     node: np.ndarray  # node of the mesh of shape (n_nodes, 2), (n_nodes, 3)
-    el_pos: np.ndarray # node corresponding to each electrodes of shape (n_el, 1)
+    el_pos: np.ndarray  # node corresponding to each electrodes of shape (n_el, 1)
     perm: Union[int, float, np.ndarray] = None  # permittivity on element
-    ref_el: int = None # node of the reference electrode # ref node should not be on electrodes, it is up to the user to decide
+    ref_el: int = None  # node of the reference electrode # ref node should not be on electrodes, it is up to the user to decide
 
     def __post_init__(self) -> None:
         """Checking of the inputs"""
@@ -124,9 +125,9 @@ class PyEITMesh:
             raise TypeError(
                 f"Wrong shape of {node.shape=}, expected an ndarray of shape (n_nodes,2) or (n_nodes,3)"
             )
-        # convert nodes [x,y] to nodes [x,y,0] 
+        # convert nodes [x,y] to nodes [x,y,0]
         if node.shape[1] == 2:
-            node = np.hstack((node, np.zeros((node.shape[0],1))))
+            node = np.hstack((node, np.zeros((node.shape[0], 1))))
 
         return node
 
@@ -163,7 +164,7 @@ class PyEITMesh:
             )
         return perm
 
-    def _check_ref_el(self, ref_el: int=None) -> int:
+    def _check_ref_el(self, ref_el: int = None) -> int:
         """
         Return a valid reference electrode node
 
@@ -173,7 +174,7 @@ class PyEITMesh:
             node number of reference electrode, by default None
             If None, a default node will be assigned
             If the choosen node is on electrode node, a default node will be assigned
-        
+
         eturns
         -------
         int
@@ -181,9 +182,11 @@ class PyEITMesh:
 
         """
         return (
-            ref_el if ref_el is not None and ref_el not in self.el_pos else max(self.el_pos) + 1
+            ref_el
+            if ref_el is not None and ref_el not in self.el_pos
+            else max(self.el_pos) + 1
         )
-    
+
     def set_ref_el(self, ref_el: int) -> None:
         """
         Set reference electrode node
@@ -195,7 +198,7 @@ class PyEITMesh:
             If the choosen node is on electrode node, a default node will be assigned
 
         """
-        self.ref_el= self._check_ref_el(ref_el)
+        self.ref_el = self._check_ref_el(ref_el)
 
     @property
     def x_coor(self) -> np.ndarray:
@@ -256,7 +259,7 @@ class PyEITMesh:
             number of vertices of the elements contained in the mesh
         """
         return self.element.shape[1]
-    
+
     @property
     def n_el(self) -> int:
         """
@@ -374,7 +377,7 @@ def create(
     t = check_order(p, t)
     # 3. generate electrodes, the same as p_fix (top n_el)
     el_pos = np.arange(n_el)
-    return PyEITMesh(element=t, node=p, perm=None, el_pos= el_pos)
+    return PyEITMesh(element=t, node=p, perm=None, el_pos=el_pos)
 
 
 def set_perm(
@@ -451,16 +454,15 @@ def set_perm(
     return PyEITMesh(
         element=mesh.element,
         node=mesh.node,
-        perm=perm, 
+        perm=perm,
         el_pos=mesh.el_pos,
-        ref_el=mesh.ref_el)
+        ref_el=mesh.ref_el,
+    )
 
 
-def layer_circle(
-    n_el: int = 16, n_fan: int = 8, n_layer: int = 8
-) -> PyEITMesh:
+def layer_circle(n_el: int = 16, n_fan: int = 8, n_layer: int = 8) -> PyEITMesh:
     """generate mesh on unit-circle"""
     model = MeshCircle(n_fan=n_fan, n_layer=n_layer, n_el=n_el)
     pts, tri, el_pos = model.create()
     # perm = np.ones(tri.shape[0]) not need anymore as handled in PyEITMesh
-    return PyEITMesh(element=tri, node=pts, perm=None, el_pos= el_pos)
+    return PyEITMesh(element=tri, node=pts, perm=None, el_pos=el_pos)

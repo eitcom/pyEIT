@@ -14,7 +14,9 @@ from .utils import check_order
 from .wrapper import PyEITMesh
 
 
-def multi_shell(n_fan=8, n_layer=8, n_el=16, r_layer=None, perm_per_layer=None)->PyEITMesh:
+def multi_shell(
+    n_fan=8, n_layer=8, n_el=16, r_layer=None, perm_per_layer=None
+) -> PyEITMesh:
     """
     create simple multi shell mesh
 
@@ -59,12 +61,12 @@ def multi_shell(n_fan=8, n_layer=8, n_el=16, r_layer=None, perm_per_layer=None)-
         perm[idx] = a
 
     # 5. build output structure
-    return PyEITMesh(element= e, node= p, perm= perm, el_pos= el_pos, ref= 0)
+    return PyEITMesh(element=e, node=p, perm=perm, el_pos=el_pos, ref=0)
 
 
 def multi_circle(
     r=1.0, background=1.0, n_el=16, h0=0.006, r_layer=None, perm_per_layer=None, ppl=64
-)->PyEITMesh:
+) -> PyEITMesh:
     """
     create multi layer circle mesh
 
@@ -112,7 +114,6 @@ def multi_circle(
         r2 = np.sum(pts**2, axis=1)
         return 0.6 * (2.0 - r2)
 
-
     # 1. build fix points, may be used as the position for electrodes
     if ppl > n_el:
         step = np.ceil(ppl / n_el).astype("int")
@@ -147,4 +148,4 @@ def multi_circle(
         perm[idx] = a
 
     # 5. build output structure
-    return PyEITMesh(element= t, node= p, perm= perm, el_pos= el_pos, ref= 0)
+    return PyEITMesh(element=t, node=p, perm=perm, el_pos=el_pos, ref=0)

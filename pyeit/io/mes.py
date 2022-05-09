@@ -8,15 +8,16 @@ Please Cite the following paper if you are using .mes in your research:
     intracranial pressure during dehydration treatment of cerebral edema."
     NeuroImage: Clinical 23 (2019): 101909.
 """
+import ctypes
+
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import os
-import ctypes
 import struct
-import numpy as np
-import matplotlib.pyplot as plt
-from pkg_resources import resource_filename
 
+import matplotlib.pyplot as plt
+import numpy as np
+from pkg_resources import resource_filename
 from pyeit.mesh.wrapper import PyEITMesh
 
 
@@ -58,7 +59,7 @@ def load(fstr, mirror=False) -> PyEITMesh:
         el_index = np.mod(np.arange(ne_start, -ne_start, -1), ne)
         el_pos = el_pos[el_index]
 
-    return PyEITMesh(node= pts, element= tri,perm=perm, el_pos=el_pos)
+    return PyEITMesh(node=pts, element=tri, perm=perm, el_pos=el_pos)
 
 
 def get_bmp_size(fh):
@@ -160,7 +161,7 @@ def extract_el(fh):
     return el_pos
 
 
-def mesh_plot(ax, mesh_obj:PyEITMesh, imstr="", title=None):
+def mesh_plot(ax, mesh_obj: PyEITMesh, imstr="", title=None):
     """plot and annotate mesh"""
     p, e, perm = mesh_obj.node, mesh_obj.element, mesh_obj.perm
     mesh_center = np.array([np.median(p[:, 0]), np.median(p[:, 1])])

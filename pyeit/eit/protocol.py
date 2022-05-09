@@ -17,8 +17,9 @@ class PyEITProtocol:
     EIT Protocol buid-in protocol object
 
     """
-    ex_mat:np.ndarray
-    meas_mat:np.ndarray
+
+    ex_mat: np.ndarray
+    meas_mat: np.ndarray
 
     def __post_init__(self) -> None:
         """Checking of the inputs"""
@@ -98,7 +99,6 @@ class PyEITProtocol:
 
         return meas_mat
 
-
     @property
     def n_exc(self) -> int:
         """
@@ -118,7 +118,7 @@ class PyEITProtocol:
             number of measurements per excitations
         """
         return self.meas_mat.shape[1]
-    
+
     @property
     def n_meas_tot(self) -> int:
         """
@@ -127,7 +127,7 @@ class PyEITProtocol:
         int
             total amount of measurements
         """
-        return self.n_meas*self.n_exc
+        return self.n_meas * self.n_exc
 
     @property
     def n_el(self) -> int:
@@ -138,9 +138,14 @@ class PyEITProtocol:
             number of electrodes used in the excitation and
         """
         return max(max(self.ex_mat.flatten()), max(self.meas_mat.flatten())) + 1
-    
 
-def create(n_el:int=16, dist_exc:Union[int, list[int]]=1, step_meas:int=1, parser_meas:Union[str, list[str]]= 'std') -> PyEITProtocol:
+
+def create(
+    n_el: int = 16,
+    dist_exc: Union[int, list[int]] = 1,
+    step_meas: int = 1,
+    parser_meas: Union[str, list[str]] = "std",
+) -> PyEITProtocol:
     """
     Return an EIT protocol, comprising an excitation and a measuremnet pattern
 
@@ -171,7 +176,7 @@ def create(n_el:int=16, dist_exc:Union[int, list[int]]=1, step_meas:int=1, parse
         if dist_exc is not list or an int
     """
     if isinstance(dist_exc, int):
-        dist_exc= [dist_exc]
+        dist_exc = [dist_exc]
 
     if not isinstance(dist_exc, list):
         raise TypeError(f"{dist_exc=}; {type(dist_exc)=} should be a list[int]")
@@ -179,11 +184,16 @@ def create(n_el:int=16, dist_exc:Union[int, list[int]]=1, step_meas:int=1, parse
     _ex_mat = [build_exc_pattern_std(n_el, dist) for dist in dist_exc]
     ex_mat = np.vstack(_ex_mat)
 
-    meas_mat= build_meas_pattern_std(ex_mat, n_el, step_meas, parser_meas)
+    meas_mat = build_meas_pattern_std(ex_mat, n_el, step_meas, parser_meas)
     return PyEITProtocol(ex_mat, meas_mat)
 
 
-def build_meas_pattern_std(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[str, list[str]]= 'std') -> np.ndarray:
+def build_meas_pattern_std(
+    ex_mat: np.ndarray,
+    n_el: int = 16,
+    step: int = 1,
+    parser: Union[str, list[str]] = "std",
+) -> np.ndarray:
     """
     Build the measurement pattern (subtract_row-voltage pairs [N, M])
     for all excitations on boundary electrodes.
@@ -231,7 +241,7 @@ def build_meas_pattern_std(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Un
     for ex_line in ex_mat:
         a, b = ex_line[0], ex_line[1]
         i0 = a if fmmu_rotate else 0
-        m = (i0 + np.arange(n_el)) %n_el
+        m = (i0 + np.arange(n_el)) % n_el
         n = (m + step) % n_el
         meas_pattern = np.vstack([n, m]).T
 
@@ -240,9 +250,8 @@ def build_meas_pattern_std(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Un
             meas_pattern = meas_pattern[diff_keep]
 
         diff_op.append(meas_pattern)
-        
+
     return np.array(diff_op)
-    
 
 
 def build_exc_pattern_std(n_el: int = 16, dist: int = 1) -> np.ndarray:

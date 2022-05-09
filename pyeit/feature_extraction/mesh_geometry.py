@@ -27,7 +27,7 @@ class SimpleMeshGeometry:
     """
 
     # constructor
-    def __init__(self, mesh:PyEITMesh, method="element"):
+    def __init__(self, mesh: PyEITMesh, method="element"):
         """
         Parameters
         ----------
@@ -43,7 +43,7 @@ class SimpleMeshGeometry:
             self.ts = mesh.elem_centers
         else:
             self.ts = mesh.node
-        el_pos=mesh.el_pos
+        el_pos = mesh.el_pos
 
         # vertical cut (from 5->13)
         pts = mesh.node
@@ -298,7 +298,7 @@ if __name__ == "__main__":
     mesh = mes.load(mstr)
     pts = mesh.node
     tri = mesh.element
-    el_pos= mesh.el_pos
+    el_pos = mesh.el_pos
     x, y = pts[:, 0], pts[:, 1]
 
     # 1. demo using ellipse fit

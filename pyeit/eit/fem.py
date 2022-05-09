@@ -36,12 +36,14 @@ class Forward:
         The nodes are continuous numbered, the numbering of an element is
         CCW (counter-clock-wise).
         """
-        self.mesh= mesh
+        self.mesh = mesh
         # coefficient matrix [initialize]
         self.se = calculate_ke(self.mesh.node, self.mesh.element)
         self.assemble_pde(self.mesh.perm, init=True)
 
-    def assemble_pde(self, perm:Union[int, float, np.ndarray]= None, init: bool = True)->None:
+    def assemble_pde(
+        self, perm: Union[int, float, np.ndarray] = None, init: bool = True
+    ) -> None:
         """
         assemble PDE
 
@@ -60,14 +62,15 @@ class Forward:
         """
         if any(self.mesh.perm != perm) and not init:
             warnings.warn(
-                'You passed a new permittivity but you dont want to init', 
-                stacklevel=2
+                "You passed a new permittivity but you dont want to init", stacklevel=2
             )
         # be raised, telling a user that it should pass init = True
         if not init:
             return
         perm = self._check_perm(perm)
-        self.kg = assemble(self.se, self.mesh.element, perm, self.mesh.n_nodes, ref=self.mesh.ref_el)
+        self.kg = assemble(
+            self.se, self.mesh.element, perm, self.mesh.n_nodes, ref=self.mesh.ref_el
+        )
 
     def solve(self, ex_line: np.ndarray = None) -> np.ndarray:
         """
@@ -99,7 +102,7 @@ class Forward:
 
     def _check_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
         """
-        Check/init the permittivity on element 
+        Check/init the permittivity on element
 
         Parameters
         ----------
@@ -148,31 +151,33 @@ class EITForward(Forward):
         super().__init__(mesh=mesh)
 
         # EIT measurement protocol
-        self.protocol= protocol
+        self.protocol = protocol
 
-    def _check_mesh_protocol_compatibility(self, mesh: PyEITMesh, protocol: PyEITProtocol) -> None:
+    def _check_mesh_protocol_compatibility(
+        self, mesh: PyEITMesh, protocol: PyEITProtocol
+    ) -> None:
         """
         Check if mesh and protocol are compatible
 
-        - #1 n_el in mesh >=  n_el in protocol 
+        - #1 n_el in mesh >=  n_el in protocol
         - #2 .., TODO if necessary
-    
+
         Raises
         ------
         ValueError
             if protocol is not compatible to the mesh
         """
         # n_el in mesh should be >=  n_el in protocol
-        m_n_el=mesh.n_el 
-        p_n_el=protocol.n_el
+        m_n_el = mesh.n_el
+        p_n_el = protocol.n_el
 
-        if m_n_el!=p_n_el:
+        if m_n_el != p_n_el:
             warnings.warn(
                 f"The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes",
-                stacklevel=2
+                stacklevel=2,
             )
-        
-        if m_n_el<p_n_el: 
+
+        if m_n_el < p_n_el:
             raise ValueError(
                 f"Protocol is not compatible with mesh :\
 The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes "
@@ -213,7 +218,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         normalize: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Compute the Jacobian matrix and initial boundary voltage meas. 
+        Compute the Jacobian matrix and initial boundary voltage meas.
         extimation v0
 
         Parameters
@@ -238,7 +243,8 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
 
         # calculate v, jac per excitation pattern (ex_line)
         _jac = np.zeros(
-            (self.protocol.n_exc, self.protocol.n_meas, self.mesh.n_elems), dtype=self.mesh.perm.dtype
+            (self.protocol.n_exc, self.protocol.n_meas, self.mesh.n_elems),
+            dtype=self.mesh.perm.dtype,
         )
         v = np.zeros((self.protocol.n_exc, self.protocol.n_meas))
         for i, ex_line in enumerate(self.protocol.ex_mat):
@@ -446,6 +452,7 @@ def assemble(
 
     # for efficient sparse inverse (csc)
     return sparse.csr_matrix((data, (row, col)), shape=(n_pts, n_pts))
+
 
 def calculate_ke(pts: np.ndarray, tri: np.ndarray) -> np.ndarray:
     """
