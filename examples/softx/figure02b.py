@@ -21,11 +21,11 @@ from pyeit.eit.utils import eit_scan_lines
 mesh_obj = mesh.create(h0=0.05)
 
 # extract node, element, alpha
-pts = mesh_obj["node"]
-tri = mesh_obj["element"]
-el_pos = mesh_obj["el_pos"]
+pts = mesh_obj.node
+tri = mesh_obj.element
+el_pos = mesh_obj.el_pos
 x, y = pts[:, 0], pts[:, 1]
-quality.stats(pts, tri)
+mesh_obj.print_stats()
 
 
 def calc_sens(fwd: EITForward, ex_mat):
@@ -45,8 +45,7 @@ def calc_sens(fwd: EITForward, ex_mat):
     assert any(s >= 0)
 
     se = np.log10(s)
-    sn = sim2pts(pts, tri, se)
-    return sn
+    return sim2pts(pts, tri, se)
 
 
 """ 1. FEM forward setup """

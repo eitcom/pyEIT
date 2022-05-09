@@ -17,8 +17,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pkg_resources import resource_filename
 
+from pyeit.mesh.wrapper import PyEITMesh
 
-def load(fstr, mirror=False):
+
+def load(fstr, mirror=False) -> PyEITMesh:
     """
     Parameters
     ----------
@@ -56,8 +58,7 @@ def load(fstr, mirror=False):
         el_index = np.mod(np.arange(ne_start, -ne_start, -1), ne)
         el_pos = el_pos[el_index]
 
-    mesh = {"node": pts, "element": tri, "perm": perm}
-    return mesh, el_pos
+    return PyEITMesh(node= pts, element= tri,perm=perm, el_pos=el_pos)
 
 
 def get_bmp_size(fh):
@@ -159,9 +160,9 @@ def extract_el(fh):
     return el_pos
 
 
-def mesh_plot(ax, mesh_obj, el_pos, imstr="", title=None):
+def mesh_plot(ax, mesh_obj:PyEITMesh, imstr="", title=None):
     """plot and annotate mesh"""
-    p, e, perm = mesh_obj["node"], mesh_obj["element"], mesh_obj["perm"]
+    p, e, perm = mesh_obj.node, mesh_obj.element, mesh_obj.perm
     mesh_center = np.array([np.median(p[:, 0]), np.median(p[:, 1])])
     annotate_color = "k"
     if os.path.exists(imstr):
@@ -170,8 +171,8 @@ def mesh_plot(ax, mesh_obj, el_pos, imstr="", title=None):
         ax.imshow(im, origin="lower")
     ax.tripcolor(p[:, 0], p[:, 1], e, facecolors=perm, edgecolors="k", alpha=0.4)
     ax.triplot(p[:, 0], p[:, 1], e, lw=1)
-    ax.plot(p[el_pos, 0], p[el_pos, 1], "ro")
-    for i, el in enumerate(el_pos):
+    ax.plot(p[mesh_obj.el_pos, 0], p[mesh_obj.el_pos, 1], "ro")
+    for i, el in enumerate(mesh_obj.el_pos):
         xy = np.array([p[el, 0], p[el, 1]])
         text_offset = (xy - mesh_center) * [1, -1] * 0.05
         ax.annotate(
@@ -195,23 +196,23 @@ if __name__ == "__main__":
     # How to load and use a .mes file (github.com/liubenyuan/eitmesh)
     mstr = resource_filename("eitmesh", "data/IM470.mes")
     imstr = mstr.replace(".mes", ".bmp")
-    mesh_obj, el_pos = load(fstr=mstr)
+    mesh_obj = load(fstr=mstr)
 
     # print the size
-    e, pts, perm = mesh_obj["element"], mesh_obj["node"], mesh_obj["perm"]
+    e, pts, perm = mesh_obj.element, mesh_obj.node, mesh_obj.perm
     # print('tri size = (%d, %d)' % e.shape)
     # print('pts size = (%d, %d)' % pts.shape)
     fig, ax = plt.subplots(1, figsize=(6, 6))
-    mesh_plot(ax, mesh_obj, el_pos, imstr=imstr)
+    mesh_plot(ax, mesh_obj, imstr=imstr)
     # fig.savefig("IM470.png", dpi=100)
 
     # compare two mesh
     mstr = resource_filename("eitmesh", "data/DLS2.mes")
-    mesh_obj2, el_pos2 = load(fstr=mstr)
-    mesh_array = [[mesh_obj, el_pos, "IM470"], [mesh_obj2, el_pos2, "DLS2"]]
+    mesh_obj2 = load(fstr=mstr)
+    mesh_array = [[mesh_obj, "IM470"], [mesh_obj2, "DLS2"]]
 
     fig, axs = plt.subplots(1, 2, figsize=(12, 6))
     for i, ax in enumerate(axs):
-        mesh, elp, title = mesh_array[i]
-        mesh_plot(ax, mesh, elp, title=title)
+        mesh, title = mesh_array[i]
+        mesh_plot(ax, mesh, title=title)
     # fig.savefig("mesh_plot.png", dpi=100)

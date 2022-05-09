@@ -6,7 +6,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
-from typing import Union
+from typing import Tuple, Union
 import numpy as np
 import numpy.linalg as la
 from scipy import sparse
@@ -39,7 +39,7 @@ class Forward:
         self.se = calculate_ke(self.mesh.node, self.mesh.element)
         self.assemble_pde(self.mesh.perm, init=True)
 
-    def assemble_pde(self, perm, init: bool = True):
+    def assemble_pde(self, perm:Union[int, float, np.ndarray]= None, init: bool = True):
         """
         assemble PDE
 
@@ -56,7 +56,7 @@ class Forward:
              if self.mesh.perm != perm and not init
 
         """
-        if self.mesh.perm != perm and not init:
+        if any(self.mesh.perm != perm) and not init:
             raise Warning('You passed a new permittivity but you dont want to init')
         # be raised, telling a user that it should pass init = True
         if not init:
@@ -183,7 +183,7 @@ class EITForward(Forward):
         for ex_line in self.ex_mat:
             a, b = ex_line[0], ex_line[1]
             i0 = a if fmmu_rotate else 0
-            m = (i0 + np.arange(self.n_el)) %self.mesh.n_el
+            m = (i0 + np.arange(self.mesh.n_el)) %self.mesh.n_el
             n = (m + self.step) %self.mesh.n_el
             meas_pattern = np.vstack([n, m]).T
 
@@ -221,7 +221,7 @@ class EITForward(Forward):
         """
         if ex_mat is None:
             # initialize the scan lines for 16 electrodes (default: adjacent)
-            ex_mat = np.array([[i, np.mod(i + 1,self.mesh.n_el)] for i in range(self.n_el)])
+            ex_mat = np.array([[i, np.mod(i + 1,self.mesh.n_el)] for i in range(self.mesh.n_el)])
         elif isinstance(ex_mat, list) and len(ex_mat) == 2:
             # case ex_line has been passed instead of ex_mat
             ex_mat = np.array([ex_mat]).reshape((1, 2))  # build a 2D array
@@ -312,7 +312,7 @@ class EITForward(Forward):
         perm: Union[int, float, np.ndarray] = None,
         init: bool = False,
         normalize: bool = False,
-    ) -> Union[np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Compute the Jacobian matrix and initial boundary voltage meas. 
         extimation v0
@@ -329,7 +329,7 @@ class EITForward(Forward):
 
         Returns
         -------
-        Union[np.ndarray, np.ndarray]
+        Tuple[np.ndarray, np.ndarray]
             Jacobian matrix, initial boundary voltage meas. extimation v0
 
         """
@@ -338,7 +338,7 @@ class EITForward(Forward):
         r_el = la.inv(self.kg.toarray())[self.mesh.el_pos]
 
         # calculate v, jac per excitation pattern (ex_line)
-        jac = np.zeros(
+        _jac = np.zeros(
             (self.n_exe, self.n_meas, self.mesh.n_elems), dtype=self.mesh.perm.dtype
         )
         v = np.zeros((self.n_exe, self.n_meas))
@@ -349,16 +349,16 @@ class EITForward(Forward):
             # Build Jacobian matrix column wise (element wise)
             #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
             for (e, ijk) in enumerate(self.mesh.element):
-                jac[i, :, e] = np.dot(np.dot(ri[:, ijk], self.se[e]), f[ijk])
+                _jac[i, :, e] = np.dot(np.dot(ri[:, ijk], self.se[e]), f[ijk])
 
         # measurement protocol
-        J = np.vstack(jac)
+        jac = np.vstack(_jac)
         v0 = v.reshape(-1)
 
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])
         if normalize:
-            J = J / np.abs(v0[:, None])
-        return J, v0
+            jac = jac / np.abs(v0[:, None])
+        return jac, v0
 
     def compute_b_matrix(
         self,

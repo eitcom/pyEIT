@@ -10,9 +10,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import dates
 
+from pyeit.mesh.wrapper import PyEITMesh
+
 
 def mesh_plot(
-    mesh,
+    mesh:PyEITMesh,
     el_pos,
     mstr="",
     figsize=(9, 6),
@@ -26,8 +28,8 @@ def mesh_plot(
 ):
     """plot mesh structure (base layout)"""
     # load mesh structure
-    pts = mesh["node"]
-    tri = mesh["element"]
+    pts = mesh.node
+    tri = mesh.element
     fig, ax = plt.subplots(figsize=figsize)
     ax.set_facecolor("black")
     ax.set_aspect("equal")

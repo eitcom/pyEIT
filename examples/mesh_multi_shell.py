@@ -36,10 +36,10 @@ mesh_obj = multi_circle(
 )
 
 """ 0. Visualizing mesh structure """
-pts = mesh_obj["node"]
-tri = mesh_obj["element"]
-tri_perm = mesh_obj["perm"]
-el_pos = mesh_obj["el_pos"]
+pts = mesh_obj.node
+tri = mesh_obj.element
+tri_perm = mesh_obj.perm
+el_pos = mesh_obj.el_pos
 figsize = (6, 6)
 
 # plot

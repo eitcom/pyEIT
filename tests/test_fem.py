@@ -2,6 +2,7 @@
 import unittest
 import numpy as np
 import pyeit.eit.fem
+from pyeit.mesh.wrapper import PyEITMesh
 
 
 def _assemble(ke, tri, perm, n):
@@ -41,9 +42,7 @@ def _mesh_obj():
     perm = np.array([3.0, 1.0])
     el_pos = np.array([1, 2])
     # new mesh structure or dataset
-    mesh = {"node": node, "element": element, "perm": perm, "el_pos": el_pos, "ref": 3}
-
-    return mesh
+    return PyEITMesh(node=node, element= element, perm=perm, el_pos= el_pos, ref_el= 3)
 
 
 def _mesh_obj_large():
@@ -54,9 +53,7 @@ def _mesh_obj_large():
     perm = np.random.randn(n_tri)
     np.random.seed(0)
     el_pos = np.random.permutation(n_pts)[:16]
-    mesh = {"node": node, "element": element, "perm": perm, "el_pos": el_pos, "ref": 0}
-
-    return mesh
+    return PyEITMesh(node=node, element= element, perm=perm, el_pos= el_pos, ref_el= 0)
 
 
 class TestFem(unittest.TestCase):
@@ -158,7 +155,7 @@ class TestFem(unittest.TestCase):
     def test_solve_eit(self):
         """test solve_eit using a simple mesh structure"""
         mesh = _mesh_obj()
-        el_pos = mesh["el_pos"]
+        el_pos = mesh.el_pos
         ex_mat = np.array([[0, 1], [1, 0]])
         protocol = {"ex_mat": ex_mat, "step": 1, "parser": "meas_current"}
         fwd = pyeit.eit.fem.EITForward(mesh, protocol)

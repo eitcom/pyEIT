@@ -12,13 +12,12 @@ import pyeit.mesh.plot as mplot
 # tetrahedron meshing in a 3D bbox
 bbox = [[-1.2, -1.2, -1.2], [1.2, 1.2, 1.2]]
 # 3D Mesh shape is specified with fd parameter in the instantiation, e.g : fd=ball , Default in 3D :fd=ball
-ms, el_pos = mesh.create(h0=0.15, bbox=bbox)
+ms= mesh.create(h0=0.15, bbox=bbox)
 
 # print mesh quality
-p = ms["node"]
-t = ms["element"]
-print("points =", p.shape)
-print("simplices =", t.shape)
+p = ms.node
+t = ms.element
+ms.print_stats()
 
 # plot
 mplot.tetplot(p, t, edge_color=(0.2, 0.2, 1.0, 1.0), alpha=0.01)

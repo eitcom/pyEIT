@@ -7,6 +7,8 @@ from __future__ import division, absolute_import, print_function
 
 import numpy as np
 
+from pyeit.mesh.wrapper import PyEITMesh
+
 from .shape import circle, fix_points_circle
 from .distmesh import build
 from .utils import check_order
@@ -53,9 +55,7 @@ def multi_shell(n_fan=8, n_layer=8, n_el=16, r_layer=None, perm_per_layer=None):
         perm[idx] = a
 
     # 5. build output structure
-    mesh = {"element": e, "node": p, "perm": perm, "el_pos": el_pos, "ref": 0}
-
-    return mesh
+    return PyEITMesh(element= e, node= p, perm= perm, el_pos= el_pos, ref= 0)
 
 
 def multi_circle(
@@ -137,6 +137,4 @@ def multi_circle(
         perm[idx] = a
 
     # 5. build output structure
-    mesh = {"element": t, "node": p, "perm": perm, "el_pos": el_pos, "ref": 0}
-
-    return mesh
+    return PyEITMesh(element= t, node= p, perm= perm, el_pos= el_pos, ref= 0)

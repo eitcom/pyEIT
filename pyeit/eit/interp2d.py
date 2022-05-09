@@ -538,16 +538,16 @@ def pdegrad(
 def demo() -> None:
     """demo shows how to interpolate on regular/irregular grids"""
     # 1. create mesh
-    mesh_obj, _ = layer_circle(n_layer=8, n_fan=6)
-    pts = mesh_obj["node"]
-    tri = mesh_obj["element"]
+    mesh_obj = layer_circle(n_layer=8, n_fan=6)
+    pts = mesh_obj.node
+    tri = mesh_obj.element
 
     # set anomaly
     anomaly = [{"x": 0.5, "y": 0.5, "d": 0.2, "perm": 100.0}]
     mesh_new = set_perm(mesh_obj, anomaly=anomaly)
 
     # 2. interpolate using averaged neighbor triangle area
-    perm_node = sim2pts(pts, tri, mesh_new["perm"])
+    perm_node = sim2pts(pts, tri, mesh_new.perm)
 
     # plot mesh and interpolated mesh (tri2pts)
     fig_size = (6, 4)
@@ -555,7 +555,7 @@ def demo() -> None:
     ax = fig.add_subplot(111)
     ax.set_aspect("equal")
     ax.triplot(pts[:, 0], pts[:, 1], tri)
-    im1 = ax.tripcolor(pts[:, 0], pts[:, 1], tri, mesh_new["perm"])
+    im1 = ax.tripcolor(pts[:, 0], pts[:, 1], tri, mesh_new.perm)
     fig.colorbar(im1, orientation="vertical")
 
     fig = plt.figure(figsize=fig_size)
@@ -573,7 +573,7 @@ def demo() -> None:
     xyi = np.vstack((xg.flatten(), yg.flatten())).T
     # w_mat = weight_idw(xy, xyi)
     w_mat = weight_sigmod(xy, xyi)
-    im = np.dot(w_mat.T, mesh_new["perm"])
+    im = np.dot(w_mat.T, mesh_new.perm)
     # im = weight_linear_rbf(xy, xyi, mesh_new['perm'])
     im[mask] = 0.0
     # reshape to grid size

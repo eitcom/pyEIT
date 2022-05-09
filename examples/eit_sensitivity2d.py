@@ -21,10 +21,10 @@ from pyeit.eit.utils import eit_scan_lines
 mesh_obj = mesh.layer_circle(n_layer=8, n_fan=6)
 
 # extract node, element, alpha
-pts = mesh_obj["node"]
-tri = mesh_obj["element"]
+pts = mesh_obj.node
+tri = mesh_obj.element
 x, y = pts[:, 0], pts[:, 1]
-quality.stats(pts, tri)
+mesh_obj.print_stats()
 
 
 def calc_sens(fwd: EITForward, ex_mat):
@@ -44,11 +44,11 @@ def calc_sens(fwd: EITForward, ex_mat):
     assert any(s >= 0)
 
     se = np.log10(s)
-    sn = sim2pts(pts, tri, se)
-    return sn
+    return sim2pts(pts, tri, se)
 
 
 """ 1. FEM forward setup """
+
 # loop over EIT scan settings: vary the distance of stimulation nodes, AB
 ex_list = [1, 2, 4, 8]
 N = len(ex_list)
@@ -73,7 +73,7 @@ for ix in range(N):
     ex_dist = ex_list[ix]
     # statistics, it seems like ex_dist=4 yields the minimal std
     std = np.std(sn)
-    print("std (ex_dist=%d) = %f" % (ex_dist, std))
+    print(f"std ({ex_dist=}) = {std}")
     im = ax.tripcolor(
         x,
         y,
@@ -87,7 +87,7 @@ for ix in range(N):
         vmax=vmax,
     )
     # annotate
-    ax.set_title("ex_dist=" + str(ex_dist))
+    ax.set_title(f"ex_dist={str(ex_dist)}")
     ax.set_aspect("equal")
     ax.set_ylim([-1.2, 1.2])
     ax.set_xlim([-1.2, 1.2])

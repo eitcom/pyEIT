@@ -10,17 +10,17 @@ from pyeit.mesh import create
 from pyeit.mesh import layer_circle
 
 mesh0 = create(n_el=16)
-el_pos0 = mesh0["el_pos"]
+el_pos0 = mesh0.el_pos
 mesh1 = layer_circle(n_el=16, n_fan=8, n_layer=8)
-el_pos1 = mesh1["el_pos"]
+el_pos1 = mesh1.el_pos
 
 fig = plt.figure(figsize=(9, 4))
 ax1 = fig.add_subplot(121)
 ax2 = fig.add_subplot(122)
 
 # plot mesh0: distmesh
-p = mesh0["node"]
-t = mesh0["element"]
+p = mesh0.node
+t = mesh0.element
 ax1.triplot(p[:, 0], p[:, 1], t, lw=1)
 ax1.plot(p[el_pos0, 0], p[el_pos0, 1], "ro")
 ax1.set_aspect("equal")
@@ -31,8 +31,8 @@ ax1.set_ylabel("y")
 ax1.set_title("distmesh2d")
 
 # plot mesh1: layer circle
-p = mesh1["node"]
-t = mesh1["element"]
+p = mesh1.node
+t = mesh1.element
 ax2.triplot(p[:, 0], p[:, 1], t, lw=1)
 ax2.plot(p[el_pos1, 0], p[el_pos1, 1], "ro")
 ax2.set_aspect("equal")

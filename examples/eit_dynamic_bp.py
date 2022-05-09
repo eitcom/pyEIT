@@ -35,7 +35,7 @@ protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
 # calculate simulated data
 fwd = EITForward(mesh_obj, protocol)
 v0 = fwd.solve_eit()
-v1 = fwd.solve_eit(perm=mesh_new["perm"], init=True)
+v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
 
 """ 3. naive inverse solver using back-projection """
 eit = bp.BP(mesh_obj, protocol)
@@ -43,8 +43,8 @@ eit.setup(weight="none")
 ds = 192.0 * eit.solve(v1, v0, normalize=False)
 
 # extract node, element, alpha
-pts = mesh_obj["node"]
-tri = mesh_obj["element"]
+pts = mesh_obj.node
+tri = mesh_obj.element
 
 # draw
 fig, axes = plt.subplots(2, 1, constrained_layout=True, figsize=(6, 9))
@@ -52,7 +52,7 @@ fig, axes = plt.subplots(2, 1, constrained_layout=True, figsize=(6, 9))
 ax = axes[0]
 ax.axis("equal")
 ax.set_title(r"Input $\Delta$ Conductivities")
-delta_perm = np.real(mesh_new["perm"] - mesh_obj["perm"])
+delta_perm = np.real(mesh_new.perm - mesh_obj.perm)
 im = ax.tripcolor(pts[:, 0], pts[:, 1], tri, delta_perm, shading="flat")
 # reconstructed
 ax1 = axes[1]

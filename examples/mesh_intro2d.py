@@ -14,11 +14,11 @@ from pyeit.mesh.shape import thorax
 """ 0. create mesh """
 # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
 mesh_obj = wrapper.create(16, h0=0.1, fd=thorax)
-el_pos = mesh_obj["el_pos"]
+el_pos = mesh_obj.el_pos
 
 # extract nodes and triangles (truss)
-pts = mesh_obj["node"]
-tri = mesh_obj["element"]
+pts = mesh_obj.node
+tri = mesh_obj.element
 
 # plot the mesh
 fig, ax = plt.subplots(figsize=(6, 4))
@@ -52,7 +52,7 @@ anomaly = [
 ms1 = wrapper.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 
 # show delta permittivity on nodes (reverse interp)
-ele_ds = ms1["perm"] - ms0["perm"]
+ele_ds = ms1.perm - ms0.perm
 node_ds = sim2pts(pts, tri, ele_ds)
 
 # plot

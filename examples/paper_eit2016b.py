@@ -25,8 +25,8 @@ import pyeit.eit.jac as jac
 mesh_obj = mesh.create(16, h0=0.08)
 
 # extract node, element, permittivity
-pts = mesh_obj["node"]
-tri = mesh_obj["element"]
+pts = mesh_obj.node
+tri = mesh_obj.element
 
 """ 1. problem setup """
 # test function for altering the permittivity in mesh
@@ -37,7 +37,7 @@ anomaly = [
     {"x": 0, "y": -0.5, "d": 0.1, "perm": 0.1},
 ]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
-delta_perm = np.real(mesh_new["perm"] - mesh_obj["perm"])
+delta_perm = np.real(mesh_new.perm - mesh_obj.perm)
 
 """ ax1. FEM forward simulations """
 # setup EIT scan conditions
@@ -48,7 +48,7 @@ protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
 # calculate simulated data
 fwd = EITForward(mesh_obj, protocol)
 v0 = fwd.solve_eit()
-v1 = fwd.solve_eit(perm=mesh_new["perm"], init=True)
+v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
 
 """ ax2. BP """
 eit = bp.BP(mesh_obj, protocol)

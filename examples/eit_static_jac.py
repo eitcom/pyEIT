@@ -26,21 +26,21 @@ anomaly = [
 # background changed to values other than 1.0 requires more iterations
 mesh_new = set_perm(mesh_obj, anomaly=anomaly, background=2.0)
 # extract node, element, perm
-xx, yy = mesh_obj["node"][:, 0], mesh_obj["node"][:, 1]
-tri = mesh_obj["element"]
-perm = mesh_new["perm"]
+xx, yy = mesh_obj.node[:, 0], mesh_obj.node[:, 1]
+tri = mesh_obj.element
+perm = mesh_new.perm
 
 # %% calculate simulated data
 el_dist, step = 1, 1
 ex_mat = eit_scan_lines(n_el, el_dist)
 protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
 fwd = EITForward(mesh_obj, protocol)
-v1 = fwd.solve_eit(perm=mesh_new["perm"], init=True)
+v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
 
 # plot
 fig, ax = plt.subplots(figsize=(9, 6))
 im = ax.tripcolor(xx, yy, tri, np.real(perm), cmap="viridis")
-for el in mesh_obj["el_pos"]:
+for el in mesh_obj.el_pos:
     ax.plot(xx[el], yy[el], "ro")
 ax.axis("equal")
 ax.set_title(r"$\Delta$ Conductivities")

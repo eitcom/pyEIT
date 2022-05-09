@@ -15,16 +15,16 @@ from pyeit.eit.fem import Forward
 mesh_obj = mesh.create(16, h0=0.08)
 
 # extract node, element, alpha
-pts = mesh_obj["node"]
-tri = mesh_obj["element"]
-el_pos = mesh_obj["el_pos"]
+pts = mesh_obj.node
+tri = mesh_obj.element
+el_pos = mesh_obj.el_pos
 x, y = pts[:, 0], pts[:, 1]
-quality.stats(pts, tri)
+mesh_obj.print_stats()
 
 # change permittivity
 anomaly = [{"x": 0.40, "y": 0.50, "d": 0.20, "perm": 100.0}]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
-perm = mesh_new["perm"]
+perm = mesh_new.perm
 
 """ 1. FEM forward simulations """
 # setup (AB) current path

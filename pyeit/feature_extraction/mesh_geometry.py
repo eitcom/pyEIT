@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 from pkg_resources import resource_filename
 from pyeit.io import mes
+from pyeit.mesh.wrapper import PyEITMesh
 
 
 class SimpleMeshGeometry:
@@ -26,14 +27,12 @@ class SimpleMeshGeometry:
     """
 
     # constructor
-    def __init__(self, mesh, el_pos, method="element"):
+    def __init__(self, mesh:PyEITMesh, method="element"):
         """
         Parameters
         ----------
         mesh : dictionary
             'element', 'node', 'perm'
-        el_pos : array
-            indices of electrode nodes
         method : string
             'element', 'node'
         """
@@ -41,12 +40,13 @@ class SimpleMeshGeometry:
             raise TypeError("method do not recognized.")
         if method == "element":
             # find the center of elements
-            self.ts = self._tri_centers(mesh)
+            self.ts = mesh.elem_centers
         else:
-            self.ts = mesh["node"]
+            self.ts = mesh.node
+        el_pos=mesh.el_pos
 
         # vertical cut (from 5->13)
-        pts = mesh["node"]
+        pts = mesh.node
         vert = np.array([pts[el_pos[12]], pts[el_pos[4]]])
         self.vert_vec = vert[1] - vert[0]
 
@@ -103,16 +103,6 @@ class SimpleMeshGeometry:
     def down_right(self):
         """down right coordinates"""
         return np.logical_and(self.right(), self.down())
-
-    @staticmethod
-    def _tri_centers(mesh):
-        """
-        calculate centers (x,y) of each triangles
-        """
-        el2no = mesh["element"]
-        no2xy = mesh["node"]
-        ts = np.mean(no2xy[el2no], axis=1)
-        return ts
 
     @staticmethod
     def _line_side(vline, vpoint):
@@ -305,9 +295,10 @@ if __name__ == "__main__":
     print(mstr)
 
     # load mesh
-    mesh, el_pos = mes.load(mstr)
-    pts = mesh["node"]
-    tri = mesh["element"]
+    mesh = mes.load(mstr)
+    pts = mesh.node
+    tri = mesh.element
+    el_pos= mesh.el_pos
     x, y = pts[:, 0], pts[:, 1]
 
     # 1. demo using ellipse fit
@@ -338,7 +329,7 @@ if __name__ == "__main__":
         ax.text(pts[e, 0], pts[e, 1], str(i + 1), color="r")
 
     # 2. demo using simple fit
-    mg = SimpleMeshGeometry(mesh, el_pos)
+    mg = SimpleMeshGeometry(mesh)
     perm = np.zeros(tri.shape[0])
     fig, ax = plt.subplots(figsize=(9, 6))
     mesh_image = mstr.replace(".mes", ".bmp")

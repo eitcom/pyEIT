@@ -24,12 +24,12 @@ else:
     mesh_obj = mesh.create(16, h0=0.1)
 
 # extract node, element, alpha
-pts = mesh_obj["node"]
-tri = mesh_obj["element"]
+pts = mesh_obj.node
+tri = mesh_obj.element
 x, y = pts[:, 0], pts[:, 1]
 
 """ 1. problem setup """
-mesh_obj["alpha"] = np.random.rand(tri.shape[0]) * 200 + 100
+# mesh_obj["alpha"] = np.random.rand(tri.shape[0]) * 200 + 100 # NOT USED
 anomaly = [{"x": 0.5, "y": 0.5, "d": 0.1, "perm": 1000.0}]
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly)
 
@@ -41,7 +41,7 @@ protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
 # calculate simulated data
 fwd = EITForward(mesh_obj, protocol)
 v0 = fwd.solve_eit()
-v1 = fwd.solve_eit(perm=mesh_new["perm"], init=True)
+v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
 
 """ 3. JAC solver """
 # Note: if the jac and the real-problem are generated using the same mesh,
@@ -59,14 +59,14 @@ fig, axes = plt.subplots(1, 2, constrained_layout=True)
 fig.set_size_inches(9, 4)
 
 ax = axes[0]
-delta_perm = mesh_new["perm"] - mesh_obj["perm"]
+delta_perm = mesh_new.perm - mesh_obj.perm
 im = ax.tripcolor(x, y, tri, np.real(delta_perm), shading="flat")
 ax.set_aspect("equal")
 
 # plot EIT reconstruction
 ax = axes[1]
 im = ax.tripcolor(x, y, tri, ds_n, shading="flat")
-for i, e in enumerate(mesh_obj["el_pos"]):
+for i, e in enumerate(mesh_obj.el_pos):
     ax.annotate(str(i + 1), xy=(x[e], y[e]), color="r")
 ax.set_aspect("equal")
 

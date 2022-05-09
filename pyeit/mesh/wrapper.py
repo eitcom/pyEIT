@@ -388,8 +388,8 @@ def set_perm(
 
     Parameters
     ----------
-    mesh: dict
-        mesh structure
+    mesh: PyEITMesh
+        mesh object
     anomaly: dict, optional
         anomaly is a dictionary (or arrays of dictionary) contains,
         {'x': val, 'y': val, 'd': val, 'perm': val}
@@ -400,8 +400,8 @@ def set_perm(
 
     Returns
     -------
-    mesh_obj: dict
-        updated mesh structure, {'element', 'node', 'perm'}
+    PyEITMesh
+        mesh object
     """
     perm = mesh.perm.copy()
     tri_centers = mesh.elem_centers  # np.mean(tri[pts], axis=1)

@@ -29,17 +29,16 @@ mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 
 """ 2. calculate simulated data using stack ex_mat """
 el_dist, step = 7, 1
-n_el = len(mesh_obj["el_pos"])
-ex_mat1 = eit_scan_lines(n_el, el_dist)
+ex_mat1 = eit_scan_lines(mesh_obj.n_el, el_dist)
 # TODO: a combinational el_dist of 1 and other value should also work.
-ex_mat2 = eit_scan_lines(n_el, 3)
+ex_mat2 = eit_scan_lines(mesh_obj.n_el, 3)
 ex_mat = np.vstack([ex_mat1, ex_mat2])
 protocol = {"ex_mat": ex_mat, "step": step, "parser": "std"}
 
 # forward solver
 fwd = EITForward(mesh_obj, protocol)
 v0 = fwd.solve_eit()
-v1 = fwd.solve_eit(perm=mesh_new["perm"], init=True)
+v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
 
 """ 3. solving using dynamic EIT """
 # number of stimulation lines/patterns
@@ -48,9 +47,9 @@ eit.setup(p=0.40, lamb=1e-3, method="kotre")
 ds = eit.solve(v1, v0, normalize=False)
 
 # extract node, element, alpha
-pts = mesh_obj["node"]
-tri = mesh_obj["element"]
-delta_perm = mesh_new["perm"] - mesh_obj["perm"]
+pts = mesh_obj.node
+tri = mesh_obj.element
+delta_perm = mesh_new.perm - mesh_obj.perm
 
 # show alpha
 fig, ax = plt.subplots(figsize=(6, 4))
