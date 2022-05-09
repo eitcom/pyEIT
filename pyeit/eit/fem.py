@@ -324,9 +324,10 @@ class EITForward(Forward):
         perm: Union[int, float, np.ndarray] = None,
         init: bool = False,
         normalize: bool = False,
-    ) -> np.ndarray:
+    ) -> Union[np.ndarray, np.ndarray]:
         """
-        Compute the Jacobian matrix
+        Compute the Jacobian matrix and initial boundary voltage meas. 
+        extimation v0
 
         Parameters
         ----------
@@ -340,13 +341,9 @@ class EITForward(Forward):
 
         Returns
         -------
-        np.ndarray
-            Jacobian matrix
+        Union[np.ndarray, np.ndarray]
+            Jacobian matrix, initial boundary voltage meas. extimation v0
 
-        Notes
-        -----
-            - initial boundary voltage meas. extimation v0 can be accessed
-            after computation through call fwd.v0
         """
         # update k if necessary and calculate r=inv(k)
         self.assemble_pde(perm=self._check_perm(perm), init=init)
