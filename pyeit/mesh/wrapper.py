@@ -6,7 +6,7 @@
 from __future__ import absolute_import, division, print_function
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Union
 
 import numpy as np
