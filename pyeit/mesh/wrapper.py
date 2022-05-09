@@ -4,7 +4,9 @@
 # Copyright (c) Benyuan Liu. All rights reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
-from copy import deepcopy
+from dataclasses import dataclass
+from typing import Callable, Union
+
 import numpy as np
 
 from .distmesh import build
@@ -13,7 +15,252 @@ from .utils import check_order
 from . import shape
 
 
-def create(n_el=16, fd=None, fh=shape.area_uniform, h0=0.1, p_fix=None, bbox=None):
+@dataclass
+class PyEITMesh:
+    """
+    Pyeit buid-in mesh object
+
+    perm : Union[int, float, np.ndarray], optional
+        permittivity on elements ; shape (n_elems,), by default `None`.
+        If `None`, a uniform permittivity on elements with a value 1 will be generated.
+        If perm is int or float, uniform permittivity on elements with value of perm  will be generated.
+    """
+
+    element: np.ndarray  # elements of the mesh of shape (n_elem, 3) for 2D mesh, (n_elem, 4) for 3D mesh
+    node: np.ndarray  # node of the mesh of shape (n_nodes, 2), (n_nodes, 3)
+    el_pos: np.ndarray # node corresponding to each electrodes of shape (n_el, 1)
+    perm: Union[int, float, np.ndarray] = None  # permittivity on element
+    ref_el: int = None # node of the reference electrode
+
+    def __post_init__(self) -> None:
+        """Checking of the inputs"""
+        self.element = self._check_element(self.element)
+        self.node = self._check_node(self.node)
+        self.perm = self.get_valid_perm(self.perm)
+
+    def print_stats(self):
+        """
+        Print mesh or tetrahedral status
+
+        Parameters
+        ----------
+        p: array_like
+            coordinates of nodes (x, y) in 2D, (x, y, z) in 3D
+        t: array_like
+            connectives forming elements
+
+        Notes
+        -----
+        a simple function for illustration purpose only.
+        print the status (size) of nodes and elements
+        """
+        text_2D_3D = "3D" if self.is_3D else "2D"
+        print(f"{text_2D_3D} mesh status:")
+        print(f"{self.n_nodes} nodes, {self.n_elems} elements")
+
+    def _check_element(self, element: np.ndarray) -> np.ndarray:
+        """
+        Check nodes element
+        return nodes [x,y,z]
+
+        Parameters
+        ----------
+        node : np.ndarray, optional
+            nodes [x,y] ; shape (n_elem,3)
+            nodes [x,y,z] ; shape (n_nodes,4)
+
+        Returns
+        -------
+        np.ndarray
+            nodes [x,y,z] ; shape (n_nodes,3)
+
+        Raises
+        ------
+        TypeError
+            raised if perm is not ndarray and of shape (n_tri,)
+        """
+        if not isinstance(element, np.ndarray):
+            raise TypeError(f"Wrong type of {element=}, expected an ndarray")
+        if element.ndim != 2:
+            raise TypeError(
+                f"Wrong shape of {element.shape=}, expected an ndarray with 2 dimensions"
+            )
+        if element.shape[1] not in [3, 4]:
+            raise TypeError(
+                f"Wrong shape of {element.shape=}, expected an ndarray of shape (n_nodes,2) or (n_nodes,3)"
+            )
+
+        return element
+
+    def _check_node(self, node: np.ndarray) -> np.ndarray:
+        """
+        Check nodes shape
+        return nodes [x,y,z]
+
+        Parameters
+        ----------
+        node : np.ndarray, optional
+            nodes [x,y] ; shape (n_nodes,2) (in that case z will be set 0)
+            nodes [x,y,z] ; shape (n_nodes,3)
+
+        Returns
+        -------
+        np.ndarray
+            nodes [x,y,z] ; shape (n_nodes,3)
+
+        Raises
+        ------
+        TypeError
+            raised if perm is not ndarray and of shape (n_tri,)
+        """
+        if not isinstance(node, np.ndarray):
+            raise TypeError(f"Wrong type of {node=}, expected an ndarray")
+        if node.ndim != 2:
+            raise TypeError(
+                f"Wrong shape of {node.shape=}, expected an ndarray with 2 dimensions"
+            )
+        if node.shape[1] not in [2, 3]:
+            raise TypeError(
+                f"Wrong shape of {node.shape=}, expected an ndarray of shape (n_nodes,2) or (n_nodes,3)"
+            )
+        # convert nodes [x,y] to nodes [x,y,0] 
+        if node.shape[1] == 2:
+            node = np.hstack((node, np.zeros((node.shape[0],1))))
+
+        return node
+
+    def get_valid_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
+        """
+        Return a valid permittivity on element
+
+        Parameters
+        ----------
+        perm : Union[int, float, np.ndarray], optional
+            Permittivity on elements ; shape (n_elems,), by default `None`.
+            If `None`, a uniform permittivity on elements with a value 1 will be used.
+            If perm is int or float, uniform permittivity on elements will be used.
+
+        Returns
+        -------
+        np.ndarray
+            permittivity on elements ; shape (n_elems,)
+
+        Raises
+        ------
+        TypeError
+            check if perm passed as ndarray has a shape (n_elems,) # TODO enhanced
+        """
+
+        if perm is None:
+            return np.ones(self.n_elems, dtype=float)
+        elif isinstance(perm, (int, float)):
+            return np.ones(self.n_elems, dtype=float) * perm
+
+        if not isinstance(perm, np.ndarray) or perm.shape != (self.n_elems,):
+            raise TypeError(
+                f"Wrong type/shape of {perm=}, expected an ndarray; shape ({self.n_elems}, )"
+            )
+        return perm
+
+    @property
+    def x_coor(self) -> np.ndarray:
+        """
+        Returns
+        -------
+        np.ndarray
+            x coordinates of the nodes; shape (n_nodes,)
+        """
+        return self.node[:, 0]
+
+    @property
+    def y_coor(self) -> np.ndarray:
+        """
+        Returns
+        -------
+        np.ndarray
+            y coordinates of the nodes; shape (n_nodes,)
+        """
+        return self.node[:, 1]
+
+    @property
+    def z_coor(self) -> np.ndarray:
+        """
+        Returns
+        -------
+        np.ndarray
+            z coordinates of the nodes; shape (n_nodes,)
+        """
+        return self.node[:, 2]
+
+    @property
+    def n_nodes(self) -> int:
+        """
+        Returns
+        -------
+        int
+            number of nodes contained in the mesh
+        """
+        return self.node.shape[0]
+
+    @property
+    def n_elems(self) -> int:
+        """
+        Returns
+        -------
+        int
+            number of elements contained in the mesh
+        """
+        return self.element.shape[0]
+
+    @property
+    def n_vertices(self) -> int:
+        """
+        Returns
+        -------
+        int
+            number of vertices of the elements contained in the mesh
+        """
+        return self.element.shape[1]
+
+    @property
+    def elem_centers(self) -> np.ndarray:
+        """
+        Returns
+        -------
+        np.ndarray
+            center of the nodes [x,y,z]; shape (n_elems,3)
+        """
+        return np.mean(self.node[self.element], axis=1)
+
+    @property
+    def is_3D(self) -> np.ndarray:
+        """
+        Returns
+        -------
+        np.ndarray
+            True if the mesh is a 3D mesh (use elements with 4 vertices)
+        """
+        return self.n_vertices == 4
+
+    @property
+    def is_2D(self) -> np.ndarray:
+        """
+        Returns
+        -------
+        np.ndarray
+            True if the mesh is a 2D mesh (use elements with 3 vertices)
+        """
+        return self.n_vertices == 3
+
+
+def create(
+    n_el: int = 16,
+    fd: Callable = None,
+    fh: Callable = shape.area_uniform,
+    h0: float = 0.1,
+    p_fix: np.ndarray = None,
+    bbox: np.ndarray = None,
+) -> PyEITMesh:
     """
     Generating 2D/3D meshes using distmesh (pyEIT built-in)
 
@@ -34,8 +281,8 @@ def create(n_el=16, fd=None, fh=shape.area_uniform, h0=0.1, p_fix=None, bbox=Non
 
     Returns
     -------
-    mesh_obj: dict
-        {'element', 'node', 'perm'}
+    PyEITMesh
+        mesh object
     """
 
     # test conditions if fd or/and bbox are none
@@ -82,23 +329,12 @@ def create(n_el=16, fd=None, fh=shape.area_uniform, h0=0.1, p_fix=None, bbox=Non
     t = check_order(p, t)
     # 3. generate electrodes, the same as p_fix (top n_el)
     el_pos = np.arange(n_el)
-    # 4. init uniform element permittivity (sigma)
-    perm = np.ones(t.shape[0], dtype=float)  # np.float is deprecated
-    # 5. place reference node
-    ref = set_reference_node(el_pos, p.shape[0])
-    # 6. build output structure
-    mesh = {"element": t, "node": p, "perm": perm, "el_pos": el_pos, "ref": ref}
-    return mesh
+    return PyEITMesh(element=t, node=p, perm=None, el_pos= el_pos)
 
 
-def set_reference_node(el_pos, n_pts):
-    assert el_pos.size < n_pts - 1
-    ref_candidate = np.arange(el_pos.size + 1)
-    ref = np.setdiff1d(ref_candidate, el_pos)[0]
-    return ref
-
-
-def set_perm(mesh, anomaly=None, background=None):
+def set_perm(
+    mesh: PyEITMesh, anomaly: dict = None, background: float = None
+) -> PyEITMesh:
     """wrapper for pyEIT interface
 
     Note
@@ -122,21 +358,18 @@ def set_perm(mesh, anomaly=None, background=None):
     mesh_obj: dict
         updated mesh structure, {'element', 'node', 'perm'}
     """
-    pts = mesh["element"]
-    tri = mesh["node"]
-    perm = mesh["perm"].copy()
-    tri_centers = np.mean(tri[pts], axis=1)
+    perm = mesh.perm.copy()
+    tri_centers = mesh.elem_centers  # np.mean(tri[pts], axis=1)
 
     # this code is equivalent to:
     # >>> N = np.shape(tri)[0]
     # >>> for i in range(N):
     # >>>     tri_centers[i] = np.mean(pts[tri[i]], axis=0)
     # >>> plt.plot(tri_centers[:,0], tri_centers[:,1], 'kx')
-    n = np.size(mesh["perm"])
 
     # reset background if needed
     if background is not None:
-        perm = background * np.ones(n)
+        perm = background * np.ones_like(mesh.perm)
 
     # change dtype to 'complex' for complex-valued permittivity
     if anomaly is not None:
@@ -147,7 +380,7 @@ def set_perm(mesh, anomaly=None, background=None):
 
     # assign anomaly values (for elements in regions)
     if anomaly is not None:
-        for _, attr in enumerate(anomaly):
+        for attr in anomaly:
             d = attr["d"]
             # find elements whose distance to (cx,cy) is smaller than d
             if "z" in attr:
@@ -170,17 +403,19 @@ def set_perm(mesh, anomaly=None, background=None):
             # update permittivity within indices
             perm[index] = attr["perm"]
 
-    mesh_new = deepcopy(mesh)
-    mesh_new["perm"] = perm
-    return mesh_new
+    return PyEITMesh(
+        element=mesh.element,
+        node=mesh.node,
+        perm=perm, 
+        el_pos=mesh.el_pos,
+        ref_el=mesh.ref_el)
 
 
-def layer_circle(n_el=16, n_fan=8, n_layer=8):
+def layer_circle(
+    n_el: int = 16, n_fan: int = 8, n_layer: int = 8
+) -> PyEITMesh:
     """generate mesh on unit-circle"""
     model = MeshCircle(n_fan=n_fan, n_layer=n_layer, n_el=n_el)
-    p, e, el_pos = model.create()
-    perm = np.ones(e.shape[0])
-    ref = set_reference_node(el_pos, p.shape[0])
-    mesh = {"element": e, "node": p, "perm": perm, "el_pos": el_pos, "ref": ref}
-
-    return mesh
+    pts, tri, el_pos = model.create()
+    # perm = np.ones(tri.shape[0]) not need anymore as handled in PyEITMesh
+    return PyEITMesh(element=tri, node=pts, perm=None, el_pos= el_pos)
