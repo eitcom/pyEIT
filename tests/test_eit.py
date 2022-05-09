@@ -12,7 +12,7 @@ def _mesh_obj():
     perm = np.array([3.0, 1.0])  # assemble should not use perm.dtype
     el_pos = np.array([1, 2])
 
-    return PyEITMesh(node= node, element= element, perm= perm, el_pos= el_pos, ref_el= 3)
+    return PyEITMesh(node=node, element=element, perm=perm, el_pos=el_pos, ref_el=3)
 
 
 class TestFem(unittest.TestCase):

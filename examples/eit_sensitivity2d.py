@@ -14,7 +14,7 @@ from pyeit.eit.interp2d import sim2pts, tri_area
 
 """ 0. build mesh """
 # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
-n_el= 16 # nb of electrodes
+n_el = 16  # nb of electrodes
 mesh_obj = mesh.layer_circle(n_el, n_layer=8, n_fan=6)
 
 # extract node, element, alpha
@@ -52,7 +52,9 @@ N = len(ex_list)
 s = []
 for ex_dist in ex_list:
     # setup EIT scan conditions
-    protocol_obj = protocol.create(n_el, dist_exc=ex_dist, step_meas=1, parser_meas="fmmu")
+    protocol_obj = protocol.create(
+        n_el, dist_exc=ex_dist, step_meas=1, parser_meas="fmmu"
+    )
     # calculate simulated data using FEM with different protocol
     fwd = EITForward(mesh_obj, protocol_obj)
     # Note: ex_mat can also be stacked, see demo_dynamic_stack.py

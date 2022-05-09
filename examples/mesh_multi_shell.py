@@ -12,7 +12,7 @@ from pyeit.eit.fem import Forward
 from pyeit.eit.protocol import build_exc_pattern_std
 
 # (a) using multi-shell (calls layer_circle, fast, inaccurate)
-n_el= 16 # nb of electrodes
+n_el = 16  # nb of electrodes
 n_fan = 6
 n_layer = 12
 r_layers = [n_layer - 1]

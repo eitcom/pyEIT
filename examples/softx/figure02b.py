@@ -17,7 +17,7 @@ import pyeit.eit.protocol as protocol
 
 """ 0. build mesh """
 # mesh_obj, el_pos = mesh.layer_circle(n_layer=8, n_fan=6)
-n_el= 16 # nb of electrodes
+n_el = 16  # nb of electrodes
 mesh_obj = mesh.create(n_el, h0=0.05)
 
 # extract node, element, alpha
@@ -54,7 +54,9 @@ ex_list = [1, 2, 5, 8]
 N = len(ex_list)
 s = []
 for ex_dist in ex_list:
-    protocol_obj = protocol.create(n_el, dist_exc=ex_dist, step_meas=1, parser_meas="fmmu")
+    protocol_obj = protocol.create(
+        n_el, dist_exc=ex_dist, step_meas=1, parser_meas="fmmu"
+    )
     fwd = EITForward(mesh_obj, protocol_obj)
     # TODO: ex_mat can also be stacked, see eit_dynamic_stack.py
     s0 = calc_sens(fwd)

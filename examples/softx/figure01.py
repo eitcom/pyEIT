@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from pyeit.mesh import create
 from pyeit.mesh import layer_circle
 
-n_el= 16 # nb of electrodes
+n_el = 16  # nb of electrodes
 mesh0 = create(n_el)
 el_pos0 = mesh0.el_pos
 mesh1 = layer_circle(n_el, n_fan=8, n_layer=8)

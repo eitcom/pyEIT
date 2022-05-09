@@ -24,38 +24,36 @@ example = [
     "softx/figure02b.py",
     "softx/figure03.py",
 ]
-list_ex=''
-index={}
-for i,file in enumerate(example):
-    list_ex = f"{list_ex}Example #{i}: {file}\r\n"  
-    index[f"{i}"]=i
-
+list_ex = ""
+index = {}
+for i, file in enumerate(example):
+    list_ex = f"{list_ex}Example #{i}: {file}\r\n"
+    index[f"{i}"] = i
 
 
 def run():
-    ans= input(f"List of all examples:\r\n{list_ex} Run all examples? (y)/n or #: ") 
-    all= ans in ['Y', 'y']
+    ans = input(f"List of all examples:\r\n{list_ex} Run all examples? (y)/n or #: ")
+    all = ans in ["Y", "y"]
 
     if not all and ans in list(index.keys()):
         _run_ex(example[index[ans]])
         return
 
     for ex in example:
-        next= True
+        next = True
         if not all:
-            ans= input(f"Run example '{ex}'? (y)/n:")
-            next= ans not in ['N', 'n']
+            ans = input(f"Run example '{ex}'? (y)/n:")
+            next = ans not in ["N", "n"]
         if not next:
             continue
         _run_ex(ex)
+
 
 def _run_ex(ex_):
     path = os.path.join(folder, ex_)
     cmd = f"python {path}"
     print(f"runs >> {cmd}")
     subprocess.call(cmd, shell=True)
-
-
 
 
 if __name__ == "__main__":
