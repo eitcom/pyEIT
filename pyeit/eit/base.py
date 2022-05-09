@@ -10,6 +10,8 @@ writing your own reconstruction algorithms.
 from __future__ import division, absolute_import, print_function
 from abc import ABC, abstractmethod
 import numpy as np
+
+from pyeit.mesh.wrapper import PyEITMesh
 from .fem import EITForward
 
 
@@ -24,7 +26,7 @@ class EitBase(ABC):
 
     def __init__(
         self,
-        mesh: dict,
+        mesh: PyEITMesh,
         protocol: dict,
         jac_normalized: bool = False,
         **kwargs,
@@ -36,8 +38,8 @@ class EitBase(ABC):
 
         Parameters
         ----------
-        mesh: dict or dataset
-            mesh structure, {'node', 'element', 'perm', 'el_pos', 'ref'}
+        mesh: PyEITMesh
+            mesh object
         protocol: dict
             measurement protocol {ex_mat, step, parser}
         jac_normalized : bool, optional
@@ -55,14 +57,8 @@ class EitBase(ABC):
         # build forward solver
         self.fwd = EITForward(mesh=mesh, protocol=protocol)
 
-        # solving mesh structure
+        # mesh structure
         self.mesh = mesh
-        self.pts = mesh["node"]
-        self.tri = mesh["element"]
-        self.perm = mesh["perm"]
-        self.el_pos = mesh["el_pos"]
-        self.no_num, self.n_dim = self.pts.shape
-        self.el_num, self.n_vertices = self.tri.shape
 
         # measurement protocol
         self.ex_mat = protocol["ex_mat"]

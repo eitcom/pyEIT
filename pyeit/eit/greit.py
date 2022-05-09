@@ -73,11 +73,11 @@ class GREIT(EitBase):
 
         # parameters for GREIT projection
         if w is None:
-            w = np.ones_like(self.mesh["perm"])
+            w = np.ones_like(self.mesh.perm)
         self.params = {"w": w, "p": p, "lamb": lamb, "n": n, "s": s, "ratio": ratio}
 
         # Build grids and mask
-        self.xg, self.yg, self.mask = meshgrid(self.pts, n=n)
+        self.xg, self.yg, self.mask = meshgrid(self.mesh.node, n=n)
 
         w_mat = self._compute_grid_weights(self.xg, self.yg)
         self.J, self.v0 = self.fwd.compute_jac()
@@ -167,7 +167,7 @@ class GREIT(EitBase):
             weights
         """
         # mapping from values on triangles to values on grids
-        xy = np.mean(self.pts[self.tri], axis=1)
+        xy = self.mesh.elem_centers #np.mean(self.mesh.node[self.mesh.element], axis=1)
         xyi = np.vstack((xg.flatten(), yg.flatten())).T
         # GREIT is using sigmod as weighting function (global)
         ratio, s = self.params["ratio"], self.params["s"]
