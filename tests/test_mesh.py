@@ -24,6 +24,8 @@ def test_shape_circle():
     assert pm.check_ccw(p, t)
 
 
+
+
 def test_thorax():
     """Thorax mesh"""
     p, t = pm.distmesh.build(

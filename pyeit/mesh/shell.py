@@ -3,19 +3,18 @@
 """ create multi-shell mesh """
 # Copyright (c) Benyuan Liu. All rights reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
-from pyeit.mesh.wrapper import PyEITMesh
-
-from .shape import circle, fix_points_circle
 from .distmesh import build
-from .utils import check_order
 from .mesh_circle import MeshCircle
+from .shape import circle, fix_points_circle
+from .utils import check_order
+from .wrapper import PyEITMesh
 
 
-def multi_shell(n_fan=8, n_layer=8, n_el=16, r_layer=None, perm_per_layer=None):
+def multi_shell(n_fan=8, n_layer=8, n_el=16, r_layer=None, perm_per_layer=None)->PyEITMesh:
     """
     create simple multi shell mesh
 
@@ -31,6 +30,11 @@ def multi_shell(n_fan=8, n_layer=8, n_el=16, r_layer=None, perm_per_layer=None):
         int, anomaly layers
     perm_per_layer : NDArray
         float, conductivity on each anomaly layer
+
+    Returns
+    -------
+    PyEITMesh
+        mesh object
 
     Notes
     -----
@@ -60,7 +64,7 @@ def multi_shell(n_fan=8, n_layer=8, n_el=16, r_layer=None, perm_per_layer=None):
 
 def multi_circle(
     r=1.0, background=1.0, n_el=16, h0=0.006, r_layer=None, perm_per_layer=None, ppl=64
-):
+)->PyEITMesh:
     """
     create multi layer circle mesh
 
@@ -80,6 +84,11 @@ def multi_circle(
         n x 1 arrays, the conductivity on each layer
     ppl : int
         point per layer
+
+    Returns
+    -------
+    PyEITMesh
+        mesh object
 
     Notes
     -----
@@ -102,6 +111,7 @@ def multi_circle(
         """distance function"""
         r2 = np.sum(pts**2, axis=1)
         return 0.6 * (2.0 - r2)
+
 
     # 1. build fix points, may be used as the position for electrodes
     if ppl > n_el:

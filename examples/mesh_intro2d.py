@@ -7,13 +7,13 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pyeit.mesh import wrapper
+import pyeit.mesh as mesh
 from pyeit.eit.interp2d import sim2pts
 from pyeit.mesh.shape import thorax
 
 """ 0. create mesh """
 # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
-mesh_obj = wrapper.create(16, h0=0.1, fd=thorax)
+mesh_obj = mesh.create(16, h0=0.1, fd=thorax)
 el_pos = mesh_obj.el_pos
 
 # extract nodes and triangles (truss)
@@ -43,13 +43,13 @@ anomaly = [
     {"x": 0.5, "y": 0.5, "d": 0.2, "perm": 10},
     {"x": -0.2, "y": -0.2, "d": 0.4, "perm": 20},
 ]
-ms0 = wrapper.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
+ms0 = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 
 anomaly = [
     {"x": 0.5, "y": 0.5, "d": 0.2, "perm": 20},
     {"x": -0.2, "y": -0.2, "d": 0.4, "perm": 10},
 ]
-ms1 = wrapper.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
+ms1 = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 
 # show delta permittivity on nodes (reverse interp)
 ele_ds = ms1.perm - ms0.perm
