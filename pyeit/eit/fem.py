@@ -12,11 +12,13 @@ import numpy.linalg as la
 from scipy import sparse
 import scipy.sparse.linalg
 
+from pyeit.mesh.wrapper import PyEITMesh
+
 
 class Forward:
     """FEM forward computing code"""
 
-    def __init__(self, mesh: dict[str, np.ndarray]) -> None:
+    def __init__(self, mesh: PyEITMesh) -> None:
         """
         FEM forward solver.
         A good FEM forward solver should only depend on
@@ -24,30 +26,18 @@ class Forward:
 
         Parameters
         ----------
-        mesh: dict or dataset
-            mesh structure, {'node', 'element', 'perm', 'el_pos', 'ref'}
+        mesh: PyEITMesh
+            mesh object
 
         Note
         ----
         The nodes are continuous numbered, the numbering of an element is
         CCW (counter-clock-wise).
         """
-        self.pts = mesh["node"]
-        self.tri = mesh["element"]
-        self.tri_perm = mesh["perm"]
-        self.el_pos = mesh["el_pos"]
-        # ref node should not be on electrodes, it is up to the user to decide
-        self.ref_el = mesh["ref"]
-
-        # infer dimensions from mesh
-        self.n_pts, self.n_dim = self.pts.shape
-        self.n_tri, self.n_vertices = self.tri.shape
-        self.n_el = self.el_pos.size
-        self.user_perm = self.tri_perm
-
+        self.mesh= mesh
         # coefficient matrix [initialize]
-        self.se = calculate_ke(self.pts, self.tri)
-        self.assemble_pde(self.tri_perm, init=True)
+        self.se = calculate_ke(self.mesh.node, self.mesh.element)
+        self.assemble_pde(self.mesh.perm, init=True)
 
     def assemble_pde(self, perm, init: bool = True):
         """
@@ -60,12 +50,12 @@ class Forward:
         kinit : bool, optional
             re-calculate kg
         """
-        # if self.user_perm != perm and kinit = False, a warning message should
+        # if self.mesh.perm != perm and init = False, a warning message should
         # be raised, telling a user that it should pass kinit = True
+        if not init:
+            return
         p = self._check_perm(perm)
-        if init:
-            self.user_perm = p
-            self.kg = assemble(self.se, self.tri, p, self.n_pts, ref=self.ref_el)
+        self.kg = assemble(self.se, self.mesh.element, p, self.mesh.n_nodes, ref=self.mesh.ref_el)
 
     def solve(self, ex_line: np.ndarray = None) -> np.ndarray:
         """
@@ -89,23 +79,21 @@ class Forward:
         CEM (complete electrode model) is under development.
         """
         # using natural boundary conditions
-        b = np.zeros(self.n_pts)
-        b[self.el_pos[ex_line]] = [1, -1]
+        b = np.zeros(self.mesh.n_nodes)
+        b[self.mesh.el_pos[ex_line]] = [1, -1]
 
         # solve
-        f = scipy.sparse.linalg.spsolve(self.kg, b)
-
-        return f
+        return scipy.sparse.linalg.spsolve(self.kg, b)
 
     def _check_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
         """
-        Check/init the permittivity on element
+        Check/init the permittivity on element 
 
         Parameters
         ----------
         perm : Union[int, float, np.ndarray], optional, default None
-            permittivity on elements, Must be the same size with self.tri_perm.
-            If `None`, `self.tri_perm` will be used
+            permittivity on elements.
+            If `None`, `self.mesh.perm` will be used
             If perm is int or float, uniform permittivity on elements will be used
 
         Returns
@@ -113,34 +101,28 @@ class Forward:
         np.ndarray
             permittivity on elements ; shape (n_tri,)
 
-        Raises
-        ------
-        TypeError
-            raised if perm is not ndarray and of shape (n_tri,)
+        Note
+        ----
+        see `get_valid_perm` of PyEITMesh
         """
-        if perm is None:
-            return self.tri_perm
-        elif isinstance(perm, (int, float)):
-            return np.ones(self.n_tri, dtype=float) * perm
-        if not isinstance(perm, np.ndarray) or perm.shape != (self.n_tri,):
-            raise TypeError(f"Wrong type/shape of {perm=}, expected an ndarray(n_tri,)")
+        # here we let the mesh doing the cheking/init
+        return self.mesh.perm if perm is None else self.mesh.get_valid_perm(perm)
 
-        return perm
 
 
 class EITForward(Forward):
     """EIT Forward simulation, depends on mesh and protocol"""
 
     def __init__(
-        self, mesh: dict[str, np.ndarray], protocol: dict[str, np.ndarray]
+        self, mesh: PyEITMesh, protocol: dict[str, np.ndarray]
     ) -> None:
         """
         EIT Forward Solver
 
         Parameters
         ----------
-        mesh: dict or dataset
-            mesh structure, {'node', 'element', 'perm', 'el_pos', 'ref'}
+        mesh: PyEITMesh
+            mesh object
         protocol: dict or dataset
             measurement protocol, {'ex_mat', 'step', 'parser'}
 
@@ -195,8 +177,8 @@ class EITForward(Forward):
         for ex_line in self.ex_mat:
             a, b = ex_line[0], ex_line[1]
             i0 = a if fmmu_rotate else 0
-            m = (i0 + np.arange(self.n_el)) % self.n_el
-            n = (m + self.step) % self.n_el
+            m = (i0 + np.arange(self.n_el)) %self.mesh.n_el
+            n = (m + self.step) %self.mesh.n_el
             meas_pattern = np.vstack([n, m]).T
 
             if not meas_current:
@@ -233,7 +215,7 @@ class EITForward(Forward):
         """
         if ex_mat is None:
             # initialize the scan lines for 16 electrodes (default: adjacent)
-            ex_mat = np.array([[i, np.mod(i + 1, self.n_el)] for i in range(self.n_el)])
+            ex_mat = np.array([[i, np.mod(i + 1,self.mesh.n_el)] for i in range(self.n_el)])
         elif isinstance(ex_mat, list) and len(ex_mat) == 2:
             # case ex_line has been passed instead of ex_mat
             ex_mat = np.array([ex_mat]).reshape((1, 2))  # build a 2D array
@@ -311,11 +293,11 @@ class EITForward(Forward):
         v: np.ndarray
             simulated boundary voltage measurements; shape(n_exe*n_el,)
         """
-        self.assemble_pde(perm=perm, init=init)
+        self.assemble_pde(perm=self._check_perm(perm), init=init)
         v = np.zeros((self.n_exe, self.n_meas))
         for i, ex_line in enumerate(self.ex_mat):
             f = self.solve(ex_line)
-            v[i] = subtract_row(f[self.el_pos], self.diff_op[i])
+            v[i] = subtract_row(f[self.mesh.el_pos], self.diff_op[i])
 
         return v.reshape(-1)
 
@@ -333,7 +315,7 @@ class EITForward(Forward):
         ----------
         perm : Union[int, float, np.ndarray], optional
             permittivity on elements ; shape (n_tri,), by default `None`.
-        kinit : bool, optional
+        init : bool, optional
             re-calculate kg
         normalize : bool, optional
             flag for Jacobian normalization, by default False.
@@ -347,20 +329,20 @@ class EITForward(Forward):
         """
         # update k if necessary and calculate r=inv(k)
         self.assemble_pde(perm=self._check_perm(perm), init=init)
-        r_el = la.inv(self.kg.toarray())[self.el_pos]
+        r_el = la.inv(self.kg.toarray())[self.mesh.el_pos]
 
         # calculate v, jac per excitation pattern (ex_line)
         jac = np.zeros(
-            (self.n_exe, self.n_meas, self.n_tri), dtype=self.user_perm.dtype
+            (self.n_exe, self.n_meas, self.mesh.n_elems), dtype=self.mesh.perm.dtype
         )
         v = np.zeros((self.n_exe, self.n_meas))
         for i, ex_line in enumerate(self.ex_mat):
             f = self.solve(ex_line)
-            v[i] = subtract_row(f[self.el_pos], self.diff_op[i])
+            v[i] = subtract_row(f[self.mesh.el_pos], self.diff_op[i])
             ri = subtract_row(r_el, self.diff_op[i])
             # Build Jacobian matrix column wise (element wise)
             #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
-            for (e, ijk) in enumerate(self.tri):
+            for (e, ijk) in enumerate(self.mesh.element):
                 jac[i, :, e] = np.dot(np.dot(ri[:, ijk], self.se[e]), f[ijk])
 
         # measurement protocol
@@ -385,19 +367,19 @@ class EITForward(Forward):
         perm : Union[int, float, np.ndarray], optional
             permittivity on elements ; shape (n_tri,), by default `None`.
         init : bool, optional
-            re-calculate kg
+            re-calculate kg using perm
 
         Returns
         -------
         np.ndarray
             back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
         """
-        self.assemble_pde(self._check_perm(perm), init=init)
-        b_mat = np.zeros((self.n_exe, self.n_meas, self.n_pts))
+        self.assemble_pde(perm=self._check_perm(perm), init=init)
+        b_mat = np.zeros((self.n_exe, self.n_meas, self.mesh.n_nodes))
 
         for i, ex_line in enumerate(self.ex_mat):
             f = self.solve(ex_line=ex_line)
-            f_el = f[self.el_pos]
+            f_el = f[self.mesh.el_pos]
             # build bp projection matrix
             # 1. we can either smear at the center of elements, using
             #    >> fe = np.mean(f[:, self.tri], axis=1)
