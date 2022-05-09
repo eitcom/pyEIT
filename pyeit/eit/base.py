@@ -11,7 +11,7 @@ from __future__ import division, absolute_import, print_function
 from abc import ABC, abstractmethod
 import numpy as np
 from pyeit.eit.protocol import PyEITProtocol
-
+import warnings
 from pyeit.mesh.wrapper import PyEITMesh
 from .fem import EITForward
 
@@ -45,16 +45,6 @@ class EitBase(ABC):
         # build forward solver
         self.fwd = EITForward(mesh=mesh, protocol=protocol)
 
-        # mesh structure
-        # self.mesh = mesh # Actually this mesh can also be accessed through, self.fwd.mesh
-
-        # measurement protocol
-
-        # self.ex_mat = protocol["ex_mat"] # NOT USED
-        # self.step = protocol["step"] # NOT USED
-        # self.parser = protocol["parser"] # NOT USED
-        # self.jac_normalized = jac_normalized # NOT USED
-
         # initialize other parameters
         self.params = None
         self.xg = None
@@ -63,6 +53,10 @@ class EitBase(ABC):
         # user must run solver.setup() manually to get correct H
         self.H = None
         self.is_ready = False
+        warnings.warn(
+            f"Before using {type(self).__name__}-EITSolver run solver.setup() to set the solver ready!",
+            stacklevel=2
+        )
     
     @property
     def mesh(self)->PyEITMesh:

@@ -24,7 +24,7 @@ class PyEITProtocol:
     def __post_init__(self) -> None:
         """Checking of the inputs"""
         self.ex_mat = self._check_ex_mat(self.ex_mat)
-        self.meas_mat = self._check_ex_mat(self.meas_mat)
+        self.meas_mat = self._check_meas_mat(self.meas_mat)
 
     def _check_ex_mat(self, ex_mat: np.ndarray) -> np.ndarray:
         """
@@ -205,8 +205,8 @@ def build_meas_pattern(ex_mat:np.ndarray, n_el:int=16, step:int=1, parser:Union[
             meas_pattern = meas_pattern[diff_keep]
 
         diff_op.append(meas_pattern)
-
-    return diff_op
+        
+    return np.array(diff_op)
 
 
 def eit_scan_lines(n_el: int = 16, dist: int = 1) -> np.ndarray:

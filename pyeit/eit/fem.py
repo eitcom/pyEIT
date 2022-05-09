@@ -10,6 +10,7 @@ from typing import Tuple, Union
 import numpy as np
 import numpy.linalg as la
 from scipy import sparse
+import warnings
 import scipy.sparse.linalg
 from pyeit.eit.protocol import PyEITProtocol
 
@@ -40,7 +41,7 @@ class Forward:
         self.se = calculate_ke(self.mesh.node, self.mesh.element)
         self.assemble_pde(self.mesh.perm, init=True)
 
-    def assemble_pde(self, perm:Union[int, float, np.ndarray]= None, init: bool = True):
+    def assemble_pde(self, perm:Union[int, float, np.ndarray]= None, init: bool = True)->None:
         """
         assemble PDE
 
@@ -58,7 +59,10 @@ class Forward:
 
         """
         if any(self.mesh.perm != perm) and not init:
-            raise Warning('You passed a new permittivity but you dont want to init')
+            warnings.warn(
+                'You passed a new permittivity but you dont want to init', 
+                stacklevel=2
+            )
         # be raised, telling a user that it should pass init = True
         if not init:
             return
@@ -120,9 +124,7 @@ class Forward:
 class EITForward(Forward):
     """EIT Forward simulation, depends on mesh and protocol"""
 
-    def __init__(
-        self, mesh: PyEITMesh, protocol: PyEITProtocol
-    ) -> None:
+    def __init__(self, mesh: PyEITMesh, protocol: PyEITProtocol) -> None:
         """
         EIT Forward Solver
 
@@ -140,18 +142,40 @@ class EITForward(Forward):
         voltages for imaging, you MUST normalize it with the signs of v0
         under each current-injecting pattern.
         """
+        self._check_mesh_protocol_compatibility(mesh, protocol)
+
         # FEM solver
         super().__init__(mesh=mesh)
 
         # EIT measurement protocol
         self.protocol= protocol
-        self._check_mesh_protocol_compatibility()
 
-    def _check_mesh_protocol_compatibility(self) -> None:
-        compatible = True  # TODO
-        if not compatible:
+    def _check_mesh_protocol_compatibility(self, mesh: PyEITMesh, protocol: PyEITProtocol) -> None:
+        """
+        Check if mesh and protocol are compatible
+
+        - #1 n_el in mesh >=  n_el in protocol 
+        - #2 .., TODO if necessary
+    
+        Raises
+        ------
+        ValueError
+            if protocol is not compatible to the mesh
+        """
+        # n_el in mesh should be >=  n_el in protocol
+        m_n_el=mesh.n_el 
+        p_n_el=protocol.n_el
+
+        if m_n_el!=p_n_el:
+            warnings.warn(
+                f"The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes",
+                stacklevel=2
+            )
+        
+        if m_n_el<p_n_el: 
             raise ValueError(
-                "Passed protocol is not compatible to the passed mesh"
+                f"Protocol is not compatible with mesh :\
+The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes "
             )
 
     def solve_eit(
