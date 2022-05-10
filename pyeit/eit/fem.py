@@ -58,7 +58,7 @@ class Forward:
         """            
         if perm is None:
             warnings.warn(
-                f"You passed a permittivity = {perm}, ", stacklevel=2
+                ">> initial stiffness matrix based on self.mesh.perm will be used ", stacklevel=2
             )
             return
         perm = self.mesh.get_valid_perm(perm)
