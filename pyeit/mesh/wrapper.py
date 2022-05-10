@@ -193,7 +193,7 @@ class PyEITMesh:
         int
             valid reference electrode node
         """
-        default_ref = np.setdiff1d(np.arange(len(self.el_pos + 1)), self.el_pos)[0]
+        default_ref = np.setdiff1d(np.arange(len(self.el_pos) + 1), self.el_pos)[0]
         return ref if ref not in self.el_pos else default_ref
         # assert ref < self.n_nodes
 
