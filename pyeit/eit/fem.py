@@ -55,7 +55,7 @@ class Forward:
             return
         perm = self.mesh.get_valid_perm(perm)
         self.kg = assemble(
-            self.se, self.mesh.element, perm, self.mesh.n_nodes, ref=self.mesh.ref_el
+            self.se, self.mesh.element, perm, self.mesh.n_nodes, ref=self.mesh.ref_node
         )
 
     def solve(self, ex_line: np.ndarray = None) -> np.ndarray:

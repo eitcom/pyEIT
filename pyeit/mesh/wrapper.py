@@ -23,24 +23,34 @@ class PyEITMesh:
     """
     Pyeit buid-in mesh object
 
+    Parameters
+    ----------
+    node : np.ndarray
+        node of the mesh of shape (n_nodes, 2), (n_nodes, 3)
+    element : np.ndarray
+        elements of the mesh of shape (n_elem, 3) for 2D mesh, (n_elem, 4) for 3D mesh
     perm : Union[int, float, np.ndarray], optional
-        permittivity on elements ; shape (n_elems,), by default `None`.
+        permittivity on elements; shape (n_elems,), by default `None`.
         If `None`, a uniform permittivity on elements with a value 1 will be generated.
-        If perm is int or float, uniform permittivity on elements with value of perm  will be generated.
+        If perm is int or float, uniform permittivity on elements with value of perm will be generated.
+    el_pos : np.ndarray
+        node corresponding to each electrodes of shape (n_el, 1)
+    ref_node : int
+        reference node. ref_node should not be on electrodes.
     """
 
-    element: np.ndarray  # elements of the mesh of shape (n_elem, 3) for 2D mesh, (n_elem, 4) for 3D mesh
-    node: np.ndarray  # node of the mesh of shape (n_nodes, 2), (n_nodes, 3)
-    el_pos: np.ndarray  # node corresponding to each electrodes of shape (n_el, 1)
-    perm: Union[int, float, np.ndarray] = None  # permittivity on element
-    ref_el: int = None  # node of the reference electrode # ref node should not be on electrodes, it is up to the user to decide
+    node: np.ndarray
+    element: np.ndarray
+    perm: Union[int, float, np.ndarray] = None
+    el_pos: np.ndarray = np.arange(16)
+    ref_node: int = None
 
     def __post_init__(self) -> None:
         """Checking of the inputs"""
         self.element = self._check_element(self.element)
         self.node = self._check_node(self.node)
         self.perm = self.get_valid_perm(self.perm)
-        self.ref_el = self._check_ref_el(self.ref_el)
+        self.ref_node = self._check_ref_node(self.ref_node)
 
     def print_stats(self):
         """
@@ -152,7 +162,7 @@ class PyEITMesh:
         Raises
         ------
         TypeError
-            check if perm passed as ndarray has a shape (n_elems,) # TODO enhanced
+            check if perm passed as ndarray has a shape (n_elems,)
         """
 
         if perm is None:
@@ -166,41 +176,37 @@ class PyEITMesh:
             )
         return perm
 
-    def _check_ref_el(self, ref_el: int = None) -> int:
+    def _check_ref_node(self, ref: int = 0) -> int:
         """
         Return a valid reference electrode node
 
         Parameters
         ----------
-        ref_el : int, optional
-            node number of reference electrode, by default None
-            If None, a default node will be assigned
-            If the choosen node is on electrode node, a default node will be assigned
+        ref : int, optional
+            node number of reference node, by default 0
+            If the choosen node is on electrode node, a node-list in
+            np.arange(0, len(el_pos)+1) will be checked iteratively until
+            a non-electrode node is selected.
 
-        eturns
+        returns
         -------
         int
             valid reference electrode node
-
         """
-        return (
-            ref_el
-            if ref_el is not None and ref_el not in self.el_pos
-            else max(self.el_pos) + 1
-        )
+        default_ref = np.setdiff1d(np.arange(len(self.el_pos + 1)), self.el_pos)[0]
+        return ref if ref not in self.el_pos else default_ref
+        # assert ref < self.n_nodes
 
-    def set_ref_el(self, ref_el: int) -> None:
+    def set_ref_node(self, ref: int = 0) -> None:
         """
         Set reference electrode node
 
         Parameters
         ----------
-        ref_el : int, optional
+        ref : int, optional
             node number of reference electrode
-            If the choosen node is on electrode node, a default node will be assigned
-
         """
-        self.ref_el = self._check_ref_el(ref_el)
+        self.ref_node = self._check_ref_node(ref)
 
     @property
     def n_nodes(self) -> int:
@@ -452,11 +458,11 @@ def set_perm(
         perm[mask] = an.perm
 
     return PyEITMesh(
-        element=mesh.element,
         node=mesh.node,
+        element=mesh.element,
         perm=perm,
         el_pos=mesh.el_pos,
-        ref_el=mesh.ref_el,
+        ref_node=mesh.ref_node,
     )
 
 

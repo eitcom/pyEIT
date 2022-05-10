@@ -44,7 +44,7 @@ def _mesh_obj():
     perm = np.array([3.0, 1.0])
     el_pos = np.array([1, 2])
     # new mesh structure or dataset
-    return PyEITMesh(node=node, element=element, perm=perm, el_pos=el_pos, ref_el=3)
+    return PyEITMesh(node=node, element=element, perm=perm, el_pos=el_pos, ref_node=3)
 
 
 def _mesh_obj_large():
@@ -55,7 +55,7 @@ def _mesh_obj_large():
     perm = np.random.randn(n_tri)
     np.random.seed(0)
     el_pos = np.random.permutation(n_pts)[:16]
-    return PyEITMesh(node=node, element=element, perm=perm, el_pos=el_pos, ref_el=0)
+    return PyEITMesh(node=node, element=element, perm=perm, el_pos=el_pos, ref_node=0)
 
 
 def _protocol_obj(ex_mat, n_el, step_meas, parser_meas):

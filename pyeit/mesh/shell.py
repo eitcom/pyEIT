@@ -61,7 +61,7 @@ def multi_shell(
         perm[idx] = a
 
     # 5. build output structure
-    return PyEITMesh(element=e, node=p, perm=perm, el_pos=el_pos, ref_el=0)
+    return PyEITMesh(node=p, element=e, perm=perm, el_pos=el_pos, ref_node=0)
 
 
 def multi_circle(
@@ -148,4 +148,4 @@ def multi_circle(
         perm[idx] = a
 
     # 5. build output structure
-    return PyEITMesh(element=t, node=p, perm=perm, el_pos=el_pos, ref_el=0)
+    return PyEITMesh(node=p, element=t, perm=perm, el_pos=el_pos, ref_node=0)
