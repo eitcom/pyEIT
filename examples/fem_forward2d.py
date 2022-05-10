@@ -2,42 +2,47 @@
 """ demo on forward 2D """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
-import numpy as np
 import matplotlib.pyplot as plt
-
+import numpy as np
+import pyeit.eit.protocol as protocol
 import pyeit.mesh as mesh
-from pyeit.mesh import quality
 from pyeit.eit.fem import Forward
-from pyeit.eit.utils import eit_scan_lines
 from pyeit.mesh.shape import thorax
+from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 
 """ 0. build mesh """
-# Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
-mesh_obj, el_pos = mesh.create(16, h0=0.08, fd=thorax)
+n_el = 16  # nb of electrodes
+use_customize_shape = False
+if use_customize_shape:
+    # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax
+    mesh_obj = mesh.create(n_el, h0=0.1, fd=thorax)
+else:
+    mesh_obj = mesh.create(n_el, h0=0.1)
+el_pos = mesh_obj.el_pos
 
 # extract node, element, alpha
-pts = mesh_obj["node"]
-tri = mesh_obj["element"]
+pts = mesh_obj.node
+tri = mesh_obj.element
 x, y = pts[:, 0], pts[:, 1]
-quality.stats(pts, tri)
+mesh_obj.print_stats()
 
 # change permittivity
-anomaly = [{"x": 0.40, "y": 0.50, "d": 0.20, "perm": 100.0}]
+anomaly = PyEITAnomaly_Circle(center=[0.4, 0.5], r=0.2, perm=100.0)
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
-perm = mesh_new["perm"]
+perm = mesh_new.perm
 
 """ 1. FEM forward simulations """
 # setup EIT scan conditions
-ex_dist, step = 7, 1
-ex_mat = eit_scan_lines(16, ex_dist)
+protocol_obj = protocol.create(n_el, dist_exc=7, step_meas=1, parser_meas="std")
+
 # Define electrode current sink and current source
-ex_line = ex_mat[0].ravel()
+ex_line = protocol_obj.ex_mat[0].ravel()
 
 # calculate simulated data using FEM
-fwd = Forward(mesh_obj, el_pos)
-f = fwd.solve(ex_line, perm=perm)
+fwd = Forward(mesh_new)
+f = fwd.solve(ex_line)
 f = np.real(f)
 
 """ 2. plot """
@@ -45,6 +50,7 @@ fig = plt.figure()
 ax1 = fig.add_subplot(111)
 # draw equi-potential lines
 vf = np.linspace(min(f), max(f), 32)
+# vf = np.sort(f[el_pos])
 # Draw contour lines on an unstructured triangular grid.
 ax1.tricontour(x, y, tri, f, vf, cmap=plt.cm.viridis)
 

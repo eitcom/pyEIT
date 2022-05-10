@@ -1,7 +1,10 @@
 # test for fem.py
 import unittest
+
 import numpy as np
 import pyeit.eit.fem
+from pyeit.eit.protocol import PyEITProtocol, build_meas_pattern_std
+from pyeit.mesh import PyEITMesh
 
 
 def _assemble(ke, tri, perm, n):
@@ -20,8 +23,9 @@ def _assemble(ke, tri, perm, n):
 
     return k
 
-def _voltage_meter(ex_line, n_el, dist, parser):
-    """a simple voltage meter"""
+
+def _meas_pattern(ex_line, n_el, dist, parser):
+    """a simple voltage meter (meas_pattern)"""
     meas_current = parser == "meas_current"
     rel_electrode = parser in ["fmmu", "rotate_meas"]
     i0 = ex_line[0] if rel_electrode else 0
@@ -31,19 +35,35 @@ def _voltage_meter(ex_line, n_el, dist, parser):
     keep = [~np.any(np.isin(vi, ex_line), axis=0) for vi in v]
     return v if meas_current else v[keep]
 
+
 def _mesh_obj():
-    """build a simple mesh, which is used in FMMU.CEM"""
+    """build a simple, determinant mesh model/dataset"""
     node = np.array([[0.13, 0.15], [0.2, 0.2], [0.1, 0.1], [0.18, 0.12]])
     element = np.array([[0, 2, 3], [0, 3, 1]])
-    # assemble uses perm.dtype, perm MUST not be np.int
+    # assemble uses perm.dtype, perm MUST not be np.int (result rounding error in K)
     perm = np.array([3.0, 1.0])
-    mesh = {"node": node, "element": element, "perm": perm, "ref": 3}
     el_pos = np.array([1, 2])
+    # new mesh structure or dataset
+    return PyEITMesh(node=node, element=element, perm=perm, el_pos=el_pos, ref_el=3)
 
-    return mesh, el_pos
+
+def _mesh_obj_large():
+    """build a large, random mesh model/dataset"""
+    n_tri, n_pts = 400, 1000
+    node = np.random.randn(n_pts, 2)
+    element = np.array([np.random.permutation(n_pts)[:3] for _ in range(n_tri)])
+    perm = np.random.randn(n_tri)
+    np.random.seed(0)
+    el_pos = np.random.permutation(n_pts)[:16]
+    return PyEITMesh(node=node, element=element, perm=perm, el_pos=el_pos, ref_el=0)
+
+
+def _protocol_obj(ex_mat, n_el, step_meas, parser_meas):
+    meas_mat = build_meas_pattern_std(ex_mat, n_el, step_meas, parser_meas)
+    return PyEITProtocol(ex_mat, meas_mat)
+
 
 class TestFem(unittest.TestCase):
-
     def test_ke_triangle(self):
         """test ke calculation using triangle (2D)"""
         pts = np.array([[0, 1], [0, 0], [1, 0]])
@@ -59,63 +79,60 @@ class TestFem(unittest.TestCase):
         """test ke calculation using tetrahedron (3D)"""
         pts = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 0], [1, 0, 0]])
         tri = np.array([[0, 1, 2, 3]])
-        k_truth = np.array([[3, -1, -1, -1], [-1, 1, 0, 0], [-1, 0, 1, 0], [-1, 0, 0, 1]])
-        volumn = 1 / 6.0
+        k_truth = np.array(
+            [[3, -1, -1, -1], [-1, 1, 0, 0], [-1, 0, 1, 0], [-1, 0, 0, 1]]
+        )
+        volumn = 1.0 / 6.0
         ke = pyeit.eit.fem.calculate_ke(pts, tri)
 
         self.assertTrue(ke.shape == (1, 4, 4))
         self.assertTrue(np.allclose(ke[0], k_truth * volumn))
 
-
     def test_assemble(self):
-        """test assembling coefficients matrix, K"""
+        """test assembling coefficients matrix, {se, perm} -> K"""
         np.random.seed(0)
         n, ne = 10, 42
-        nodes = np.arange(n)
-        ke = np.random.randn(ne, 3, 3)
-        tri = np.array([nodes[np.random.permutation(n)[:3]] for _ in range(ne)])
+        pts = np.arange(n)
+        tri = np.array([pts[np.random.permutation(n)[:3]] for _ in range(ne)])
         perm = np.random.randn(ne)
-        k_truth = _assemble(ke, tri, perm, n)
-        k = pyeit.eit.fem.assemble(ke, tri, perm, n)
+        se = np.random.randn(ne, 3, 3)
+        k_truth = _assemble(se, tri, perm, n)
+        k = pyeit.eit.fem.assemble(se, tri, perm, n).toarray()
 
         self.assertTrue(np.allclose(k, k_truth))
 
-    def test_voltage_meter(self):
-        """test voltage meter"""
+    def test_meas_pattern(self):
+        """test measurement pattern/voltage meter"""
+        # @libuenyan shoul be in test_eit.py or test_protocol.py
         n_el = 16
         np.random.seed(42)
+        mesh = _mesh_obj_large()
         for parser in ["meas_current", "fmmu", "rotate_meas"]:
             ex_lines = [np.random.permutation(n_el)[:2] for _ in range(10)]
             for ex_line in ex_lines:
-                ex_mat = np.array([ex_line])  # two dim
-                diff_truth = _voltage_meter(ex_line, n_el, 1, parser)
-                diff = pyeit.eit.fem.voltage_meter(ex_mat, n_el, 1, parser)
-                
-                self.assertTrue(np.allclose(diff, diff_truth))
+                ex_mat = np.array([ex_line])
+                # build protocol dict/dataset
+                protocol = _protocol_obj(ex_mat, n_el, 1, parser)
+                fwd = pyeit.eit.fem.EITForward(mesh, protocol)
+                diff_truth = _meas_pattern(ex_line, n_el, 1, parser)
+                diff = fwd.protocol.meas_mat[0]
+
+                assert np.allclose(diff, diff_truth)
 
     def test_subtract_row(self):
-        """
-        subtract the last dimension
-        v is [n_exe, n_el, 1] where n_exe is the number of execution (stimulations)
-        and n_el is the number of voltage sensing electrode,
-        meas_pattern is [n_exe, n_meas, 2], where n_meas is the effective number
-        of voltage differences.
-
-        for simplification, we let n_meas=1
-        """
+        """calculate f[diff_op[0]] - f[diff_op[1]]"""
         n_exe = 10
         n_el = 16
-        v = np.random.randn(n_exe, n_el, 1)
+        v = np.random.randn(n_el)
         diff_pairs = np.array([np.random.permutation(n_el)[:2] for _ in range(n_exe)])
-        vd_truth = np.array([v[i, d[0]] - v[i, d[1]] for i, d in enumerate(diff_pairs)])
-        meas_pattern = diff_pairs.reshape(n_exe, 1, 2)
-        vd = pyeit.eit.fem.subtract_row(v, meas_pattern)
+        vd_truth = np.array([v[d[0]] - v[d[1]] for d in diff_pairs])
+        vd = pyeit.eit.fem.subtract_row(v, diff_pairs)
 
         self.assertTrue(vd_truth.size == vd.size)
         self.assertTrue(np.allclose(vd.ravel(), vd_truth.ravel()))
 
     def test_k(self):
-        """test K using a simple mesh structure"""
+        """test Forward.kg using a simple, determinant mesh structure"""
         k_truth = np.array(
             [
                 [3.7391, -0.1521, -1.5, 0.0],
@@ -124,101 +141,64 @@ class TestFem(unittest.TestCase):
                 [0.0, 0.0, 0.0, 1.0],
             ]
         )
-        mesh, _ = _mesh_obj()
-        n_pts = mesh["node"].shape[0]
-        ke = pyeit.eit.fem.calculate_ke(mesh["node"], mesh["element"])
-        # fix ref to be exactly the one in mesh
-        k = pyeit.eit.fem.assemble(
-            ke, mesh["element"], mesh["perm"], n_pts, ref=mesh["ref"]
-        )
+        mesh = _mesh_obj()
+        fwd = pyeit.eit.fem.Forward(mesh)
+        k = fwd.kg.toarray()  # sparse COO to dense
 
         self.assertTrue(np.allclose(k, k_truth, rtol=0.01))
 
     def test_solve(self):
         """test solve using a simple mesh structure"""
-        mesh, el_pos = _mesh_obj()
+        mesh = _mesh_obj()
         f_truth = np.array([-0.27027027, 2.59459459, -0.93693694, 0.0])
-        fwd = pyeit.eit.fem.Forward(mesh, el_pos)
-        # fix ref to be exactly the one in mesh
-        ex_mat = np.array([[0, 1]])
-        fwd.set_ref_el(mesh["ref"])
-        f= fwd.solve(ex_mat, perm=mesh["perm"])
+        fwd = pyeit.eit.fem.Forward(mesh)
+        ex_line = np.array([0, 1])
+        f = fwd.solve(ex_line)
 
         self.assertTrue(np.allclose(f, f_truth))
         # test without passing any argument
-        f= fwd.solve()
+        f = fwd.solve()
         self.assertTrue(isinstance(f, np.ndarray))
 
     def test_solve_eit(self):
-        """test solve using a simple mesh structure"""
-        mesh, el_pos = _mesh_obj()
-        f_truth = np.array([-0.27027027, 2.59459459, -0.93693694, 0.0])
-
-        fwd = pyeit.eit.fem.Forward(mesh, el_pos)
-        # fix ref to be exactly the one in mesh
-        fwd.set_ref_el(mesh["ref"])
+        """test solve_eit using a simple mesh structure"""
+        mesh = _mesh_obj()
+        el_pos = mesh.el_pos
         ex_mat = np.array([[0, 1], [1, 0]])
+        protocol = _protocol_obj(ex_mat, mesh.n_el, 1, "meas_current")
+        fwd = pyeit.eit.fem.EITForward(mesh, protocol)
+
         # include voltage differences on driving electrodes
-        res = fwd.solve_eit(ex_mat, parser="meas_current")
+        v = fwd.solve_eit()
+        f_truth = np.array([-0.27027027, 2.59459459, -0.93693694, 0.0])
         vdiff_truth = f_truth[el_pos[1]] - f_truth[el_pos[0]]
         v_truth = vdiff_truth * np.array([1, -1, -1, 1])
-
-        self.assertTrue(np.allclose(res.v, v_truth))
-        # test without passing any argument
-        res= fwd.solve_eit()
-        self.assertTrue(isinstance(res.v, np.ndarray))
-
-        # test passing meas_pattern
-        res= fwd.solve_eit(ex_mat, meas_pattern=np.array([[[0, 1]],[[1, 0]]]))
-        self.assertTrue(isinstance(res.v, np.ndarray))
+        self.assertTrue(np.allclose(v, v_truth))
 
     def test_compute_jac(self):
-        """test compute_jac using a simple mesh structure"""
-        #TODO @ liubenyuan please checkt this test
-        # compute_jac return jac with the "subtract_row part" here you wanted to test only the jac_i get from old solve method
-        # the jac_i_truth correspond to the jac_truth!
-        mesh, el_pos = _mesh_obj()
-        jac_i_truth = np.array([[-0.02556611, 2.67129291], [-0.28431134, -0.08400292]])
-        jac_truth = np.array([[-0.25874523, -2.75529584], [ 0.25874523,  2.75529584]])
+        """test solve using a simple mesh structure"""
+        mesh = _mesh_obj()
+        ex_mat = np.array([[0, 1]])
+        protocol = _protocol_obj(ex_mat, mesh.n_el, 1, "meas_current")
+        fwd = pyeit.eit.fem.EITForward(mesh, protocol)
 
         # testing solve
-        ex_mat = np.array([[0, 1]])
-        fwd = pyeit.eit.fem.Forward(mesh, el_pos)
-        # fix ref to be exactly the one in mesh
-        fwd.set_ref_el(mesh["ref"])
-        jac = fwd.compute_jac(ex_mat, perm=mesh["perm"], parser="meas_current" )
-        
+        jac_truth = np.array([[-0.25874523, -2.75529584], [0.25874523, 2.75529584]])
+        jac, _ = fwd.compute_jac()
         self.assertTrue(np.allclose(jac, jac_truth))
-        # test without passing any argument
-        jac = fwd.compute_jac()
-        self.assertTrue(isinstance(jac, np.ndarray))
-
-        # test passing meas_pattern
-        jac = fwd.compute_jac(ex_mat, meas_pattern=np.array([[[0, 1]]]))
-        self.assertTrue(isinstance(jac, np.ndarray))
 
     def test_compute_b_matrix(self):
         """test compute_jac using a simple mesh structure"""
-
-        mesh, el_pos = _mesh_obj()
-        b_truth = np.array([]) # TODO @ liubenyuan
-
-        # testing solve
+        mesh = _mesh_obj()
         ex_mat = np.array([[0, 1]])
-        fwd = pyeit.eit.fem.Forward(mesh, el_pos)
+        protocol = _protocol_obj(ex_mat, mesh.n_el, 1, "meas_current")
+
+        # smear: (f_min < f) & (f <= f_max)
+        b_truth = np.array([[1, 1, 0, 1], [1, 1, 0, 1]])
         # fix ref to be exactly the one in mesh
-        fwd.set_ref_el(mesh["ref"])
-        b = fwd.compute_b_matrix(ex_mat, perm=mesh["perm"], parser="meas_current" )
-        
-        # self.assertTrue(np.allclose(b, b_truth)) # TODO @ liubenyuan
-        # test without passing any argument
+        fwd = pyeit.eit.fem.EITForward(mesh, protocol)
         b = fwd.compute_b_matrix()
-        self.assertTrue(isinstance(b, np.ndarray))
-
-        # test passing meas_pattern
-        b = fwd.compute_b_matrix(ex_mat, meas_pattern=np.array([[[0, 1]]]))
-        self.assertTrue(isinstance(b, np.ndarray))
-
+        self.assertTrue(np.allclose(b, b_truth))
 
 
 if __name__ == "__main__":

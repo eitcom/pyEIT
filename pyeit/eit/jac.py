@@ -7,7 +7,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
-from typing import Tuple, Union
+from typing import Union
 
 import numpy as np
 import scipy.linalg as la
@@ -39,7 +39,7 @@ class JAC(EitBase):
         self.params = {"p": p, "lamb": lamb, "method": method}
         # pre-compute H0 for dynamical imaging
         # H = (J.T*J + R)^(-1) * J.T
-        self.J = self._compute_jac_matrix()
+        self.J, self.v0 = self.fwd.compute_jac()
         self.H = self._compute_h(self.J, p, lamb, method)
         self.is_ready = True
 
@@ -85,10 +85,6 @@ class JAC(EitBase):
 
         # build H
         return np.dot(la.inv(j_w_j + lamb * r_mat), jac.transpose())
-
-    # --------------------------------------------------------------------------
-    # Special method for JAC
-    # --------------------------------------------------------------------------
 
     def solve_gs(self, v1: np.ndarray, v0: np.ndarray) -> np.ndarray:
         """
@@ -225,7 +221,7 @@ class JAC(EitBase):
         """
         self._check_solver_is_ready()
         if x0 is None:
-            x0 = self.perm
+            x0 = self.mesh.perm
         if p is None:
             p = self.params["p"]
         if lamb is None:
@@ -239,7 +235,7 @@ class JAC(EitBase):
         for i in range(maxiter):
 
             # forward solver,
-            jac, v0 = self._gn_single_jac_v0(x0)
+            jac, v0 = self.fwd.compute_jac(x0, init=True)
             # Residual
             r0 = v - v0
 
@@ -263,28 +259,6 @@ class JAC(EitBase):
             lamb *= lamb_decay
             lamb = max(lamb, lamb_min)
         return x0
-
-    def _gn_single_jac_v0(
-        self, perm0: Union[int, float, np.ndarray]
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Compute Jacobian and first meas. extimation for gn single step
-
-        Parameters
-        ----------
-        x0 : Union[int, float, np.ndarray]
-            previous permittivity guess, by default None
-            (see Foward._get_perm for more details, in fem.py)
-
-        Returns
-        -------
-        Tuple[np.ndarray, np.ndarray]
-            _description_
-        """
-
-        jac = self._compute_jac_matrix(perm=perm0, allow_jac_norm=False)
-        v0 = self.fwd.v0
-        return jac, v0
 
     def project(self, ds: np.ndarray) -> np.ndarray:
         """
@@ -311,7 +285,7 @@ class JAC(EitBase):
         -------
         np.ndarray
         """
-        d_mat = sar(self.tri)
+        d_mat = sar(self.mesh.element)
         return np.dot(d_mat, ds)
 
 

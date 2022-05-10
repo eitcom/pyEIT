@@ -2,40 +2,35 @@
 """ demo on sensitivity analysis of 2D mesh"""
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
-# numeric
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-
-# pyEIT
+import matplotlib.pyplot as plt
+import numpy as np
+import pyeit.eit.protocol as protocol
 import pyeit.mesh as mesh
-from pyeit.eit.interp2d import tri_area, sim2pts
-from pyeit.mesh import quality
-from pyeit.eit.fem import Forward
-from pyeit.eit.utils import eit_scan_lines
+from pyeit.eit.fem import EITForward
+from pyeit.eit.interp2d import sim2pts, tri_area
 
 """ 0. build mesh """
 # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax , Default :fd=circle
-mesh_obj, el_pos = mesh.layer_circle(n_layer=8, n_fan=6)
-# mesh_obj, el_pos = mesh.create()
+n_el = 16  # nb of electrodes
+mesh_obj = mesh.layer_circle(n_el, n_layer=8, n_fan=6)
 
 # extract node, element, alpha
-pts = mesh_obj["node"]
-tri = mesh_obj["element"]
+pts = mesh_obj.node
+tri = mesh_obj.element
 x, y = pts[:, 0], pts[:, 1]
-quality.stats(pts, tri)
+mesh_obj.print_stats()
 
 
-def calc_sens(fwd:Forward, ex_mat):
+def calc_sens(fwd: EITForward):
     """
     see Adler2017 on IEEE TBME, pp 5, figure 6,
     Electrical Impedance Tomography: Tissue Properties to Image Measures
     """
     # solving EIT problem
-    jac = fwd.compute_jac(ex_mat=ex_mat, parser="fmmu")
-    v0 = fwd.v0
+    jac, v0 = fwd.compute_jac()
     # normalized jacobian (note: normalize affect sensitivity)
     v0 = v0[:, np.newaxis]
     jac = jac  # / v0  # (normalize or not)
@@ -46,21 +41,24 @@ def calc_sens(fwd:Forward, ex_mat):
     assert any(s >= 0)
 
     se = np.log10(s)
-    sn = sim2pts(pts, tri, se)
-    return sn
+    return sim2pts(pts, tri, se)
 
 
 """ 1. FEM forward setup """
-# calculate simulated data using FEM
-fwd = Forward(mesh_obj, el_pos)
+
 # loop over EIT scan settings: vary the distance of stimulation nodes, AB
 ex_list = [1, 2, 4, 8]
 N = len(ex_list)
 s = []
 for ex_dist in ex_list:
-    ex_mat = eit_scan_lines(16, ex_dist)
+    # setup EIT scan conditions
+    protocol_obj = protocol.create(
+        n_el, dist_exc=ex_dist, step_meas=1, parser_meas="fmmu"
+    )
+    # calculate simulated data using FEM with different protocol
+    fwd = EITForward(mesh_obj, protocol_obj)
     # Note: ex_mat can also be stacked, see demo_dynamic_stack.py
-    s0 = calc_sens(fwd, ex_mat)
+    s0 = calc_sens(fwd)
     s.append(s0)
 
 """ 2. Plot (elements) sensitivity """
@@ -74,7 +72,7 @@ for ix in range(N):
     ex_dist = ex_list[ix]
     # statistics, it seems like ex_dist=4 yields the minimal std
     std = np.std(sn)
-    print("std (ex_dist=%d) = %f" % (ex_dist, std))
+    print(f"std ({ex_dist=}) = {std}")
     im = ax.tripcolor(
         x,
         y,
@@ -88,7 +86,7 @@ for ix in range(N):
         vmax=vmax,
     )
     # annotate
-    ax.set_title("ex_dist=" + str(ex_dist))
+    ax.set_title(f"ex_dist={str(ex_dist)}")
     ax.set_aspect("equal")
     ax.set_ylim([-1.2, 1.2])
     ax.set_xlim([-1.2, 1.2])

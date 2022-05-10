@@ -3,18 +3,19 @@
 """ interpolation on 2D/3D irregular/regular grids """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
+
 from typing import Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as la
-from scipy.sparse import coo_matrix
-from scipy.spatial import ConvexHull
 from matplotlib.path import Path
-import matplotlib.pyplot as plt
 
 # for debugging
 from pyeit.mesh import layer_circle, set_perm
+from scipy.sparse import coo_matrix
+from scipy.spatial import ConvexHull
 
 
 def meshgrid(
@@ -127,16 +128,17 @@ def _hull_points(pts: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     pts: np.ndarray
-        nx2 array of points (x, y)
+        nx2 array of points (x, y) (can be also (x,y,z))
 
     Returns
     -------
     np.ndarray
         convex hull points (edge points)
     """
-    cv = ConvexHull(pts)
+    pts_2D = pts[:, :2]  # get only x and y
+    cv = ConvexHull(pts_2D)
     hull_nodes = cv.vertices
-    return pts[hull_nodes, :]
+    return pts_2D[hull_nodes, :]
 
 
 def _distance2d(
@@ -400,7 +402,7 @@ def tri_area(pts: np.ndarray, sim: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     pts: np.ndarray
-        Nx2 array, (x,y) locations for points
+        Nx2 array, (x,y) locations for points (can be also (x,y,z))
     sim: np.ndarray
         Mx3 array, elements (triangles) connectivity
 
@@ -409,9 +411,10 @@ def tri_area(pts: np.ndarray, sim: np.ndarray) -> np.ndarray:
     a: np.ndarray
         Areas of triangles
     """
+    pts_2D = pts[:, :2]  # get only x and y
     a = np.zeros(np.shape(sim)[0])
     for i, e in enumerate(sim):
-        xy = pts[e]
+        xy = pts_2D[e]
         # which can be simplified to
         # s = xy[[2, 0, 1]] - xy[[1, 2, 0]]
         s = xy[[2, 0]] - xy[[1, 2]]
@@ -534,18 +537,20 @@ def pdegrad(
 
 
 def demo() -> None:
+    from pyeit.mesh.wrapper import PyEITAnomaly_Circle
+
     """demo shows how to interpolate on regular/irregular grids"""
     # 1. create mesh
-    mesh_obj, _ = layer_circle(n_layer=8, n_fan=6)
-    pts = mesh_obj["node"]
-    tri = mesh_obj["element"]
+    mesh_obj = layer_circle(n_layer=8, n_fan=6)
+    pts = mesh_obj.node
+    tri = mesh_obj.element
 
     # set anomaly
-    anomaly = [{"x": 0.5, "y": 0.5, "d": 0.2, "perm": 100.0}]
+    anomaly = PyEITAnomaly_Circle(center=[0.5, 0.5], r=0.2, perm=100.0)
     mesh_new = set_perm(mesh_obj, anomaly=anomaly)
 
     # 2. interpolate using averaged neighbor triangle area
-    perm_node = sim2pts(pts, tri, mesh_new["perm"])
+    perm_node = sim2pts(pts, tri, mesh_new.perm)
 
     # plot mesh and interpolated mesh (tri2pts)
     fig_size = (6, 4)
@@ -553,7 +558,7 @@ def demo() -> None:
     ax = fig.add_subplot(111)
     ax.set_aspect("equal")
     ax.triplot(pts[:, 0], pts[:, 1], tri)
-    im1 = ax.tripcolor(pts[:, 0], pts[:, 1], tri, mesh_new["perm"])
+    im1 = ax.tripcolor(pts[:, 0], pts[:, 1], tri, mesh_new.perm)
     fig.colorbar(im1, orientation="vertical")
 
     fig = plt.figure(figsize=fig_size)
@@ -571,7 +576,7 @@ def demo() -> None:
     xyi = np.vstack((xg.flatten(), yg.flatten())).T
     # w_mat = weight_idw(xy, xyi)
     w_mat = weight_sigmod(xy, xyi)
-    im = np.dot(w_mat.T, mesh_new["perm"])
+    im = np.dot(w_mat.T, mesh_new.perm)
     # im = weight_linear_rbf(xy, xyi, mesh_new['perm'])
     im[mask] = 0.0
     # reshape to grid size
