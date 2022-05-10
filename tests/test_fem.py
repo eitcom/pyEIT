@@ -1,7 +1,10 @@
 # test for fem.py
 import unittest
+
 import numpy as np
 import pyeit.eit.fem
+from pyeit.eit.protocol import PyEITProtocol, build_meas_pattern_std
+from pyeit.mesh.wrapper import PyEITMesh
 
 
 def _assemble(ke, tri, perm, n):
@@ -41,9 +44,7 @@ def _mesh_obj():
     perm = np.array([3.0, 1.0])
     el_pos = np.array([1, 2])
     # new mesh structure or dataset
-    mesh = {"node": node, "element": element, "perm": perm, "el_pos": el_pos, "ref": 3}
-
-    return mesh
+    return PyEITMesh(node=node, element=element, perm=perm, el_pos=el_pos, ref_el=3)
 
 
 def _mesh_obj_large():
@@ -54,9 +55,12 @@ def _mesh_obj_large():
     perm = np.random.randn(n_tri)
     np.random.seed(0)
     el_pos = np.random.permutation(n_pts)[:16]
-    mesh = {"node": node, "element": element, "perm": perm, "el_pos": el_pos, "ref": 0}
+    return PyEITMesh(node=node, element=element, perm=perm, el_pos=el_pos, ref_el=0)
 
-    return mesh
+
+def _protocol_obj(ex_mat, n_el, step_meas, parser_meas):
+    meas_mat = build_meas_pattern_std(ex_mat, n_el, step_meas, parser_meas)
+    return PyEITProtocol(ex_mat, meas_mat)
 
 
 class TestFem(unittest.TestCase):
@@ -99,6 +103,7 @@ class TestFem(unittest.TestCase):
 
     def test_meas_pattern(self):
         """test measurement pattern/voltage meter"""
+        # @libuenyan shoul be in test_eit.py or test_protocol.py
         n_el = 16
         np.random.seed(42)
         mesh = _mesh_obj_large()
@@ -107,10 +112,10 @@ class TestFem(unittest.TestCase):
             for ex_line in ex_lines:
                 ex_mat = np.array([ex_line])
                 # build protocol dict/dataset
-                protocol = {"ex_mat": ex_mat, "step": 1, "parser": parser}
+                protocol = _protocol_obj(ex_mat, n_el, 1, parser)
                 fwd = pyeit.eit.fem.EITForward(mesh, protocol)
                 diff_truth = _meas_pattern(ex_line, n_el, 1, parser)
-                diff = fwd.build_meas_pattern()[0]
+                diff = fwd.protocol.meas_mat[0]
 
                 assert np.allclose(diff, diff_truth)
 
@@ -158,9 +163,9 @@ class TestFem(unittest.TestCase):
     def test_solve_eit(self):
         """test solve_eit using a simple mesh structure"""
         mesh = _mesh_obj()
-        el_pos = mesh["el_pos"]
+        el_pos = mesh.el_pos
         ex_mat = np.array([[0, 1], [1, 0]])
-        protocol = {"ex_mat": ex_mat, "step": 1, "parser": "meas_current"}
+        protocol = _protocol_obj(ex_mat, mesh.n_el, 1, "meas_current")
         fwd = pyeit.eit.fem.EITForward(mesh, protocol)
 
         # include voltage differences on driving electrodes
@@ -174,8 +179,8 @@ class TestFem(unittest.TestCase):
         """test solve using a simple mesh structure"""
         mesh = _mesh_obj()
         ex_mat = np.array([[0, 1]])
-        protocol = {"ex_mat": ex_mat, "step": 1, "parser": "meas_current"}
-        fwd = pyeit.eit.fem.EITForward(mesh=mesh, protocol=protocol)
+        protocol = _protocol_obj(ex_mat, mesh.n_el, 1, "meas_current")
+        fwd = pyeit.eit.fem.EITForward(mesh, protocol)
 
         # testing solve
         jac_truth = np.array([[-0.25874523, -2.75529584], [0.25874523, 2.75529584]])
@@ -186,12 +191,12 @@ class TestFem(unittest.TestCase):
         """test compute_jac using a simple mesh structure"""
         mesh = _mesh_obj()
         ex_mat = np.array([[0, 1]])
-        protocol = {"ex_mat": ex_mat, "step": 1, "parser": "meas_current"}
+        protocol = _protocol_obj(ex_mat, mesh.n_el, 1, "meas_current")
 
         # smear: (f_min < f) & (f <= f_max)
         b_truth = np.array([[1, 1, 0, 1], [1, 1, 0, 1]])
         # fix ref to be exactly the one in mesh
-        fwd = pyeit.eit.fem.EITForward(mesh=mesh, protocol=protocol)
+        fwd = pyeit.eit.fem.EITForward(mesh, protocol)
         b = fwd.compute_b_matrix()
         self.assertTrue(np.allclose(b, b_truth))
 

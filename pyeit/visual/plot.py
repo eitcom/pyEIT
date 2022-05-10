@@ -3,16 +3,18 @@
 """plot EIT data"""
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
+
 import os.path
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import dates
+from pyeit.mesh.wrapper import PyEITMesh
 
 
 def mesh_plot(
-    mesh,
+    mesh: PyEITMesh,
     el_pos,
     mstr="",
     figsize=(9, 6),
@@ -26,8 +28,8 @@ def mesh_plot(
 ):
     """plot mesh structure (base layout)"""
     # load mesh structure
-    pts = mesh["node"]
-    tri = mesh["element"]
+    pts = mesh.node
+    tri = mesh.element
     fig, ax = plt.subplots(figsize=figsize)
     ax.set_facecolor("black")
     ax.set_aspect("equal")

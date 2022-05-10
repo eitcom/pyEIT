@@ -221,7 +221,7 @@ class JAC(EitBase):
         """
         self._check_solver_is_ready()
         if x0 is None:
-            x0 = self.perm
+            x0 = self.mesh.perm
         if p is None:
             p = self.params["p"]
         if lamb is None:
@@ -285,7 +285,7 @@ class JAC(EitBase):
         -------
         np.ndarray
         """
-        d_mat = sar(self.tri)
+        d_mat = sar(self.mesh.element)
         return np.dot(d_mat, ds)
 
 

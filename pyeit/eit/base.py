@@ -7,9 +7,15 @@ writing your own reconstruction algorithms.
 """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
+
+import warnings
 from abc import ABC, abstractmethod
+
 import numpy as np
+from pyeit.eit.protocol import PyEITProtocol
+from pyeit.mesh.wrapper import PyEITMesh
+
 from .fem import EITForward
 
 
@@ -24,10 +30,8 @@ class EitBase(ABC):
 
     def __init__(
         self,
-        mesh: dict,
-        protocol: dict,
-        jac_normalized: bool = False,
-        **kwargs,
+        mesh: PyEITMesh,
+        protocol: PyEITProtocol,
     ) -> None:
         """
         An EIT solver.
@@ -36,39 +40,13 @@ class EitBase(ABC):
 
         Parameters
         ----------
-        mesh: dict or dataset
-            mesh structure, {'node', 'element', 'perm', 'el_pos', 'ref'}
-        protocol: dict
-            measurement protocol {ex_mat, step, parser}
-        jac_normalized : bool, optional
-            normalize the jacobian using f0 computed from input perm, by
-            default False
-
-        Notes
-        -----
-            - parser is required for your code to be compatible with
-            (a) simulation data set or (b) FMMU data set
-            - To pass a custom measurement pattern use the kwarg meas_pattern
-            pay attenteion that the meas_pattern should be an nd.array of shape
-            (n_exc, n_meas_per_exc, 2). If not TypeError will be raised.
+        mesh: PyEITMesh
+            mesh object
+        protocol: PyEITProtocol
+            measurement object
         """
         # build forward solver
         self.fwd = EITForward(mesh=mesh, protocol=protocol)
-
-        # solving mesh structure
-        self.mesh = mesh
-        self.pts = mesh["node"]
-        self.tri = mesh["element"]
-        self.perm = mesh["perm"]
-        self.el_pos = mesh["el_pos"]
-        self.no_num, self.n_dim = self.pts.shape
-        self.el_num, self.n_vertices = self.tri.shape
-
-        # measurement protocol
-        self.ex_mat = protocol["ex_mat"]
-        self.step = protocol["step"]
-        self.parser = protocol["parser"]
-        self.jac_normalized = jac_normalized
 
         # initialize other parameters
         self.params = None
@@ -78,6 +56,20 @@ class EitBase(ABC):
         # user must run solver.setup() manually to get correct H
         self.H = None
         self.is_ready = False
+        warnings.warn(
+            f"Before using {type(self).__name__}-EITSolver run solver.setup() to set the solver ready!",
+            stacklevel=2,
+        )
+
+    @property
+    def mesh(self) -> PyEITMesh:
+        return self.fwd.mesh
+
+    # # if needed protocol attributes can be accessed by using self.protocol
+    # # instead of self.fwd.protocol
+    # @property
+    # def protocol(self)->PyEITProtocol:
+    #     return self.fwd.protocol
 
     @abstractmethod
     def setup(self) -> None:
@@ -124,7 +116,7 @@ class EitBase(ABC):
         normalize: Bool, optional
             true for conducting normalization, by default False
         log_scale: Bool, optional
-            remap reconstructions in log scale,by default False
+            remap reconstructions in log scale, by default False
 
         Raises
         ------
