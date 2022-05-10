@@ -34,6 +34,7 @@ class GREIT(EitBase):
         n: int = 32,
         s: float = 20.0,
         ratio: float = 0.1,
+        jac_normalized: bool = False,
     ) -> None:
         """
         Setup GREIT solver
@@ -54,6 +55,9 @@ class GREIT(EitBase):
             control the blur, by default 20.0
         ratio : float, optional
             desired ratio, by default 0.1
+        jac_normalized : bool, optional
+            normalize the jacobian using f0 computed from input perm, by
+            default False
 
         Raises
         ------
@@ -75,13 +79,21 @@ class GREIT(EitBase):
         # parameters for GREIT projection
         if w is None:
             w = np.ones_like(self.mesh.perm)
-        self.params = {"w": w, "p": p, "lamb": lamb, "n": n, "s": s, "ratio": ratio}
+        self.params = {
+            "w": w,
+            "p": p,
+            "lamb": lamb,
+            "n": n,
+            "s": s,
+            "ratio": ratio,
+            "jac_normalize": jac_normalized,
+        }
 
         # Build grids and mask
         self.xg, self.yg, self.mask = meshgrid(self.mesh.node, n=n)
 
         w_mat = self._compute_grid_weights(self.xg, self.yg)
-        self.J, self.v0 = self.fwd.compute_jac()
+        self.J, self.v0 = self.fwd.compute_jac(normalize=jac_normalized)
         self.H = self._compute_h(jac=self.J, w_mat=w_mat)
         self.is_ready = True
 

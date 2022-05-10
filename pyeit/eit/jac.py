@@ -23,7 +23,7 @@ class JAC(EitBase):
         p: float = 0.20,
         lamb: float = 0.001,
         method: str = "kotre",
-        jac_normalized: bool = True,
+        jac_normalized: bool = False,
     ) -> None:
         """
         Setup JAC solver
