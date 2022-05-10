@@ -238,7 +238,7 @@ class JAC(EitBase):
         for i in range(maxiter):
 
             # forward solver,
-            jac, v0 = self.fwd.compute_jac(x0, init=True)
+            jac, v0 = self.fwd.compute_jac(x0)
             # Residual
             r0 = v - v0
 

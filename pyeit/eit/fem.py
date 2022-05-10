@@ -38,35 +38,30 @@ class Forward:
         self.mesh = mesh
         # coefficient matrix [initialize]
         self.se = calculate_ke(self.mesh.node, self.mesh.element)
-        self.assemble_pde(self.mesh.perm, init=True)
+        self.assemble_pde(self.mesh.perm)
 
-    def assemble_pde(
-        self, perm: Union[int, float, np.ndarray] = None, init: bool = True
-    ) -> None:
+    def assemble_pde(self, perm: Union[int, float, np.ndarray]) -> None:
         """
         assemble PDE
 
         Parameters
         ----------
-        perm : Union[int, float, np.ndarray], optional
-            permittivity on elements ; shape (n_tri,), by default `None`.
-        init : bool, optional
-            re-calculate kg
-
+        perm : Union[int, float, np.ndarray]
+            permittivity on elements ; shape (n_tri,).
+            if `None`, assemble_pde is aborded
+            
         Raise
         -------
         Warning
-             if self.mesh.perm != perm and not init
+             if perm is `None`, just for information
 
-        """
-        if any(self.mesh.perm != perm) and not init:
+        """            
+        if perm is None:
             warnings.warn(
-                "You passed a new permittivity but you dont want to init", stacklevel=2
+                f"You passed a permittivity = {perm}, ", stacklevel=2
             )
-        # be raised, telling a user that it should pass init = True
-        if not init:
             return
-        perm = self._check_perm(perm)
+        perm = self.mesh.get_valid_perm(perm)
         self.kg = assemble(
             self.se, self.mesh.element, perm, self.mesh.n_nodes, ref=self.mesh.ref_el
         )
@@ -98,29 +93,6 @@ class Forward:
 
         # solve
         return scipy.sparse.linalg.spsolve(self.kg, b)
-
-    def _check_perm(self, perm: Union[int, float, np.ndarray] = None) -> np.ndarray:
-        """
-        Check/init the permittivity on element
-
-        Parameters
-        ----------
-        perm : Union[int, float, np.ndarray], optional, default None
-            permittivity on elements.
-            If `None`, `self.mesh.perm` will be used
-            If perm is int or float, uniform permittivity on elements will be used
-
-        Returns
-        -------
-        np.ndarray
-            permittivity on elements ; shape (n_tri,)
-
-        Note
-        ----
-        see `get_valid_perm` of PyEITMesh
-        """
-        # here we let the mesh doing the cheking/init
-        return self.mesh.perm if perm is None else self.mesh.get_valid_perm(perm)
 
 
 class EITForward(Forward):
@@ -185,24 +157,22 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
     def solve_eit(
         self,
         perm: Union[int, float, np.ndarray] = None,
-        init: bool = False,
     ) -> np.ndarray:
         """
-        EIT simulation, generate forward v measurement
+        EIT simulation, generate forward v measurements
 
         Parameters
         ----------
         perm : Union[int, float, np.ndarray], optional
             permittivity on elements ; shape (n_tri,), by default `None`.
-        init : bool, optional
-            re-calculate kg
-
+            if perm is `None`, the computation of forward v measurements will be
+            based on the permittivity of the mesh, self.mesh.perm
         Returns
         -------
         v: np.ndarray
             simulated boundary voltage measurements; shape(n_exe*n_el,)
         """
-        self.assemble_pde(perm=self._check_perm(perm), init=init)
+        self.assemble_pde(perm)
         v = np.zeros((self.protocol.n_exc, self.protocol.n_meas))
         for i, ex_line in enumerate(self.protocol.ex_mat):
             f = self.solve(ex_line)
@@ -213,7 +183,6 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
     def compute_jac(
         self,
         perm: Union[int, float, np.ndarray] = None,
-        init: bool = False,
         normalize: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -224,8 +193,8 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         ----------
         perm : Union[int, float, np.ndarray], optional
             permittivity on elements ; shape (n_tri,), by default `None`.
-        init : bool, optional
-            re-calculate kg
+            if perm is `None`, the computation of Jacobian matrix will be based 
+            on the permittivity of the mesh, self.mesh.perm
         normalize : bool, optional
             flag for Jacobian normalization, by default False.
             If True the Jacobian is normalized
@@ -237,7 +206,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
 
         """
         # update k if necessary and calculate r=inv(k)
-        self.assemble_pde(perm=self._check_perm(perm), init=init)
+        self.assemble_pde(perm)
         r_el = la.inv(self.kg.toarray())[self.mesh.el_pos]
 
         # calculate v, jac per excitation pattern (ex_line)
@@ -267,7 +236,6 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
     def compute_b_matrix(
         self,
         perm: Union[int, float, np.ndarray] = None,
-        init: bool = False,
     ) -> np.ndarray:
         """
         Compute back-projection mappings (smear matrix)
@@ -276,15 +244,15 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         ----------
         perm : Union[int, float, np.ndarray], optional
             permittivity on elements ; shape (n_tri,), by default `None`.
-        init : bool, optional
-            re-calculate kg using perm
+            if perm is `None`, the computation of smear matrix will be based 
+            on the permittivity of the mesh, self.mesh.perm
 
         Returns
         -------
         np.ndarray
             back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
         """
-        self.assemble_pde(perm=self._check_perm(perm), init=init)
+        self.assemble_pde(perm)
         b_mat = np.zeros((self.protocol.n_exc, self.protocol.n_meas, self.mesh.n_nodes))
 
         for i, ex_line in enumerate(self.protocol.ex_mat):

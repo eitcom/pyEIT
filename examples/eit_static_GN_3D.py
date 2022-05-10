@@ -45,7 +45,7 @@ node_perm = sim2pts(pts, tri, np.real(tri_perm))
 
 # calculate simulated data
 v0 = fwd.solve_eit()
-v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
+v1 = fwd.solve_eit(perm=mesh_new.perm)
 
 """  Static GN Solver"""
 # number of stimulation lines/patterns
