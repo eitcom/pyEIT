@@ -49,16 +49,17 @@ class Forward:
         perm : Union[int, float, np.ndarray]
             permittivity on elements ; shape (n_tri,).
             if `None`, assemble_pde is aborded
-            
+
         Raise
         -------
         Warning
              if perm is `None`, just for information
 
-        """            
+        """
         if perm is None:
             warnings.warn(
-                ">> initial stiffness matrix based on self.mesh.perm will be used ", stacklevel=2
+                ">> initial stiffness matrix based on self.mesh.perm will be used ",
+                stacklevel=2,
             )
             return
         perm = self.mesh.get_valid_perm(perm)
@@ -193,7 +194,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         ----------
         perm : Union[int, float, np.ndarray], optional
             permittivity on elements ; shape (n_tri,), by default `None`.
-            if perm is `None`, the computation of Jacobian matrix will be based 
+            if perm is `None`, the computation of Jacobian matrix will be based
             on the permittivity of the mesh, self.mesh.perm
         normalize : bool, optional
             flag for Jacobian normalization, by default False.
@@ -244,7 +245,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         ----------
         perm : Union[int, float, np.ndarray], optional
             permittivity on elements ; shape (n_tri,), by default `None`.
-            if perm is `None`, the computation of smear matrix will be based 
+            if perm is `None`, the computation of smear matrix will be based
             on the permittivity of the mesh, self.mesh.perm
 
         Returns
