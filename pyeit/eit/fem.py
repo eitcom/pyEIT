@@ -50,17 +50,8 @@ class Forward:
             permittivity on elements ; shape (n_tri,).
             if `None`, assemble_pde is aborded
 
-        Raise
-        -------
-        Warning
-             if perm is `None`, just for information
-
         """
         if perm is None:
-            warnings.warn(
-                ">> initial stiffness matrix based on self.mesh.perm will be used ",
-                stacklevel=2,
-            )
             return
         perm = self.mesh.get_valid_perm(perm)
         self.kg = assemble(
