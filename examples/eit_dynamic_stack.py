@@ -34,7 +34,7 @@ protocol_obj = protocol.create(n_el, dist_exc=[7, 3], step_meas=1, parser_meas="
 # forward solver
 fwd = EITForward(mesh_obj, protocol_obj)
 v0 = fwd.solve_eit()
-v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
+v1 = fwd.solve_eit(perm=mesh_new.perm)
 
 """ 3. solving using dynamic EIT """
 # number of stimulation lines/patterns

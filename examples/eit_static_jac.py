@@ -32,7 +32,7 @@ perm = mesh_new.perm
 # %% calculate simulated data
 protocol_obj = protocol.create(n_el, dist_exc=1, step_meas=1, parser_meas="std")
 fwd = EITForward(mesh_obj, protocol_obj)
-v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
+v1 = fwd.solve_eit(perm=mesh_new.perm)
 
 # plot
 fig, ax = plt.subplots(figsize=(9, 6))

@@ -46,7 +46,7 @@ node_perm = sim2pts(pts, tri, np.real(mesh_new.perm))
 
 # calculate simulated data
 v0 = fwd.solve_eit()
-v1 = fwd.solve_eit(perm=mesh_new.perm, init=True)
+v1 = fwd.solve_eit(perm=mesh_new.perm)
 
 """ 3. JAC solver """
 # number of stimulation lines/patterns

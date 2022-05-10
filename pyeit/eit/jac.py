@@ -19,7 +19,11 @@ class JAC(EitBase):
     """A sensitivity-based EIT imaging class"""
 
     def setup(
-        self, p: float = 0.20, lamb: float = 0.001, method: str = "kotre"
+        self,
+        p: float = 0.20,
+        lamb: float = 0.001,
+        method: str = "kotre",
+        jac_normalized: bool = False,
     ) -> None:
         """
         Setup JAC solver
@@ -34,12 +38,20 @@ class JAC(EitBase):
             JAC parameters, by default 0.001
         method : str, optional
             regularization methods ("kotre", "lm", "dgn" ), by default "kotre"
+        jac_normalized : bool, optional
+            normalize the jacobian using f0 computed from input perm, by
+            default False
         """
         # passing imaging parameters
-        self.params = {"p": p, "lamb": lamb, "method": method}
+        self.params = {
+            "p": p,
+            "lamb": lamb,
+            "method": method,
+            "jac_normalize": jac_normalized,
+        }
         # pre-compute H0 for dynamical imaging
         # H = (J.T*J + R)^(-1) * J.T
-        self.J, self.v0 = self.fwd.compute_jac()
+        self.J, self.v0 = self.fwd.compute_jac(normalize=jac_normalized)
         self.H = self._compute_h(self.J, p, lamb, method)
         self.is_ready = True
 
@@ -235,7 +247,7 @@ class JAC(EitBase):
         for i in range(maxiter):
 
             # forward solver,
-            jac, v0 = self.fwd.compute_jac(x0, init=True)
+            jac, v0 = self.fwd.compute_jac(x0)
             # Residual
             r0 = v - v0
 
