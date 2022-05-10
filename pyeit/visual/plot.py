@@ -10,7 +10,7 @@ import os.path
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import dates
-from pyeit.mesh.wrapper import PyEITMesh
+from pyeit.mesh import PyEITMesh
 
 
 def mesh_plot(

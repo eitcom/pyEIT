@@ -8,13 +8,10 @@ writing your own reconstruction algorithms.
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import absolute_import, division, print_function
-
-import warnings
 from abc import ABC, abstractmethod
-
 import numpy as np
 from pyeit.eit.protocol import PyEITProtocol
-from pyeit.mesh.wrapper import PyEITMesh
+from pyeit.mesh import PyEITMesh
 
 from .fem import EITForward
 
@@ -56,10 +53,6 @@ class EitBase(ABC):
         # user must run solver.setup() manually to get correct H
         self.H = None
         self.is_ready = False
-        warnings.warn(
-            f"Before using {type(self).__name__}-EITSolver run solver.setup() to set the solver ready!",
-            stacklevel=2,
-        )
 
     @property
     def mesh(self) -> PyEITMesh:
@@ -171,7 +164,7 @@ class EitBase(ABC):
             raised if solver not ready
         """
         if not self.is_ready or self.H is None:
-            msg = "User must first run solver.setup() before using solver for solving purpose"
+            msg = "User must first run {type(self).__name__}.setup() before imaging."
             raise SolverNotReadyError(msg)
 
     def _normalize(self, v1: np.ndarray, v0: np.ndarray) -> np.ndarray:

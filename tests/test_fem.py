@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import pyeit.eit.fem
 from pyeit.eit.protocol import PyEITProtocol, build_meas_pattern_std
-from pyeit.mesh.wrapper import PyEITMesh
+from pyeit.mesh import PyEITMesh
 
 
 def _assemble(ke, tri, perm, n):

@@ -18,7 +18,7 @@ import struct
 import matplotlib.pyplot as plt
 import numpy as np
 from pkg_resources import resource_filename
-from pyeit.mesh.wrapper import PyEITMesh
+from pyeit.mesh import PyEITMesh
 
 
 def load(fstr, mirror=False) -> PyEITMesh:

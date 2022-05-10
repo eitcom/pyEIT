@@ -13,8 +13,7 @@ from scipy import sparse
 import warnings
 import scipy.sparse.linalg
 from pyeit.eit.protocol import PyEITProtocol
-
-from pyeit.mesh.wrapper import PyEITMesh
+from pyeit.mesh import PyEITMesh
 
 
 class Forward:

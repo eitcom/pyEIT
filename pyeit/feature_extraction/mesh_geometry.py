@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from pkg_resources import resource_filename
 from pyeit.io import mes
-from pyeit.mesh.wrapper import PyEITMesh
+from pyeit.mesh import PyEITMesh
 
 
 class SimpleMeshGeometry:
