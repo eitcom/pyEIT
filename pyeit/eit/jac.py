@@ -8,10 +8,8 @@
 from __future__ import division, absolute_import, print_function
 
 from typing import Union
-
 import numpy as np
 import scipy.linalg as la
-
 from .base import EitBase
 
 
@@ -23,6 +21,7 @@ class JAC(EitBase):
         p: float = 0.20,
         lamb: float = 0.001,
         method: str = "kotre",
+        perm: Union[int, float, np.ndarray] = None,
         jac_normalized: bool = False,
     ) -> None:
         """
@@ -38,6 +37,8 @@ class JAC(EitBase):
             JAC parameters, by default 0.001
         method : str, optional
             regularization methods ("kotre", "lm", "dgn" ), by default "kotre"
+        perm : Union[int, float, np.ndarray], optional
+            If perm is not None, a prior of perm distribution is used to build jac
         jac_normalized : bool, optional
             normalize the jacobian using f0 computed from input perm, by
             default False
@@ -51,7 +52,7 @@ class JAC(EitBase):
         }
         # pre-compute H0 for dynamical imaging
         # H = (J.T*J + R)^(-1) * J.T
-        self.J, self.v0 = self.fwd.compute_jac(normalize=jac_normalized)
+        self.J, self.v0 = self.fwd.compute_jac(perm=perm, normalize=jac_normalized)
         self.H = self._compute_h(self.J, p, lamb, method)
         self.is_ready = True
 

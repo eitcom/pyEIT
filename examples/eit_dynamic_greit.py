@@ -52,8 +52,8 @@ v1 = fwd.solve_eit(perm=mesh_new.perm)
 
 """ 3. Construct using GREIT """
 eit = greit.GREIT(mesh_obj, protocol_obj)
-eit.setup(p=0.50, lamb=0.001)
-ds = eit.solve(v1, v0)
+eit.setup(p=0.50, lamb=0.01, perm=1, jac_normalized=True)
+ds = eit.solve(v1, v0, normalize=True)
 x, y, ds = eit.mask_value(ds, mask_value=np.NAN)
 
 # show alpha

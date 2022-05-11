@@ -13,11 +13,9 @@ Note, that, the advantages of greit is NOT on simulated data, but
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import absolute_import, division, print_function
 
-from typing import Tuple
-
+from typing import Tuple, Union
 import numpy as np
 import scipy.linalg as la
-
 from .base import EitBase
 from .interp2d import meshgrid, weight_sigmod
 
@@ -34,6 +32,7 @@ class GREIT(EitBase):
         n: int = 32,
         s: float = 20.0,
         ratio: float = 0.1,
+        perm: Union[int, float, np.ndarray] = None,
         jac_normalized: bool = False,
     ) -> None:
         """
@@ -55,6 +54,8 @@ class GREIT(EitBase):
             control the blur, by default 20.0
         ratio : float, optional
             desired ratio, by default 0.1
+        perm : Union[int, float, np.ndarray], optional
+            If perm is not None, a prior of perm distribution is used to build Jacobian
         jac_normalized : bool, optional
             normalize the jacobian using f0 computed from input perm, by
             default False
@@ -93,7 +94,7 @@ class GREIT(EitBase):
         self.xg, self.yg, self.mask = meshgrid(self.mesh.node, n=n)
 
         w_mat = self._compute_grid_weights(self.xg, self.yg)
-        self.J, self.v0 = self.fwd.compute_jac(normalize=jac_normalized)
+        self.J, self.v0 = self.fwd.compute_jac(perm=perm, normalize=jac_normalized)
         self.H = self._compute_h(jac=self.J, w_mat=w_mat)
         self.is_ready = True
 

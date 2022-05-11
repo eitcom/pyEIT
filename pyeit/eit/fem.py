@@ -165,7 +165,9 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
             simulated boundary voltage measurements; shape(n_exe*n_el,)
         """
         self.assemble_pde(perm)
-        v = np.zeros((self.protocol.n_exc, self.protocol.n_meas))
+        v = np.zeros(
+            (self.protocol.n_exc, self.protocol.n_meas), dtype=self.mesh.perm.dtype
+        )
         for i, ex_line in enumerate(self.protocol.ex_mat):
             f = self.solve(ex_line)
             v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
@@ -206,7 +208,9 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
             (self.protocol.n_exc, self.protocol.n_meas, self.mesh.n_elems),
             dtype=self.mesh.perm.dtype,
         )
-        v = np.zeros((self.protocol.n_exc, self.protocol.n_meas))
+        v = np.zeros(
+            (self.protocol.n_exc, self.protocol.n_meas), dtype=self.mesh.perm.dtype
+        )
         for i, ex_line in enumerate(self.protocol.ex_mat):
             f = self.solve(ex_line)
             v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])

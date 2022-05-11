@@ -13,10 +13,12 @@ Arithmetic
 """
 from .bp import BP
 from .jac import JAC
+from .svd import SVD
 from .greit import GREIT
 
 __all__ = [
     "BP",
     "JAC",
+    "SVD",
     "GREIT",
 ]

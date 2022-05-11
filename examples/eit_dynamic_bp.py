@@ -23,7 +23,6 @@ else:
     mesh_obj = mesh.create(n_el, h0=0.1)
 
 """ 1. problem setup """
-
 anomaly = PyEITAnomaly_Circle(center=[0.5, 0.5], r=0.1, perm=10.0)
 mesh_new = mesh.set_perm(mesh_obj, anomaly=anomaly, background=1.0)
 

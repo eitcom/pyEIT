@@ -49,7 +49,7 @@ v1 = fwd.solve_eit(perm=mesh_new.perm)
 # (mostly) the shape and the electrode positions are not exactly the same
 # as in mesh generating the jac, then data must be normalized.
 eit = jac.JAC(mesh_obj, protocol_obj)
-eit.setup(p=0.5, lamb=0.01, method="kotre")
+eit.setup(p=0.5, lamb=0.01, method="kotre", perm=1, jac_normalized=True)
 ds = eit.solve(v1, v0, normalize=True)
 ds_n = sim2pts(pts, tri, np.real(ds))
 

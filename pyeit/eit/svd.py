@@ -5,15 +5,22 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
+from typing import Union
 import numpy as np
-
 from .jac import JAC
 
 
 class SVD(JAC):
     """implementing a sensitivity-based EIT imaging class"""
 
-    def setup(self, n: int = 25, rcond: float = 1e-2, method: str = "svd") -> None:
+    def setup(
+        self,
+        n: int = 25,
+        rcond: float = 1e-2,
+        method: str = "svd",
+        perm: Union[int, float, np.ndarray] = None,
+        jac_normalized: bool = False,
+    ) -> None:
         """
         Setup of SVD solver, singular value decomposition based reconstruction.
 
@@ -27,9 +34,14 @@ class SVD(JAC):
             reconstruction method, by default "svd"
             'svd': SVD truncation,
             'pinv': pseudo inverse
+        perm : Union[int, float, np.ndarray], optional
+            If perm is not None, a prior of perm distribution is used to build jac
+        jac_normalized : bool, optional
+            normalize the jacobian using f0 computed from input perm, by
+            default False
         """
         # correct n_ord
-        self.J, self.v0 = self.fwd.compute_jac()
+        self.J, self.v0 = self.fwd.compute_jac(perm=perm, normalize=jac_normalized)
         nm, ne = self.J.shape
         n_ord = np.min([nm, ne, n])
 

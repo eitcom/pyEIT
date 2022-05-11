@@ -5,6 +5,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
 
+from typing import Union
 import numpy as np
 from .base import EitBase
 
@@ -12,7 +13,9 @@ from .base import EitBase
 class BP(EitBase):
     """A naive inversion of (Euclidean) back projection."""
 
-    def setup(self, weight: str = "none") -> None:
+    def setup(
+        self, weight: str = "none", perm: Union[int, float, np.ndarray] = None
+    ) -> None:
         """
         Setup BP solver
 
@@ -20,12 +23,14 @@ class BP(EitBase):
         ----------
         weight : str, optional
             BP parameter, by default "none"
+        perm : Union[int, float, np.ndarray], optional
+            If perm is not None, a prior of perm distribution is used to build the smear matrix
         """
         self.params = {"weight": weight}
 
         # build the weighting matrix
         # BP: in node imaging, H is the smear matrix (transpose of B)
-        self.B = self.fwd.compute_b_matrix()
+        self.B = self.fwd.compute_b_matrix(perm=perm)
         self.H = self._compute_h(b_matrix=self.B)
         self.is_ready = True
 
