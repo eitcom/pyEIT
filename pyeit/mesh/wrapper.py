@@ -36,14 +36,14 @@ class PyEITMesh:
     el_pos : np.ndarray
         node corresponding to each electrodes of shape (n_el, 1)
     ref_node : int
-        reference node. ref_node should not be on electrodes.
+        reference node. ref_node should not be on electrodes, default 0.
     """
 
     node: np.ndarray
     element: np.ndarray
     perm: Union[int, float, np.ndarray] = None
     el_pos: np.ndarray = np.arange(16)
-    ref_node: int = None
+    ref_node: int = 0
 
     def __post_init__(self) -> None:
         """Checking of the inputs"""
@@ -355,7 +355,7 @@ def create(
     t = check_order(p, t)
     # 3. generate electrodes, the same as p_fix (top n_el)
     el_pos = np.arange(n_el)
-    return PyEITMesh(element=t, node=p, perm=None, el_pos=el_pos)
+    return PyEITMesh(element=t, node=p, perm=None, el_pos=el_pos, ref_node=0)
 
 
 @dataclass

@@ -12,7 +12,11 @@ Arithmetic
   - interp2d: Spatial interpolation for EIT
 """
 from .bp import BP
+from .jac import JAC
+from .greit import GREIT
 
 __all__ = [
     "BP",
+    "JAC",
+    "GREIT",
 ]
