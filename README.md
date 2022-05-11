@@ -8,9 +8,12 @@
 
 ### 1.1 Install using pip or conda-forge (recommended)
 
-`pyEIT` is now availbale on `pypi` and `conda-forge`,
+`pyEIT` is now availbale on `pypi` and `conda-forge`. It is purely python, which can be installed via
 ```bash
 $ pip install pyeit
+```
+or
+```bash
 $ conda install -c conda-forge pyeit
 ```
 
