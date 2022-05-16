@@ -8,6 +8,9 @@ Please cite the following paper if you are using et3 in your research:
     Fu, Feng, et al. "Use of electrical impedance tomography to monitor
     regional cerebral edema during clinical dehydration treatment."
     PloS one 9.12 (2014): e113202.
+
+2022-05-16: FMMU ET3 using [m, n](i.e., V[m] - V[n]) not [n, m],
+            which adds a negative sign to make it compatible.
 """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
@@ -176,7 +179,7 @@ class ET3:
             data = data[:, idx]
 
         # rescale data to Ohms
-        data = data * self.p["scale"]
+        data = -data * self.p["scale"]
 
         return time_array, data, adc_array
 
