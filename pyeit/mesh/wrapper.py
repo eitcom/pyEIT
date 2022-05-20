@@ -3,7 +3,7 @@
 """ wrapper function of distmesh for EIT """
 # Copyright (c) Benyuan Liu. All rights reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass

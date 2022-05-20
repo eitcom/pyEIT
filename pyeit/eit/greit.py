@@ -11,7 +11,7 @@ Note, that, the advantages of greit is NOT on simulated data, but
 """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, annotations
 
 from typing import Tuple, Union
 import numpy as np

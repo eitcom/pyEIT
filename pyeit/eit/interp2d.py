@@ -3,7 +3,7 @@
 """ interpolation on 2D/3D irregular/regular grids """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, annotations
 
 from typing import Tuple
 
