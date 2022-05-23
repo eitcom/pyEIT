@@ -57,7 +57,7 @@ def test_equal_spaced_interpolate_distance():
 
 
 def test_create_exterior_polygon():
-    mesh_obj = load_mesh(parent_dir + "/test_data/Rectangle.STL")
+    mesh_obj = load_mesh(parent_dir + "/data/Rectangle.STL")
     trimesh_obj = trimesh.Trimesh(mesh_obj.node, mesh_obj.element)
 
     polygon = create_exterior_polygon(trimesh_obj)
@@ -71,7 +71,7 @@ def test_create_exterior_polygon():
 
 
 def test_create_exterior_polygons_double_circle():
-    mesh_obj = load_mesh(parent_dir + "/test_data/Simple_Circle.ply")
+    mesh_obj = load_mesh(parent_dir + "/data/Simple_Circle.ply")
     trimesh_obj = trimesh.Trimesh(mesh_obj.node, mesh_obj.element)
 
     polygon = create_exterior_polygon(trimesh_obj)
@@ -149,7 +149,7 @@ def test_create_exterior_polygons_double_circle():
 
 def test_perimeter_point_from_centroid():
 
-    mesh_obj = load_mesh(parent_dir + "/test_data/Rectangle.STL")
+    mesh_obj = load_mesh(parent_dir + "/data/Rectangle.STL")
     trimesh_obj = trimesh.Trimesh(mesh_obj.node, mesh_obj.element)
     rectangle = create_exterior_polygon(trimesh_obj)
 
@@ -173,7 +173,7 @@ def test_perimeter_point_from_centroid():
 
 
 def test_place_electrodes_equal_spacing():
-    mesh_obj = load_mesh(parent_dir + "/test_data/Rectangle.STL")
+    mesh_obj = load_mesh(parent_dir + "/data/Rectangle.STL")
 
     plotting_obj = {}
     electrode_nodes = place_electrodes_equal_spacing(
@@ -215,7 +215,7 @@ def test_place_electrodes_equal_spacing():
 def test_place_electrodes_equal_spacing_chest_and_spine():
     mesh_obj = load_mesh(
         parent_dir
-        + "/test_data/mesha06_bumpychestslice_radiological_view_both_lungs_1_0-3.ply"
+        + "/data/mesha06_bumpychestslice_radiological_view_both_lungs_1_0-3.ply"
     )
 
     plotting_obj = {}
@@ -255,7 +255,7 @@ def test_polygonize_cw():
 
 
 def test_map_points_to_perimeter():
-    mesh_obj = load_mesh(parent_dir + "/test_data/Rectangle.STL")
+    mesh_obj = load_mesh(parent_dir + "/data/Rectangle.STL")
     angles = [(np.pi / 4) * i for i in range(8)]
     points = [(10 * np.sin(angle), 10 * np.cos(angle)) for angle in angles]
 

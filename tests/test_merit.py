@@ -9,7 +9,7 @@ parent_dir = str(Path(__file__).parent)
 
 
 def test_calc_circle():
-    square = imread(parent_dir + "/test_data/square_image.bmp", pilmode="RGB")
+    square = imread(parent_dir + "/data/square_image.bmp", pilmode="RGB")
 
     fractional_image = np.full(np.shape(square)[0:2], np.nan)
     fractional_image[

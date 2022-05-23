@@ -12,7 +12,7 @@ def test_load_triangle():
         "perm": [1.0],
     }
 
-    triangle_mesh = load_mesh(parent_dir + "/test_data/triangle.STL")
+    triangle_mesh = load_mesh(parent_dir + "/data/triangle.STL")
 
     np.testing.assert_almost_equal(correct_mesh["element"], triangle_mesh.element)
     np.testing.assert_almost_equal(correct_mesh["node"], triangle_mesh.node)

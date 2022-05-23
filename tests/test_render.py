@@ -60,14 +60,14 @@ def test_get_bounds_neg():
 
 
 def test_model_inverse_uv():
-    mesh = load_mesh(parent_dir + "/test_data/circle.STL")
+    mesh = load_mesh(parent_dir + "/data/circle.STL")
     image = model_inverse_uv(
         {"node": mesh.node[:, :2], "element": mesh.element},
         (100, 100),
         preserve_aspect_ratio=False,
     )
 
-    circle_image = np.load(parent_dir + "/test_data/circle_image.npy")
+    circle_image = np.load(parent_dir + "/data/circle_image.npy")
 
     # plt.imshow(image)
     # plt.show()
@@ -76,7 +76,7 @@ def test_model_inverse_uv():
 
 
 def test_model_inverse_uv_neg():
-    mesh = load_mesh(parent_dir + "/test_data/circle.STL")
+    mesh = load_mesh(parent_dir + "/data/circle.STL")
     mesh.node -= 5
     image = model_inverse_uv(
         {"node": mesh.node[:, :2], "element": mesh.element},
@@ -84,7 +84,7 @@ def test_model_inverse_uv_neg():
         preserve_aspect_ratio=False,
     )
 
-    circle_image = np.load(parent_dir + "/test_data/circle_image.npy")
+    circle_image = np.load(parent_dir + "/data/circle_image.npy")
 
     # plt.imshow(image)
     # plt.show()
@@ -93,7 +93,7 @@ def test_model_inverse_uv_neg():
 
 
 def test_map_image():
-    circle_image = np.load(parent_dir + "/test_data/circle_image.npy")
+    circle_image = np.load(parent_dir + "/data/circle_image.npy")
 
     values = np.array(
         [
@@ -141,7 +141,7 @@ def test_map_image():
 
     image = map_image(circle_image, values)
 
-    mapped_image = np.load(parent_dir + "/test_data/circle_image_mapped.npy")
+    mapped_image = np.load(parent_dir + "/data/circle_image_mapped.npy")
 
     # plt.imshow(image)
     # plt.show()

@@ -1,6 +1,6 @@
 from pyeit.mesh.external import load_mesh, place_electrodes_equal_spacing
 import matplotlib.pyplot as plt
-from pyeit.visual.plot import create_mesh_plot_2, create_plot
+from pyeit.visual.plot import create_mesh_plot_2, create_plot, mesh_plot
 import pyeit.eit.protocol as protocol
 from pyeit.eit.jac import JAC
 from pyeit.eit.fem import EITForward
@@ -20,6 +20,8 @@ def main():
     sim_mesh = load_mesh(simulation_mesh_filename)
     electrode_nodes = place_electrodes_equal_spacing(sim_mesh, n_electrodes=16)
     sim_mesh.el_pos = np.array(electrode_nodes)
+
+    mesh_plot(sim_mesh, el_pos=electrode_nodes, show_mesh=True, show_number=True, show_text=False, figsize=None)
 
     fig, ax = plt.subplots()
     create_mesh_plot_2(
