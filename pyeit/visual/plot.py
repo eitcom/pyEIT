@@ -12,7 +12,11 @@ from matplotlib import dates
 from pyeit.mesh import PyEITMesh
 import matplotlib.collections
 from numpy.typing import ArrayLike
-from matplotlib import pyplot as plt, patches as mpatches, axes as mpl_axes, artist as mpl_artist
+from matplotlib import (
+    pyplot as plt,
+    patches as mpatches,
+    axes as mpl_axes,
+)
 
 
 def mesh_plot(
@@ -96,9 +100,17 @@ def ts_plot(ts, figsize=(6, 4), ylabel="ATI (Ohm)", ylim=None, xdate_format=True
     return fig, ax
 
 
-def create_mesh_plot_2(ax: mpl_axes.Axes, mesh: PyEITMesh = None, ax_kwargs: dict = None, electrodes: ArrayLike = None,
-                       coordinate_labels: str = None, marker_kwargs: dict = None, marker_text_kwargs: dict = None,
-                       coord_label_text_kwargs: dict = None, flat_plane: str = "z"):
+def create_mesh_plot_2(
+    ax: mpl_axes.Axes,
+    mesh: PyEITMesh = None,
+    ax_kwargs: dict = None,
+    electrodes: ArrayLike = None,
+    coordinate_labels: str = None,
+    marker_kwargs: dict = None,
+    marker_text_kwargs: dict = None,
+    coord_label_text_kwargs: dict = None,
+    flat_plane: str = "z",
+):
     """
     Creates a plot to display a 2d mesh. Optionally plots electrode positions and adds coordinate labels.
 
@@ -133,9 +145,11 @@ def create_mesh_plot_2(ax: mpl_axes.Axes, mesh: PyEITMesh = None, ax_kwargs: dic
 
     """
     if ax_kwargs is None:
-        ax_kwargs = {"title": 'Mesh plot'}
+        ax_kwargs = {"title": "Mesh plot"}
 
-    ax.set_aspect('equal')  # Default aspect is auto. Set to equal so plot is not distorted
+    ax.set_aspect(
+        "equal"
+    )  # Default aspect is auto. Set to equal so plot is not distorted
 
     if flat_plane not in ["x", "y", "z"]:
         raise ValueError("Please select a flat plane from x, y, or z")
@@ -159,17 +173,25 @@ def create_mesh_plot_2(ax: mpl_axes.Axes, mesh: PyEITMesh = None, ax_kwargs: dic
 
     elec_markers = None
     if electrodes is not None:
-        elec_markers = add_electrode_markers(ax, nodes[electrodes], marker_kwargs, marker_text_kwargs)
+        elec_markers = add_electrode_markers(
+            ax, nodes[electrodes], marker_kwargs, marker_text_kwargs
+        )
 
     coord_labels = None
     if coordinate_labels is not None:
-        coord_labels = add_coordinate_labels(ax, coordinate_labels, coord_label_text_kwargs)
+        coord_labels = add_coordinate_labels(
+            ax, coordinate_labels, coord_label_text_kwargs
+        )
 
     return pc, elec_markers, coord_labels
 
 
-def add_electrode_markers(ax: mpl_axes.Axes, electrode_points: list,
-                          marker_kwargs: dict = None, text_kwargs: dict = None):
+def add_electrode_markers(
+    ax: mpl_axes.Axes,
+    electrode_points: list,
+    marker_kwargs: dict = None,
+    text_kwargs: dict = None,
+):
     """
     Add markers to a plot to indicate the position of electrodes
 
@@ -207,7 +229,9 @@ def add_electrode_markers(ax: mpl_axes.Axes, electrode_points: list,
     return elec_markers
 
 
-def add_coordinate_labels(ax: mpl_axes.Axes, coordinate_labels: str = None, text_kwargs: dict = None):
+def add_coordinate_labels(
+    ax: mpl_axes.Axes, coordinate_labels: str = None, text_kwargs: dict = None
+):
     """
     Add labels to a plot to clarify the relationship between the plot coordinate system and the coordinate system of the
     subject (e.g. torso slice).
@@ -235,13 +259,47 @@ def add_coordinate_labels(ax: mpl_axes.Axes, coordinate_labels: str = None, text
 
     coord_labels = []
     if coordinate_labels == "radiological":
-        l1 = ax.text(0.01, 0.5, "Right", transform=ax.transAxes, rotation="vertical", va="center", ha="left",
-                     **text_kwargs)
-        l2 = ax.text(0.99, 0.5, "Left", transform=ax.transAxes, rotation="vertical", va="center", ha="right",
-                     **text_kwargs)
-        l3 = ax.text(0.5, 0.01, "Posterior", transform=ax.transAxes, ha="center", va="bottom", **text_kwargs)
-        l4 = ax.text(0.5, 0.99, "Anterior", transform=ax.transAxes, ha="center", va="top", **text_kwargs)
-        ax.margins(y=.1, x=.1)  # axis autoscaling doesn't work with text, so we increase the margins to make room.
+        l1 = ax.text(
+            0.01,
+            0.5,
+            "Right",
+            transform=ax.transAxes,
+            rotation="vertical",
+            va="center",
+            ha="left",
+            **text_kwargs
+        )
+        l2 = ax.text(
+            0.99,
+            0.5,
+            "Left",
+            transform=ax.transAxes,
+            rotation="vertical",
+            va="center",
+            ha="right",
+            **text_kwargs
+        )
+        l3 = ax.text(
+            0.5,
+            0.01,
+            "Posterior",
+            transform=ax.transAxes,
+            ha="center",
+            va="bottom",
+            **text_kwargs
+        )
+        l4 = ax.text(
+            0.5,
+            0.99,
+            "Anterior",
+            transform=ax.transAxes,
+            ha="center",
+            va="top",
+            **text_kwargs
+        )
+        ax.margins(
+            y=0.1, x=0.1
+        )  # axis autoscaling doesn't work with text, so we increase the margins to make room.
         coord_labels = (l1, l2, l3, l4)
 
     return coord_labels
@@ -282,9 +340,20 @@ def alignment_opposing_center(ax: mpl_axes.Axes, x: float, y: float) -> dict:
     return alignment
 
 
-def create_plot(ax: mpl_axes.Axes, eit_image: ArrayLike, mesh: PyEITMesh, vmin: float = None, vmax: float = None,
-                ax_kwargs: dict = None, electrodes: ArrayLike = None, coordinate_labels: str = None, marker_kwargs: dict = None,
-                marker_text_kwargs: dict = None, coord_label_text_kwargs: dict = None, flat_plane: str = "z"):
+def create_plot(
+    ax: mpl_axes.Axes,
+    eit_image: ArrayLike,
+    mesh: PyEITMesh,
+    vmin: float = None,
+    vmax: float = None,
+    ax_kwargs: dict = None,
+    electrodes: ArrayLike = None,
+    coordinate_labels: str = None,
+    marker_kwargs: dict = None,
+    marker_text_kwargs: dict = None,
+    coord_label_text_kwargs: dict = None,
+    flat_plane: str = "z",
+):
     """
     Creates a plot of a reconstructed EIT image. Optionally plots electrode positions and adds coordinate labels.
 
@@ -334,7 +403,7 @@ def create_plot(ax: mpl_axes.Axes, eit_image: ArrayLike, mesh: PyEITMesh, vmin: 
     x = nodes[:, 0]
     y = nodes[:, 1]
 
-    ax.set_aspect('equal')
+    ax.set_aspect("equal")
 
     tripcolor_keys_map = {"vmin": vmin, "vmax": vmax}
     tripcolor_kwargs = {k: v for k, v in tripcolor_keys_map.items() if v is not None}
@@ -346,16 +415,22 @@ def create_plot(ax: mpl_axes.Axes, eit_image: ArrayLike, mesh: PyEITMesh, vmin: 
 
     elec_markers = None
     if electrodes is not None:
-        elec_markers = add_electrode_markers(ax, nodes[electrodes], marker_kwargs, marker_text_kwargs)
+        elec_markers = add_electrode_markers(
+            ax, nodes[electrodes], marker_kwargs, marker_text_kwargs
+        )
 
     coord_labels = None
     if coordinate_labels is not None:
-        coord_labels = add_coordinate_labels(ax, coordinate_labels, coord_label_text_kwargs)
+        coord_labels = add_coordinate_labels(
+            ax, coordinate_labels, coord_label_text_kwargs
+        )
 
     return plot_image, elec_markers, coord_labels
 
 
-def create_image_plot(ax, image, title, vmin=None, vmax=None, background=np.nan, margin=10, origin="lower"):
+def create_image_plot(
+    ax, image, title, vmin=None, vmax=None, background=np.nan, margin=10, origin="lower"
+):
     """
     Create a plot using imshow and set the axis bounds to frame the image
 
@@ -388,7 +463,9 @@ def create_image_plot(ax, image, title, vmin=None, vmax=None, background=np.nan,
     return im
 
 
-def create_layered_image_plot(ax, layers, labels=None, title=None, origin="lower", margin=None):
+def create_layered_image_plot(
+    ax, layers, labels=None, title=None, origin="lower", margin=None
+):
     """
     Create a plot using imshow built from discrete layers, and label those layers in the legend.
 
@@ -413,7 +490,10 @@ def create_layered_image_plot(ax, layers, labels=None, title=None, origin="lower
     """
     values = list(range(1, len(labels) + 1))
     img_array = np.full(np.shape(layers[0]), np.nan)
-    for i, layer, in enumerate(layers):
+    for (
+        i,
+        layer,
+    ) in enumerate(layers):
         img_array[np.where(np.logical_and(~np.isnan(layer), layer))] = values[i]
 
     img = ax.imshow(img_array, origin=origin)
@@ -429,9 +509,11 @@ def create_layered_image_plot(ax, layers, labels=None, title=None, origin="lower
         # colormap used by imshow
         colors = [img.cmap(img.norm(value)) for value in values]
         # create a patch (proxy artist) for every color
-        patches = [mpatches.Patch(color=colors[i], label=labels[i]) for i in range(len(values))]
+        patches = [
+            mpatches.Patch(color=colors[i], label=labels[i]) for i in range(len(values))
+        ]
         # put those patched as legend-handles into the legend
-        ax.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+        ax.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
         # fig.set_tight_layout(True)
 
     return img

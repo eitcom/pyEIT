@@ -10,7 +10,9 @@ Also cf implementation in EIDORS
 """
 
 
-def calc_greit_figures_of_merit(target_image, reconstruction_image, circular=True, target_value=None, out=None):
+def calc_greit_figures_of_merit(
+    target_image, reconstruction_image, circular=True, target_value=None, out=None
+):
     """
     Calculate 5 GRIET figures of merit. Units are pixels of the input images. Target image and reconstruction image are
     assumed to have the same pixel resolution
@@ -62,13 +64,22 @@ def calc_greit_figures_of_merit(target_image, reconstruction_image, circular=Tru
     resolution = calc_resolution(reconstruction_image)
 
     # Shape Deformation
-    shape_deformation = calc_shape_deformation(reconstruction_image, target_image=target_image if not circular else None,
-                                               circular=circular, target_value=target_value,
-                                               out=out["shape_deformation"] if out is not None else None)
+    shape_deformation = calc_shape_deformation(
+        reconstruction_image,
+        target_image=target_image if not circular else None,
+        circular=circular,
+        target_value=target_value,
+        out=out["shape_deformation"] if out is not None else None,
+    )
 
     # Ringing
-    ringing = calc_ringing(reconstruction_image, target_image=target_image if not circular else None, circular=circular,
-                           target_value=target_value, out=out["ringing"] if out is not None else None)
+    ringing = calc_ringing(
+        reconstruction_image,
+        target_image=target_image if not circular else None,
+        circular=circular,
+        target_value=target_value,
+        out=out["ringing"] if out is not None else None,
+    )
 
     return amplitude, position_error, resolution, shape_deformation, ringing
 
@@ -161,8 +172,9 @@ def calc_position_error(target_image, reconstruction_image):
     target_center = ndi.center_of_mass(target_nonan)
 
     # This definition allows + and - PE, but can also give zero in unexpected places
-    position_error = math.sqrt(target_center[0]**2 + target_center[1]**2) - \
-                     math.sqrt(recon_center[0]**2 + recon_center[1]**2)
+    position_error = math.sqrt(
+        target_center[0] ** 2 + target_center[1] ** 2
+    ) - math.sqrt(recon_center[0] ** 2 + recon_center[1] ** 2)
 
     # # This definition gives the absolute PE, but can't be negative
     # position_error = math.sqrt((target_center[0]-recon_center[0])**2 + (target_center[1]-recon_center[1])**2)
@@ -192,7 +204,7 @@ def calc_resolution(reconstruction_image):
 
     medium_area = np.count_nonzero(~np.isnan(fractional_image))
 
-    resolution = math.sqrt(target_area/medium_area)
+    resolution = math.sqrt(target_area / medium_area)
     return resolution
 
 
@@ -212,19 +224,21 @@ def calc_circle(fractional_image):
     target_area = np.count_nonzero(fractional_image == 1)
     cx, cy = ndi.center_of_mass(np.nan_to_num(fractional_image, nan=0))
 
-    radius = math.sqrt(target_area/math.pi)
+    radius = math.sqrt(target_area / math.pi)
 
     circle = np.zeros(fractional_image.shape)
     for i in range(circle.shape[0]):
         for j in range(circle.shape[1]):
-            distance = math.sqrt((cx-i)**2 + (cy-j)**2)
+            distance = math.sqrt((cx - i) ** 2 + (cy - j) ** 2)
             if distance <= radius:
                 circle[i, j] = 1
 
     return circle
 
 
-def calc_shape_deformation(reconstruction_image, target_image=None, circular=True, target_value=None, out=None):
+def calc_shape_deformation(
+    reconstruction_image, target_image=None, circular=True, target_value=None, out=None
+):
     """
     Calculate shape deformation: Sum of pixels in reconstructed target that are outside the reference target. Unit: pixels
 
@@ -273,12 +287,14 @@ def calc_shape_deformation(reconstruction_image, target_image=None, circular=Tru
         out["shape_deformation_target"] = shape_deformation_target
         out["outside_positions"] = outside
 
-    shape_deformation = area_outside/reconstructed_area
+    shape_deformation = area_outside / reconstructed_area
 
     return shape_deformation
 
 
-def calc_ringing(reconstruction_image, target_image=None, circular=True, target_value=None, out=None):
+def calc_ringing(
+    reconstruction_image, target_image=None, circular=True, target_value=None, out=None
+):
     """
     Calculate ringing: Sum of pixels of opposite value to reconstructed target in the reconstruction image
 
@@ -315,17 +331,24 @@ def calc_ringing(reconstruction_image, target_image=None, circular=True, target_
         ringing_target = target
 
     abs_max = np.max(np.abs(np.nan_to_num(reconstruction_image, nan=0)))
-    max_ind = np.unravel_index(np.argmax(np.abs(reconstruction_image) == abs_max), np.shape(reconstruction_image))
+    max_ind = np.unravel_index(
+        np.argmax(np.abs(reconstruction_image) == abs_max),
+        np.shape(reconstruction_image),
+    )
 
     sum_inside = np.sum(reconstruction_image[np.where(ringing_target == 1)])
 
     if reconstruction_image[max_ind] >= 0:
         with np.errstate(invalid="ignore"):
-            opposite_outside_positions = np.logical_and(reconstruction_image < 0, np.logical_not(ringing_target))
+            opposite_outside_positions = np.logical_and(
+                reconstruction_image < 0, np.logical_not(ringing_target)
+            )
         ringing = np.sum(reconstruction_image[opposite_outside_positions]) / sum_inside
     else:
         with np.errstate(invalid="ignore"):
-            opposite_outside_positions = np.logical_and(reconstruction_image >= 0, np.logical_not(ringing_target))
+            opposite_outside_positions = np.logical_and(
+                reconstruction_image >= 0, np.logical_not(ringing_target)
+            )
         ringing = np.sum(reconstruction_image[opposite_outside_positions]) / sum_inside
 
     if out is not None:
@@ -358,15 +381,21 @@ def classify_target_and_background(target_image, target_value=None):
     """
     target_rtol = 0.001
 
-    unique, counts = np.unique(target_image[np.logical_not(np.isnan(target_image))], return_counts=True)
+    unique, counts = np.unique(
+        target_image[np.logical_not(np.isnan(target_image))], return_counts=True
+    )
 
     if target_value is None:
         target_value = unique[np.argmin(counts)]
 
-    background = np.logical_and(np.logical_not(np.isnan(target_image)),
-                                np.logical_not(np.isclose(target_image, target_value, rtol=target_rtol)))
+    background = np.logical_and(
+        np.logical_not(np.isnan(target_image)),
+        np.logical_not(np.isclose(target_image, target_value, rtol=target_rtol)),
+    )
 
-    target = np.logical_and(np.logical_not(np.isnan(target_image)),
-                            np.isclose(target_image, target_value, rtol=target_rtol))
+    target = np.logical_and(
+        np.logical_not(np.isnan(target_image)),
+        np.isclose(target_image, target_value, rtol=target_rtol),
+    )
 
     return target, background

@@ -5,11 +5,11 @@ channels:
 dependencies:
   - pytest
   - pytest-cov
-  - numpy
+  - "numpy>=1.20"
   - scipy
   - pandas
   - matplotlib-base
   - vispy
   - shapely
   - trimesh
-  - imageio
+  - "imageio>=2.19"

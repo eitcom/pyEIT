@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.typing import NDArray, ArrayLike
+
 """
 render.py contains functions used to render unstructured 2D meshes into rectangular arrays of pixels
 """
@@ -40,9 +41,9 @@ def pt_in_triang(p_test, p0, p1, p2):
     D = (dX10 * dY20) - (dY10 * dX20)
 
     if D > 0:
-        return ((s_p >= 0) and (t_p >= 0) and (s_p + t_p) <= D)
+        return (s_p >= 0) and (t_p >= 0) and (s_p + t_p) <= D
     else:
-        return ((s_p <= 0) and (t_p <= 0) and (s_p + t_p) >= D)
+        return (s_p <= 0) and (t_p <= 0) and (s_p + t_p) >= D
 
 
 def get_bounds(arr):
@@ -114,12 +115,12 @@ def model_inverse_uv(mesh, resolution, bounds=None, preserve_aspect_ratio=True):
     # get the bounding box
     # for points in the bounding box, test the barycentric cords
     for step, inds in enumerate(clist):
-        tri = np.asarray(
-            [uv_list[inds[0]], uv_list[inds[1]], uv_list[inds[2]]]
-        )
+        tri = np.asarray([uv_list[inds[0]], uv_list[inds[1]], uv_list[inds[2]]])
 
         min_x, max_x, min_y, max_y = get_bounds(tri)
-        tri_fn = np.vectorize(lambda x, y: pt_in_triang([x, y], tri[0, :], tri[1, :], tri[2, :]))
+        tri_fn = np.vectorize(
+            lambda x, y: pt_in_triang([x, y], tri[0, :], tri[1, :], tri[2, :])
+        )
         p_xx = xx[min_x:max_x, min_y:max_y]
         p_yy = yy[min_x:max_x, min_y:max_y]
         tri_in = tri_fn(p_xx, p_yy)
@@ -129,7 +130,12 @@ def model_inverse_uv(mesh, resolution, bounds=None, preserve_aspect_ratio=True):
     return image
 
 
-def scale_uv_list(uv_list: NDArray, resolution: ArrayLike, bounds: NDArray, preserve_aspect_ratio: bool) -> NDArray:
+def scale_uv_list(
+    uv_list: NDArray,
+    resolution: ArrayLike,
+    bounds: NDArray,
+    preserve_aspect_ratio: bool,
+) -> NDArray:
     """
     Prepare a uv_list (array of coordinates) for rendering by scaling it to the given resolution and bounds
 
@@ -151,8 +157,12 @@ def scale_uv_list(uv_list: NDArray, resolution: ArrayLike, bounds: NDArray, pres
     """
     uv_list = uv_list.copy()
     if bounds is None:
-        bounds = np.array([[np.min(uv_list[:, 0]), np.min(uv_list[:, 1])],
-                           [np.max(uv_list[:, 0]), np.max(uv_list[:, 1])]])
+        bounds = np.array(
+            [
+                [np.min(uv_list[:, 0]), np.min(uv_list[:, 1])],
+                [np.max(uv_list[:, 0]), np.max(uv_list[:, 1])],
+            ]
+        )
 
     if np.any(uv_list[:, 0] < 0):
         min = np.min(uv_list[:, 0])
@@ -170,8 +180,8 @@ def scale_uv_list(uv_list: NDArray, resolution: ArrayLike, bounds: NDArray, pres
     if preserve_aspect_ratio:
         scale = np.max((np.asarray(bounds[1]) - np.asarray(bounds[0])))
     else:
-        scale = (np.asarray(bounds[1]) - np.asarray(bounds[0]))
-    uv_list = uv_list/scale
+        scale = np.asarray(bounds[1]) - np.asarray(bounds[0])
+    uv_list = uv_list / scale
     uv_list *= np.asarray(resolution)
 
     return uv_list

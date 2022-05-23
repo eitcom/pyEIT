@@ -1,4 +1,10 @@
-from pyeit.eit.render import pt_in_triang, map_image, model_inverse_uv, get_bounds, scale_uv_list
+from pyeit.eit.render import (
+    pt_in_triang,
+    map_image,
+    model_inverse_uv,
+    get_bounds,
+    scale_uv_list,
+)
 from pyeit.mesh.external import load_mesh
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,10 +27,10 @@ def test_pt_in_triang():
 
 
 def test_pt_in_triang_neg():
-    p0, p1, p2 = ([-1,-1], [1,-1], [0,1])
-    p_out_1 = ([-0.5, -1.5])
-    p_out_2 = ([0.5, -1.5])
-    p_in = ([-0.5, -0.75])
+    p0, p1, p2 = ([-1, -1], [1, -1], [0, 1])
+    p_out_1 = [-0.5, -1.5]
+    p_out_2 = [0.5, -1.5]
+    p_in = [-0.5, -0.75]
 
     out_1 = pt_in_triang(p_out_1, p0, p1, p2)
     out_2 = pt_in_triang(p_out_2, p0, p1, p2)
@@ -54,9 +60,12 @@ def test_get_bounds_neg():
 
 
 def test_model_inverse_uv():
-    mesh = load_mesh(parent_dir + "/test_data/circle.stl")
-    image = model_inverse_uv({"node": mesh.node[:, :2], "element": mesh.element}, (100, 100),
-                             preserve_aspect_ratio=False)
+    mesh = load_mesh(parent_dir + "/test_data/circle.STL")
+    image = model_inverse_uv(
+        {"node": mesh.node[:, :2], "element": mesh.element},
+        (100, 100),
+        preserve_aspect_ratio=False,
+    )
 
     circle_image = np.load(parent_dir + "/test_data/circle_image.npy")
 
@@ -67,10 +76,13 @@ def test_model_inverse_uv():
 
 
 def test_model_inverse_uv_neg():
-    mesh = load_mesh(parent_dir + "/test_data/circle.stl")
+    mesh = load_mesh(parent_dir + "/test_data/circle.STL")
     mesh.node -= 5
-    image = model_inverse_uv({"node": mesh.node[:, :2], "element": mesh.element}, (100, 100),
-                             preserve_aspect_ratio=False)
+    image = model_inverse_uv(
+        {"node": mesh.node[:, :2], "element": mesh.element},
+        (100, 100),
+        preserve_aspect_ratio=False,
+    )
 
     circle_image = np.load(parent_dir + "/test_data/circle_image.npy")
 
@@ -83,8 +95,49 @@ def test_model_inverse_uv_neg():
 def test_map_image():
     circle_image = np.load(parent_dir + "/test_data/circle_image.npy")
 
-    values = np.array([5., 5., 10., 5., 5., 5., 5., 5., 5., 5., 5., 5., 5., 5., 5., 5., 5., 5., 10,
-                       5., 5., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10.])
+    values = np.array(
+        [
+            5.0,
+            5.0,
+            10.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            10,
+            5.0,
+            5.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+            10.0,
+        ]
+    )
 
     image = map_image(circle_image, values)
 
@@ -96,7 +149,9 @@ def test_map_image():
     equal = True
     for i in range(image.shape[0]):
         for j in range(image.shape[1]):
-            if image[i][j] == mapped_image[i][j] or (np.isnan(image[i][j]) and np.isnan((mapped_image[i][j]))):
+            if image[i][j] == mapped_image[i][j] or (
+                np.isnan(image[i][j]) and np.isnan((mapped_image[i][j]))
+            ):
                 pass
             else:
                 equal = False
@@ -108,13 +163,27 @@ def test_map_image():
 def test_scale_uv_list():
     uv_list = np.array([[1, 1], [2, 1], [2, 4], [1, 4]])
 
-    scaled_0 = scale_uv_list(uv_list, resolution=[10, 10], preserve_aspect_ratio=True, bounds=np.array([[0, 0], [2, 4]]))
-    scaled_1 = scale_uv_list(uv_list, resolution=[10, 10], preserve_aspect_ratio=False, bounds=np.array([[0, 0], [2, 4]]))
-    scaled_2 = scale_uv_list(uv_list, resolution=[10, 10], preserve_aspect_ratio=True, bounds=None)
+    scaled_0 = scale_uv_list(
+        uv_list,
+        resolution=[10, 10],
+        preserve_aspect_ratio=True,
+        bounds=np.array([[0, 0], [2, 4]]),
+    )
+    scaled_1 = scale_uv_list(
+        uv_list,
+        resolution=[10, 10],
+        preserve_aspect_ratio=False,
+        bounds=np.array([[0, 0], [2, 4]]),
+    )
+    scaled_2 = scale_uv_list(
+        uv_list, resolution=[10, 10], preserve_aspect_ratio=True, bounds=None
+    )
 
-    correct_scaled_0 = np.array([[2.5, 2.5], [5., 2.5], [5., 10.], [2.5, 10.]])
-    correct_scaled_1 = np.array([[5., 2.5], [10., 2.5], [10., 10.], [5., 10.]])
-    correct_scaled_2 = np.array([[0., 0.], [3.33333333, 0.], [3.33333333, 10.], [0., 10.]])
+    correct_scaled_0 = np.array([[2.5, 2.5], [5.0, 2.5], [5.0, 10.0], [2.5, 10.0]])
+    correct_scaled_1 = np.array([[5.0, 2.5], [10.0, 2.5], [10.0, 10.0], [5.0, 10.0]])
+    correct_scaled_2 = np.array(
+        [[0.0, 0.0], [3.33333333, 0.0], [3.33333333, 10.0], [0.0, 10.0]]
+    )
 
     assert np.array_equal(scaled_0, correct_scaled_0)
     assert np.array_equal(scaled_1, correct_scaled_1)
@@ -124,15 +193,28 @@ def test_scale_uv_list():
 def test_scale_uv_list_neg():
     uv_list = np.array([[-1, -1], [0, -1], [0, 2], [-1, 2]])
 
-    scaled_0 = scale_uv_list(uv_list, resolution=[10, 10], preserve_aspect_ratio=True, bounds=np.array([[-2, -2], [0, 2]]))
-    scaled_1 = scale_uv_list(uv_list, resolution=[10, 10], preserve_aspect_ratio=False, bounds=np.array([[-2, -2], [0, 2]]))
-    scaled_2 = scale_uv_list(uv_list, resolution=[10, 10], preserve_aspect_ratio=True, bounds=None)
+    scaled_0 = scale_uv_list(
+        uv_list,
+        resolution=[10, 10],
+        preserve_aspect_ratio=True,
+        bounds=np.array([[-2, -2], [0, 2]]),
+    )
+    scaled_1 = scale_uv_list(
+        uv_list,
+        resolution=[10, 10],
+        preserve_aspect_ratio=False,
+        bounds=np.array([[-2, -2], [0, 2]]),
+    )
+    scaled_2 = scale_uv_list(
+        uv_list, resolution=[10, 10], preserve_aspect_ratio=True, bounds=None
+    )
 
-    correct_scaled_0 = np.array([[2.5, 2.5], [5., 2.5], [5., 10.], [2.5, 10.]])
-    correct_scaled_1 = np.array([[5., 2.5], [10., 2.5], [10., 10.], [5., 10.]])
-    correct_scaled_2 = np.array([[0., 0.], [3.33333333, 0.], [3.33333333, 10.], [0., 10.]])
+    correct_scaled_0 = np.array([[2.5, 2.5], [5.0, 2.5], [5.0, 10.0], [2.5, 10.0]])
+    correct_scaled_1 = np.array([[5.0, 2.5], [10.0, 2.5], [10.0, 10.0], [5.0, 10.0]])
+    correct_scaled_2 = np.array(
+        [[0.0, 0.0], [3.33333333, 0.0], [3.33333333, 10.0], [0.0, 10.0]]
+    )
 
     assert np.array_equal(scaled_0, correct_scaled_0)
     assert np.array_equal(scaled_1, correct_scaled_1)
     assert_almost_equal(scaled_2, correct_scaled_2)
-

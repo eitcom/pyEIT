@@ -38,9 +38,22 @@ def load_mesh(filename: str, dims: int = 2) -> PyEITMesh:
         green = t_mesh.metadata["ply_raw"]["face"]["data"]["green"]
         blue = t_mesh.metadata["ply_raw"]["face"]["data"]["blue"]
         alpha = t_mesh.metadata["ply_raw"]["face"]["data"]["alpha"]
-        perm = np.array([struct.unpack(">f", bytearray([red[i].item(), green[i].item(),
-                                                 blue[i].item(), alpha[i].item()]))[0]
-                         for i in range(0, len(t_mesh.faces))])  # Use a.item() to support either binary or ASCII encoding
+        perm = np.array(
+            [
+                struct.unpack(
+                    ">f",
+                    bytearray(
+                        [
+                            red[i].item(),
+                            green[i].item(),
+                            blue[i].item(),
+                            alpha[i].item(),
+                        ]
+                    ),
+                )[0]
+                for i in range(0, len(t_mesh.faces))
+            ]
+        )  # Use a.item() to support either binary or ASCII encoding
     else:
         perm = np.ones(t_mesh.faces.shape[0], dtype=float)
 
@@ -52,9 +65,16 @@ def load_mesh(filename: str, dims: int = 2) -> PyEITMesh:
     return mesh
 
 
-def place_electrodes_equal_spacing(mesh: PyEITMesh, n_electrodes: int = 16, starting_angle: float = 0,
-                                   starting_offset: float = 0.5, counter_clockwise: bool = False,
-                                   chest_and_spine_ratio: float = 1, flat_plane: str = "z", output_obj: dict = None) -> List[int]:
+def place_electrodes_equal_spacing(
+    mesh: PyEITMesh,
+    n_electrodes: int = 16,
+    starting_angle: float = 0,
+    starting_offset: float = 0.5,
+    counter_clockwise: bool = False,
+    chest_and_spine_ratio: float = 1,
+    flat_plane: str = "z",
+    output_obj: dict = None,
+) -> List[int]:
     """
     Creates a list of coordinate indices representing electrodes equally spaced around the perimeter of the 2D input mesh
 
@@ -105,36 +125,61 @@ def place_electrodes_equal_spacing(mesh: PyEITMesh, n_electrodes: int = 16, star
 
     exterior_polygon = create_exterior_polygon(trimesh_obj)
     plotting_obj = {}
-    intersection = perimeter_point_from_centroid(exterior_polygon, starting_angle, plotting_obj)
+    intersection = perimeter_point_from_centroid(
+        exterior_polygon, starting_angle, plotting_obj
+    )
     zero_offset = exterior_polygon.exterior.project(intersection, normalized=True)
-    starting_offset_spacing = (1/n_electrodes)*starting_offset
+    starting_offset_spacing = (1 / n_electrodes) * starting_offset
 
     if chest_and_spine_ratio != 1:
-        electrode_spacing = 1/((n_electrodes-2) + 2*chest_and_spine_ratio)  # Normalized spacing
-        chest_and_spine_spacing = 1/(((n_electrodes-2)/chest_and_spine_ratio) + 2)
-        starting_offset_spacing = chest_and_spine_spacing*starting_offset
-        spacing_list = [chest_and_spine_spacing if i == 0 or i == (n_electrodes/2) else electrode_spacing
-                        for i in range(n_electrodes)]
+        electrode_spacing = 1 / (
+            (n_electrodes - 2) + 2 * chest_and_spine_ratio
+        )  # Normalized spacing
+        chest_and_spine_spacing = 1 / (((n_electrodes - 2) / chest_and_spine_ratio) + 2)
+        starting_offset_spacing = chest_and_spine_spacing * starting_offset
+        spacing_list = [
+            chest_and_spine_spacing
+            if i == 0 or i == (n_electrodes / 2)
+            else electrode_spacing
+            for i in range(n_electrodes)
+        ]
 
-        electrode_points = [exterior_polygon.exterior.interpolate(distance, normalized=True) for distance in
-                            list_based_interpolate_distance(zero_offset, starting_offset_spacing, spacing_list,
-                                                            reverse=counter_clockwise)]
+        electrode_points = [
+            exterior_polygon.exterior.interpolate(distance, normalized=True)
+            for distance in list_based_interpolate_distance(
+                zero_offset,
+                starting_offset_spacing,
+                spacing_list,
+                reverse=counter_clockwise,
+            )
+        ]
 
     else:
         electrode_points = [
             exterior_polygon.exterior.interpolate(
                 # If counter clockwise is set, reverse the direction
-                equal_spaced_interpolate_distance(zero_offset, starting_offset_spacing, i, n_electrodes, reverse=counter_clockwise),
-                normalized=True)
+                equal_spaced_interpolate_distance(
+                    zero_offset,
+                    starting_offset_spacing,
+                    i,
+                    n_electrodes,
+                    reverse=counter_clockwise,
+                ),
+                normalized=True,
+            )
             for i in range(0, n_electrodes)
         ]
 
     ex_poly_xy = exterior_polygon.exterior.xy
     exterior_polygon_points = np.array(list(zip(ex_poly_xy[0], ex_poly_xy[1])))
-    electrode_nodes_exterior_polygon = [find_closest_point([point.x, point.y], exterior_polygon_points)
-                                        for point in electrode_points]
-    electrode_nodes = [find_closest_point(point, np.delete(mesh.node, flat_ind, axis=1))
-                       for point in exterior_polygon_points[electrode_nodes_exterior_polygon]]
+    electrode_nodes_exterior_polygon = [
+        find_closest_point([point.x, point.y], exterior_polygon_points)
+        for point in electrode_points
+    ]
+    electrode_nodes = [
+        find_closest_point(point, np.delete(mesh.node, flat_ind, axis=1))
+        for point in exterior_polygon_points[electrode_nodes_exterior_polygon]
+    ]
 
     output_obj["centroid"] = trimesh_obj.centroid
     output_obj["exterior_polygon"] = exterior_polygon
@@ -144,7 +189,9 @@ def place_electrodes_equal_spacing(mesh: PyEITMesh, n_electrodes: int = 16, star
     return electrode_nodes
 
 
-def create_exterior_polygon(trimesh_obj: trimesh.Trimesh) -> List[shapely.geometry.Polygon]:
+def create_exterior_polygon(
+    trimesh_obj: trimesh.Trimesh,
+) -> List[shapely.geometry.Polygon]:
     """
     Create a polygon representing the exterior edge of the input mesh. The polygon is created by identifying the edges
     of the input mesh which are only referenced by one triangle. These are the edges of the polygon.
@@ -166,16 +213,27 @@ def create_exterior_polygon(trimesh_obj: trimesh.Trimesh) -> List[shapely.geomet
 
     """
     edge_dict = {}
-    for edge in trimesh_obj.edges_sorted:  # trimesh_obj.edges_sorted removes directionality from edges (eg. (0,3) and (3,0) both become (0,3)
+    for (
+        edge
+    ) in (
+        trimesh_obj.edges_sorted
+    ):  # trimesh_obj.edges_sorted removes directionality from edges (eg. (0,3) and (3,0) both become (0,3)
         edge_bytes = edge.tobytes()  # tobytes() makes the edge array hashable
         if edge_bytes in edge_dict:
             edge_dict[edge_bytes] = edge_dict[edge_bytes] + 1
         else:
             edge_dict[edge_bytes] = 1
 
-    outer_edges = np.vstack([np.frombuffer(k, dtype=np.int64) for k, v in edge_dict.items() if v == 1])
+    outer_edges = np.vstack(
+        [np.frombuffer(k, dtype=np.int64) for k, v in edge_dict.items() if v == 1]
+    )
 
-    lines = shapely.geometry.MultiLineString([shapely.geometry.LineString(line) for line in trimesh_obj.vertices[outer_edges]])
+    lines = shapely.geometry.MultiLineString(
+        [
+            shapely.geometry.LineString(line)
+            for line in trimesh_obj.vertices[outer_edges]
+        ]
+    )
     merged_line = shapely.ops.linemerge(lines)
 
     polygons = list(shapely.ops.polygonize(merged_line))
@@ -186,7 +244,9 @@ def create_exterior_polygon(trimesh_obj: trimesh.Trimesh) -> List[shapely.geomet
     return polygons[index_max]
 
 
-def perimeter_point_from_centroid(polygon: Polygon, angle: float, output_obj: dict = None) -> Point:
+def perimeter_point_from_centroid(
+    polygon: Polygon, angle: float, output_obj: dict = None
+) -> Point:
     """
     Calculates a point on the perimeter of the input polygon which intersects with a line drawn from the centroid at a
     given angle
@@ -210,8 +270,13 @@ def perimeter_point_from_centroid(polygon: Polygon, angle: float, output_obj: di
     if output_obj is None:
         output_obj = {}
 
-    max_distance = Point(polygon.bounds[0], polygon.bounds[1]).distance(Point(polygon.bounds[2], polygon.bounds[3]))  # The max distance is the diagonal line across the bounding box
-    endpoint = [polygon.centroid.x+max_distance*np.sin(angle), polygon.centroid.y+max_distance*np.cos(angle)]
+    max_distance = Point(polygon.bounds[0], polygon.bounds[1]).distance(
+        Point(polygon.bounds[2], polygon.bounds[3])
+    )  # The max distance is the diagonal line across the bounding box
+    endpoint = [
+        polygon.centroid.x + max_distance * np.sin(angle),
+        polygon.centroid.y + max_distance * np.cos(angle),
+    ]
     line = shapely.geometry.LineString((polygon.centroid, endpoint))
     perimeter_point = line.intersection(polygon.exterior)
 
@@ -220,7 +285,9 @@ def perimeter_point_from_centroid(polygon: Polygon, angle: float, output_obj: di
     return perimeter_point
 
 
-def list_based_interpolate_distance(zero_offset, starting_offset_spacing, spacing_list, reverse=False):
+def list_based_interpolate_distance(
+    zero_offset, starting_offset_spacing, spacing_list, reverse=False
+):
     """
 
     Parameters
@@ -238,13 +305,25 @@ def list_based_interpolate_distance(zero_offset, starting_offset_spacing, spacin
     direction = -1 if reverse else 1
 
     # spacing_list[0] not used because extra offset is used instead
-    interpolate_distances = [(zero_offset + (direction * (starting_offset_spacing + sum(spacing_list[1:i + 1]))))%1 for i in range(len(spacing_list))]
+    interpolate_distances = [
+        (
+            zero_offset
+            + (direction * (starting_offset_spacing + sum(spacing_list[1 : i + 1])))
+        )
+        % 1
+        for i in range(len(spacing_list))
+    ]
 
     return interpolate_distances
 
 
-def equal_spaced_interpolate_distance(zero_offset: float, starting_offset_spacing: float, index: int, total: int,
-                                      reverse: bool = False) -> float:
+def equal_spaced_interpolate_distance(
+    zero_offset: float,
+    starting_offset_spacing: float,
+    index: int,
+    total: int,
+    reverse: bool = False,
+) -> float:
     """
     calculates distance for shapley interpolate function (normalized = True)
 
@@ -268,9 +347,13 @@ def equal_spaced_interpolate_distance(zero_offset: float, starting_offset_spacin
 
     """
     if not reverse:
-        interpolate_distance = (zero_offset + (starting_offset_spacing + index * (1 / total))) % 1
+        interpolate_distance = (
+            zero_offset + (starting_offset_spacing + index * (1 / total))
+        ) % 1
     else:
-        interpolate_distance = (zero_offset - (starting_offset_spacing + index * (1 / total))) % 1
+        interpolate_distance = (
+            zero_offset - (starting_offset_spacing + index * (1 / total))
+        ) % 1
 
     return interpolate_distance
 
@@ -285,11 +368,16 @@ def find_closest_point(point: np.ndarray, point_list: ArrayLike) -> int:
     point_list
     """
 
-    index = np.argmin([np.linalg.norm(point-point_b) for point_b in point_list])
+    index = np.argmin([np.linalg.norm(point - point_b) for point_b in point_list])
     return index
 
 
-def map_points_to_perimeter(mesh:PyEITMesh, points:List[Tuple[float,float]], output_obj:dict=None, map_to_nodes:bool=True) -> List[Point]:
+def map_points_to_perimeter(
+    mesh: PyEITMesh,
+    points: List[Tuple[float, float]],
+    output_obj: dict = None,
+    map_to_nodes: bool = True,
+) -> List[Point]:
     """
     Map a list of coordinates to points on the perimeter of a mesh. Coordinates are mapped by drawing a line
     from the centroid through each point, and finding the intersection between that line and the perimeter
@@ -323,31 +411,40 @@ def map_points_to_perimeter(mesh:PyEITMesh, points:List[Tuple[float,float]], out
 
     # move points centroid to mesh centroid
     points_polygon_uncentered = shapely.geometry.Polygon(points)
-    offset = (points_polygon_uncentered.centroid.x-exterior_polygon.centroid.x,
-              points_polygon_uncentered.centroid.y-exterior_polygon.centroid.y)
-    points = [(point[0]-offset[0], point[1]-offset[1]) for point in points]
+    offset = (
+        points_polygon_uncentered.centroid.x - exterior_polygon.centroid.x,
+        points_polygon_uncentered.centroid.y - exterior_polygon.centroid.y,
+    )
+    points = [(point[0] - offset[0], point[1] - offset[1]) for point in points]
     points_polygon = shapely.geometry.Polygon(points)
 
     b1 = exterior_polygon.bounds
     b2 = points_polygon.bounds
-    total_bounds = (min(b1[0], b2[0]), min(b1[1], b2[1]), max(b1[2], b2[2]), max(b1[3], b2[3]))
+    total_bounds = (
+        min(b1[0], b2[0]),
+        min(b1[1], b2[1]),
+        max(b1[2], b2[2]),
+        max(b1[3], b2[3]),
+    )
     max_distance = Point(total_bounds[0], total_bounds[1]).distance(
-        Point(total_bounds[2], total_bounds[3]))  # The max distance is the diagonal line across the bounding box
+        Point(total_bounds[2], total_bounds[3])
+    )  # The max distance is the diagonal line across the bounding box
 
     # for each point, find intersection between line from point to centroid and exterior polygon
     intersections = []
     intersecting_lines = []
     for point in points:
         line = shapely.geometry.LineString((exterior_polygon.centroid, point))
-        scale = max_distance/line.length
+        scale = max_distance / line.length
         line = shapely.affinity.scale(line, scale, scale, 1, exterior_polygon.centroid)
         intersecting_lines.append(line)
         intersection = line.intersection(exterior_polygon.exterior)
         intersections.append(intersection)
 
     if map_to_nodes:
-        intersections = [find_closest_point(point.xy, mesh.node)
-                         for point in intersections]
+        intersections = [
+            find_closest_point(point.xy, mesh.node) for point in intersections
+        ]
 
     output_obj["centroid"] = trimesh_obj.centroid
     output_obj["offset_points"] = points

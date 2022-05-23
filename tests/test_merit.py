@@ -12,13 +12,19 @@ def test_calc_circle():
     square = imread(parent_dir + "/test_data/square_image.bmp", pilmode="RGB")
 
     fractional_image = np.full(np.shape(square)[0:2], np.nan)
-    fractional_image[np.where((square[:, :, 0] == 255) &
-                              (square[:, :, 1] == 255) &
-                              (square[:, :, 2] == 255))[0:2]] = 0
+    fractional_image[
+        np.where(
+            (square[:, :, 0] == 255)
+            & (square[:, :, 1] == 255)
+            & (square[:, :, 2] == 255)
+        )[0:2]
+    ] = 0
 
-    fractional_image[np.where((square[:, :, 0] == 0) &
-                              (square[:, :, 1] == 0) &
-                              (square[:, :, 2] == 0))[0:2]] = 1
+    fractional_image[
+        np.where(
+            (square[:, :, 0] == 0) & (square[:, :, 1] == 0) & (square[:, :, 2] == 0)
+        )[0:2]
+    ] = 1
 
     circle = calc_circle(fractional_image)
 
@@ -37,5 +43,4 @@ def test_calc_circle():
     # plt.show()
 
     assert circle_center == fractional_image_center
-    assert np.isclose(circle_area, fractional_image_area, rtol=.01)
-
+    assert np.isclose(circle_area, fractional_image_area, rtol=0.01)
