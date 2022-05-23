@@ -6,7 +6,7 @@ import trimesh
 from shapely.geometry import Point, LinearRing
 from shapely.ops import polygonize
 import matplotlib.pyplot as plt
-from pyeit.visual.plot import create_mesh_plot
+from pyeit.visual.plot import create_mesh_plot_2
 
 parent_dir = str(Path(__file__).parent)
 

@@ -12,3 +12,4 @@ dependencies:
   - vispy
   - shapely
   - trimesh
+  - imageio
