@@ -86,10 +86,11 @@ Give `pyEIT` a **star**, **fork** this project and commit a pull request **(PR)*
 ### 3.2 Package dependencies
 
 | Packages       | Optional   | Note                                     |
-| -------------- | ---------- | ---------------------------------------- |
+|----------------| ---------- |------------------------------------------|
 | **numpy**      |            | tested with `numpy-1.19.1`               |
 | **scipy**      |            | tested with `scipy-1.5.0`                |
 | **matplotlib** |            | tested with `matplotlib-3.3.2`           |
+| **trimesh**    |            | for loading external meshes              |
 | **pandas**     | *Optional* | tested with `pandas-1.1.3`               |
 | **vispy**      | *Optional* | failed with `vispy` in python 3.8        |
 | **distmesh**   | *Optional* | a build-in module is provided in `pyEIT` |
