@@ -4,7 +4,7 @@
 """ 2D/3D FEM routines """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from __future__ import division, absolute_import, print_function
+from __future__ import division, absolute_import, print_function, annotations
 
 from typing import Tuple, Union
 import numpy as np
