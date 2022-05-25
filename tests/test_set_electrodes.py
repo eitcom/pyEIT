@@ -8,13 +8,10 @@ from pyeit.mesh.external import (
     map_points_to_perimeter,
 )
 import numpy as np
-from numpy.testing import assert_almost_equal
 from pathlib import Path
 import trimesh
-from shapely.geometry import Point, LinearRing
+from shapely.geometry import LinearRing
 from shapely.ops import polygonize
-import matplotlib.pyplot as plt
-from pyeit.visual.plot import create_mesh_plot
 
 parent_dir = str(Path(__file__).parent)
 

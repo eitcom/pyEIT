@@ -7,7 +7,6 @@ from pyeit.eit.render import (
 )
 from pyeit.mesh.external import load_mesh
 import numpy as np
-import matplotlib.pyplot as plt
 from pathlib import Path
 from numpy.testing import assert_almost_equal
 
@@ -69,9 +68,6 @@ def test_model_inverse_uv():
 
     circle_image = np.load(parent_dir + "/data/circle_image.npy")
 
-    # plt.imshow(image)
-    # plt.show()
-
     assert np.all(image == circle_image)
 
 
@@ -85,9 +81,6 @@ def test_model_inverse_uv_neg():
     )
 
     circle_image = np.load(parent_dir + "/data/circle_image.npy")
-
-    # plt.imshow(image)
-    # plt.show()
 
     assert np.all(image == circle_image)
 
@@ -142,9 +135,6 @@ def test_map_image():
     image = map_image(circle_image, values)
 
     mapped_image = np.load(parent_dir + "/data/circle_image_mapped.npy")
-
-    # plt.imshow(image)
-    # plt.show()
 
     equal = True
     for i in range(image.shape[0]):

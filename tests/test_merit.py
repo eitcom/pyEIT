@@ -1,7 +1,6 @@
 import numpy as np
 from pyeit.quality.merit import calc_circle
 from imageio.v2 import imread
-import matplotlib.pyplot as plt
 import scipy.ndimage as ndi
 from pathlib import Path
 
@@ -33,14 +32,6 @@ def test_calc_circle():
 
     circle_area = np.sum(circle == 1)
     fractional_image_area = np.sum(fractional_image == 1)
-
-    # fig, ax = plt.subplots()
-    # ax.imshow(square)
-    # fig, ax = plt.subplots()
-    # ax.imshow(fractional_image)
-    # fig, ax = plt.subplots()
-    # ax.imshow(circle)
-    # plt.show()
 
     assert circle_center == fractional_image_center
     assert np.isclose(circle_area, fractional_image_area, rtol=0.01)

@@ -21,7 +21,14 @@ def main():
     electrode_nodes = place_electrodes_equal_spacing(sim_mesh, n_electrodes=16)
     sim_mesh.el_pos = np.array(electrode_nodes)
 
-    mesh_plot(sim_mesh, el_pos=electrode_nodes, show_mesh=True, show_number=True, show_text=False, figsize=None)
+    mesh_plot(
+        sim_mesh,
+        el_pos=electrode_nodes,
+        show_mesh=True,
+        show_number=True,
+        show_text=False,
+        figsize=None,
+    )
 
     fig, ax = plt.subplots()
     create_mesh_plot_2(

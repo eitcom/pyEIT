@@ -1,8 +1,6 @@
 from pyeit.mesh.external import load_mesh, place_electrodes_equal_spacing
 import matplotlib.pyplot as plt
 from pyeit.visual.plot import (
-    create_mesh_plot_2,
-    create_plot,
     create_image_plot,
     create_layered_image_plot,
 )
@@ -56,7 +54,7 @@ def main():
     recon_render = map_image(image, np.array(solution))
 
     fig, ax = plt.subplots()
-    im = create_image_plot(ax, recon_render.T, title="Reconstruction image")
+    create_image_plot(ax, recon_render.T, title="Reconstruction image")
 
     out_circular = {}
     figs_circular = merit.calc_greit_figures_of_merit(
