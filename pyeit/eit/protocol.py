@@ -6,7 +6,7 @@
 from __future__ import absolute_import, division, print_function, annotations
 
 from dataclasses import dataclass
-from typing import Union
+from typing import Union, List
 
 import numpy as np
 
@@ -142,9 +142,9 @@ class PyEITProtocol:
 
 def create(
     n_el: int = 16,
-    dist_exc: Union[int, list[int]] = 1,
+    dist_exc: Union[int, List[int]] = 1,
     step_meas: int = 1,
-    parser_meas: Union[str, list[str]] = "std",
+    parser_meas: Union[str, List[str]] = "std",
 ) -> PyEITProtocol:
     """
     Return an EIT protocol, comprising an excitation and a measuremnet pattern
@@ -153,7 +153,7 @@ def create(
     ----------
     n_el : int, optional
         number of total electrodes, by default 16
-    dist_exc : Union[int, list[int]], optional
+    dist_exc : Union[int, List[int]], optional
         distance (number of electrodes) of A to B, by default 1
         For 'adjacent'- or 'neighbore'-mode (default) use `1` , and
         for 'apposition'-mode use `n_el/2`. (see `build_exc_pattern`)
@@ -161,7 +161,7 @@ def create(
     step_meas : int, optional
     measurement method (two adjacent electrodes are used for measuring), by default 1 (adjacent).
         (see `build_meas_pattern`)
-    parser_meas : Union[str, list[str]], optional
+    parser_meas : Union[str, List[str]], optional
         parsing the format of each frame in measurement/file, by default 'std'.
         (see `build_meas_pattern`)
 
@@ -179,7 +179,7 @@ def create(
         dist_exc = [dist_exc]
 
     if not isinstance(dist_exc, list):
-        raise TypeError(f"{dist_exc=}; {type(dist_exc)=} should be a list[int]")
+        raise TypeError(f"{dist_exc=}; {type(dist_exc)=} should be a List[int]")
 
     _ex_mat = [build_exc_pattern_std(n_el, dist) for dist in dist_exc]
     ex_mat = np.vstack(_ex_mat)
@@ -192,7 +192,7 @@ def build_meas_pattern_std(
     ex_mat: np.ndarray,
     n_el: int = 16,
     step: int = 1,
-    parser: Union[str, list[str]] = "std",
+    parser: Union[str, List[str]] = "std",
 ) -> np.ndarray:
     """
     Build the measurement pattern (subtract_row-voltage pairs [N, M])
@@ -216,7 +216,7 @@ def build_meas_pattern_std(
         number of total electrodes, by default 16
     step : int, optional
         measurement method (two adjacent electrodes are used for measuring), by default 1 (adjacent)
-    parser : Union[str, list[str]], optional
+    parser : Union[str, List[str]], optional
         parsing the format of each frame in measurement/file, by default 'std'
         if parser contains 'fmmu', or 'rotate_meas' then data are trimmed,
         boundary voltage measurements are re-indexed and rotated,
