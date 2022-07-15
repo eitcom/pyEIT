@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function, annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Callable, Union
+from typing import Callable, Union, List
 
 import numpy as np
 
@@ -409,7 +409,7 @@ class PyEITAnomaly_Ball(PyEITAnomaly):
 
 def set_perm(
     mesh: PyEITMesh,
-    anomaly: Union[PyEITAnomaly, list[PyEITAnomaly]] = None,
+    anomaly: Union[PyEITAnomaly, List[PyEITAnomaly]] = None,
     background: float = None,
 ) -> PyEITMesh:
     """wrapper for pyEIT interface
@@ -422,7 +422,7 @@ def set_perm(
     ----------
     mesh: PyEITMesh
         mesh object
-    anomaly: Union[PyEITAnomaly, list[PyEITAnomaly]], optional
+    anomaly: Union[PyEITAnomaly, List[PyEITAnomaly]], optional
         anomaly object or list of anomalyobject contains,
         all permittivity on triangles whose distance to (x,y) are less than (d)
         will be replaced with a new value, 'perm' may be a complex value.
