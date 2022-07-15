@@ -161,28 +161,49 @@ def extract_el(fh):
     return el_pos
 
 
-def mesh_plot(ax, mesh_obj: PyEITMesh, imstr="", title=None):
+def mesh_plot(
+    ax, mesh_obj: PyEITMesh, imstr="", title=None, style="color", fontsize=15
+):
     """plot and annotate mesh"""
     p, e, perm = mesh_obj.node, mesh_obj.element, mesh_obj.perm
     mesh_center = np.array([np.median(p[:, 0]), np.median(p[:, 1])])
-    annotate_color = "k"
+    # color style: production figures using "bw"
+    if style == "bw":
+        line_color = "k"
+        annotate_color = "k"
+        cmap = "Greys"
+    else:
+        line_color = "k"
+        annotate_color = "b"
+        cmap = "viridis"
+
     if os.path.exists(imstr):
         im = plt.imread(imstr)
         annotate_color = "w"
         ax.imshow(im, origin="lower")
-    ax.tripcolor(p[:, 0], p[:, 1], e, facecolors=perm, edgecolors="k", alpha=0.4)
-    ax.triplot(p[:, 0], p[:, 1], e, lw=1)
-    ax.plot(p[mesh_obj.el_pos, 0], p[mesh_obj.el_pos, 1], "ro")
+    ax.tripcolor(
+        p[:, 0], p[:, 1], e, facecolors=perm, cmap=cmap, edgecolors="k", alpha=0.4
+    )
+    ax.triplot(p[:, 0], p[:, 1], e, lw=1, color=line_color)
+    ax.plot(
+        p[mesh_obj.el_pos, 0],
+        p[mesh_obj.el_pos, 1],
+        "o",
+        color=annotate_color,
+        alpha=0.5,
+    )
     for i, el in enumerate(mesh_obj.el_pos):
         xy = np.array([p[el, 0], p[el, 1]])
-        text_offset = (xy - mesh_center) * [1, -1] * 0.05
+        text_xy = (xy - mesh_center) * [1, -1]
+        text_dist = np.sqrt(np.sum(text_xy**2))
+        text_offset = text_xy * (10 / text_dist)
         ax.annotate(
             str(i + 1),
             xy=xy,
             xytext=text_offset,
             textcoords="offset points",
             color=annotate_color,
-            fontsize=15,
+            fontsize=fontsize,
             ha="center",
             va="center",
         )
