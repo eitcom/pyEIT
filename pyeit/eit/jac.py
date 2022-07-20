@@ -70,11 +70,15 @@ class JAC(EitBase):
         jac : np.ndarray
             Jacobian
         p : float
-            regularization parameter
+            Regularization parameter, the p in R=diag(diag(JtJ) ** p)
         lamb : float
-            regularization parameter
+            Regularization parameter, the lambda in (JtJ + lambda*R)^{-1}
         method : str, optional
-            regularization method, ("kotre", "lm", "dgn" ), by default "kotre"
+            Regularization method, ("kotre", "lm", "dgn" ), by default "kotre".
+            Note that the name method="kotre" uses regularization alike the one
+            in adler-dai-lionheart-2007 (pp4):
+            "Temporal Image Reconstruction in Electrical Impedance Tomography",
+            it regularize the diagonal of JtJ by an exponential parameter p.
 
         Returns
         -------
@@ -83,11 +87,10 @@ class JAC(EitBase):
         """
         j_w_j = np.dot(jac.transpose(), jac)
         if method == "kotre":
-            # see adler-dai-lionheart-2007
             # p=0   : noise distribute on the boundary ('dgn')
             # p=0.5 : noise distribute on the middle
             # p=1   : noise distribute on the center ('lm')
-            r_mat = np.diag(np.diag(j_w_j)) ** p
+            r_mat = np.diag(np.diag(j_w_j) ** p)
         elif method == "lm":
             # Marquardt–Levenberg, 'lm' for short
             # or can be called NOSER, DLS
@@ -159,7 +162,7 @@ class JAC(EitBase):
                 A sensitivity coefficient method for the reconstruction of
                 electrical impedance tomograms.
                 Clinical Physics and Physiological Measurement,
-                10(3), 275–281. doi:10.1088/0143-0815/10/3/008
+                10(3), 275--281. doi:10.1088/0143-0815/10/3/008
 
         """
         self._check_solver_is_ready()
