@@ -39,7 +39,7 @@ v1 = fwd.solve_eit(perm=mesh_new.perm)
 """ 3. solving using dynamic EIT """
 # number of stimulation lines/patterns
 eit = jac.JAC(mesh_obj, protocol_obj)
-eit.setup(p=0.40, lamb=1e-3, method="kotre")
+eit.setup(p=0.40, lamb=1e-3, method="kotre", jac_normalized=False)
 ds = eit.solve(v1, v0, normalize=False)
 
 # extract node, element, alpha

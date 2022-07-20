@@ -1,5 +1,7 @@
-from pyeit.mesh.external import load_mesh, place_electrodes_equal_spacing
+import os
+import numpy as np
 import matplotlib.pyplot as plt
+from pyeit.mesh.external import load_mesh, place_electrodes_equal_spacing
 from pyeit.visual.plot import (
     create_image_plot,
     create_layered_image_plot,
@@ -7,7 +9,6 @@ from pyeit.visual.plot import (
 import pyeit.eit.protocol as protocol
 from pyeit.eit.jac import JAC
 from pyeit.eit.fem import EITForward
-import numpy as np
 from pyeit.eit.render import model_inverse_uv, map_image
 import pyeit.quality.merit as merit
 
@@ -18,11 +19,12 @@ def main():
     #   Anterior direction towards the Y axis
     # This allows the 2D mesh to be displayed in the radiological view with no transformations
     simulation_mesh_filename = (
-        "example_data/mesha06_bumpychestslice_radiological_view_both_lungs_1_0-3.ply"
+        "./example_data/mesha06_bumpychestslice_radiological_view_both_lungs_1_0-3.ply"
     )
     n_electrodes = 16
 
-    sim_mesh = load_mesh(simulation_mesh_filename)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    sim_mesh = load_mesh(os.path.join(current_dir, simulation_mesh_filename))
     electrode_nodes = place_electrodes_equal_spacing(sim_mesh, n_electrodes=16)
     sim_mesh.el_pos = np.array(electrode_nodes)
 

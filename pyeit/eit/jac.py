@@ -131,7 +131,7 @@ class JAC(EitBase):
     ) -> np.ndarray:
         """
         a 'naive' back projection using the transpose of Jac.
-        This scheme is the one published by kotre (1989):
+        This scheme is the one published by kotre (1989), see note [1].
 
         Parameters
         ----------
@@ -166,7 +166,7 @@ class JAC(EitBase):
         if normalize:
             dv = np.log(np.abs(v1) / np.abs(v0)) * np.sign(v0.real)
         else:
-            dv = v1 - v0
+            dv = (v1 - v0) * np.sign(v0.real)
         # s_r = J^Tv_r
         ds = -np.dot(self.J.conj().T, dv)
         return np.exp(ds) - 1.0

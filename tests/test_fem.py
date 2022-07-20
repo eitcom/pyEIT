@@ -59,8 +59,8 @@ def _mesh_obj_large():
 
 
 def _protocol_obj(ex_mat, n_el, step_meas, parser_meas):
-    meas_mat = build_meas_pattern_std(ex_mat, n_el, step_meas, parser_meas)
-    return PyEITProtocol(ex_mat, meas_mat)
+    meas_mat, keep_ba = build_meas_pattern_std(ex_mat, n_el, step_meas, parser_meas)
+    return PyEITProtocol(ex_mat, meas_mat, keep_ba)
 
 
 class TestFem(unittest.TestCase):
