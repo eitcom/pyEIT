@@ -14,6 +14,7 @@ Please cite the following paper if you are using et3 in your research:
 """
 # Copyright (c) Benyuan Liu. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+import warnings
 import os
 from struct import unpack
 
@@ -29,11 +30,12 @@ class ET3:
     def __init__(
         self,
         file_name,
+        protocol,
         data_type="auto",
         rel_date=None,
         fps=1,
         reindex=False,
-        trim=False,
+        meas_current=False,
         verbose=False,
     ):
         """
@@ -43,6 +45,8 @@ class ET3:
         ----------
         file_name : String
             file path for EIT data.
+        protocol : PyEITProtocol
+            a protocol dataclass specify the interpretation of this file format
         data_type : String, optional
             manually set data type i.e., "et0". The default is "auto".
         rel_date : Datetime, optional
@@ -52,8 +56,8 @@ class ET3:
             Frame per second, valid when rel_date specified. The default is 1.
         reindex : Bool, optional
             reindex ERD data order to ET3 format (RALP -> LARP) before trim.
-        trim : Bool, optional
-            Measurements on current carry electrodes are discarded.
+        meas_current : Bool, optional
+            Keep Measurements on current carry electrodes.
         verbose : Bool, optional
             Print debuging information. The default is False.
         """
@@ -62,7 +66,7 @@ class ET3:
         self.rel_date = rel_date
         self.fps = fps
         self.reindex = reindex
-        self.trim = trim
+        self.meas_current = meas_current
         self.verbose = verbose
 
         # frame = frame header + 2x256 (Re, Im) doubles frame data
@@ -85,9 +89,24 @@ class ET3:
 
         # extract system configuration
         self.p = self.setup(data_type)
-        # load data (RAW data are complex-valued) and build datetime
-        time_array, self.data, self.adc_array = self.load()
+
+        # load data (RAW data are complex-valued)
+        time_array, data, self.adc_array = self.load()
+
+        # build timeseries index: datetime
         self.ts = self.build_ts(time_array)
+
+        # reindex ERD format to FMMU ET format
+        if self.p["data_format"] == "erd":
+            if self.reindex is True:
+                ind = self.erd2et()
+                data = data[:, ind]
+            else:
+                warnings.warn("File format is ERD but reindex to ET3 is set to False")
+        # remove all measurements on current carring electrodes
+        if not self.meas_current:
+            data = data[:, protocol.keep_ba]
+        self.data = data
 
     def setup(self, data_type):
         """
@@ -167,16 +186,6 @@ class ET3:
 
         # build complex-valued data from Re, Im measurements
         data = x[:, :256] + 1j * x[:, 256:]
-
-        # reindex ERD format to FMMU ET format
-        if self.p["data_format"] == "erd" and self.reindex is True:
-            ind = self.erd2et()
-            data = data[:, ind]
-
-        # remove all measurements on current carring electrodes
-        if self.trim:
-            idx = trim_pattern()
-            data = data[:, idx]
 
         # rescale data to Ohms
         data = -data * self.p["scale"]
@@ -392,6 +401,7 @@ def gain_table(gain, current_in_ua):
 
 def trim_pattern():
     """
+    Deprecated, use protocol.keep_ba to trim the data.
     Generate trim array (masked value, 0) on rotating measurements,
     0......00......0 0......00......0 .. 0......00......0
     """

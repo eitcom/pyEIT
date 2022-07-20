@@ -16,15 +16,25 @@ class PyEITProtocol:
     """
     EIT Protocol buid-in protocol object
 
+    Parameters
+    ----------
+    ex_mat: np.ndarray
+        excitation matrix (pairwise)
+    meas_mat: np.ndarray
+        measurement matrix (differential pairs)
+    keep_ba: np.ndarray
+        boolean array index for keeping measurements
     """
 
     ex_mat: np.ndarray
     meas_mat: np.ndarray
+    keep_ba: np.ndarray
 
     def __post_init__(self) -> None:
         """Checking of the inputs"""
         self.ex_mat = self._check_ex_mat(self.ex_mat)
         self.meas_mat = self._check_meas_mat(self.meas_mat)
+        self.keep_ba = self._check_keep_mat(self.keep_ba)
 
     def _check_ex_mat(self, ex_mat: np.ndarray) -> np.ndarray:
         """
@@ -52,17 +62,13 @@ class PyEITProtocol:
             # case ex_line has been passed instead of ex_mat
             ex_mat = np.array([ex_mat]).reshape((1, 2))  # build a 2D array
         elif isinstance(ex_mat, np.ndarray) and ex_mat.size == 2:
-            #     case ex_line np.ndarray has been passed instead of ex_mat
+            # case ex_line np.ndarray has been passed instead of ex_mat
             ex_mat = ex_mat.reshape((-1, 2))
 
-        if (
-            not isinstance(ex_mat, np.ndarray)
-            or ex_mat.ndim != 2
-            or ex_mat.shape[1] != 2
-        ):
-            raise TypeError(
-                f"Wrong shape of {ex_mat=} expected an ndarray ; shape (n_exc, 2)"
-            )
+        if not isinstance(ex_mat, np.ndarray):
+            raise TypeError(f"Wrong type of {type(ex_mat)=}, expected an ndarray;")
+        if ex_mat.ndim != 2 or ex_mat.shape[1] != 2:
+            raise TypeError(f"Wrong shape of {ex_mat.shape=}, should be (n_exc, 2);")
 
         return ex_mat
 
@@ -88,16 +94,21 @@ class PyEITProtocol:
             raised if meas_pattern is not a np.ndarray of shape (n_exc, : , 2)
         """
         if not isinstance(meas_mat, np.ndarray):
-            raise TypeError(
-                f"Wrong type of {meas_mat=}, expected an ndarray; shape ({self.n_exc}, n_meas_per_exc, 2)"
-            )
+            raise TypeError(f"Wrong type of {type(meas_mat)=}, expected an ndarray;")
         # test shape is something like (n_exc, :, 2)
         if meas_mat.ndim != 3 or meas_mat.shape[::2] != (self.n_exc, 2):
             raise TypeError(
-                f"Wrong shape of {meas_mat=}: {meas_mat.shape=}, expected an ndarray; shape ({self.n_exc}, n_meas_per_exc, 2)"
+                f"Wrong shape of {meas_mat.shape=}, should be ({self.n_exc}, n_meas_per_exc, 2);"
             )
 
         return meas_mat
+
+    def _check_keep_mat(self, keep_ba: np.ndarray) -> np.ndarray:
+        """check keep boolean array"""
+        if not isinstance(keep_ba, np.ndarray):
+            raise TypeError(f"Wrong type of {type(keep_ba)=}, expected an ndarray;")
+
+        return keep_ba
 
     @property
     def n_exc(self) -> int:
@@ -179,13 +190,13 @@ def create(
         dist_exc = [dist_exc]
 
     if not isinstance(dist_exc, list):
-        raise TypeError(f"{dist_exc=}; {type(dist_exc)=} should be a List[int]")
+        raise TypeError(f"{type(dist_exc)=} should be a List[int]")
 
     _ex_mat = [build_exc_pattern_std(n_el, dist) for dist in dist_exc]
     ex_mat = np.vstack(_ex_mat)
 
-    meas_mat = build_meas_pattern_std(ex_mat, n_el, step_meas, parser_meas)
-    return PyEITProtocol(ex_mat, meas_mat)
+    meas_mat, keep_ba = build_meas_pattern_std(ex_mat, n_el, step_meas, parser_meas)
+    return PyEITProtocol(ex_mat, meas_mat, keep_ba)
 
 
 def build_meas_pattern_std(
@@ -229,15 +240,17 @@ def build_meas_pattern_std(
 
     Returns
     -------
-    np.ndarray
+    diff_op: np.ndarray
         measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+    keep_ba: np.ndarray
+        (n_exc*n_meas_per_exc,) boolean array
     """
     if not isinstance(parser, list):  # transform parser into list
         parser = [parser]
     meas_current = "meas_current" in parser
     fmmu_rotate = any(p in ("fmmu", "rotate_meas") for p in parser)
 
-    diff_op = []
+    diff_op, keep_ba = [], []
     for ex_line in ex_mat:
         a, b = ex_line[0], ex_line[1]
         i0 = a if fmmu_rotate else 0
@@ -245,13 +258,13 @@ def build_meas_pattern_std(
         n = (m + step) % n_el
         meas_pattern = np.vstack([n, m]).T
 
+        diff_keep = np.logical_and.reduce((m != a, m != b, n != a, n != b))
+        keep_ba.append(diff_keep)
         if not meas_current:
-            diff_keep = np.logical_and.reduce((m != a, m != b, n != a, n != b))
             meas_pattern = meas_pattern[diff_keep]
-
         diff_op.append(meas_pattern)
 
-    return np.array(diff_op)
+    return np.array(diff_op), np.array(keep_ba).ravel()
 
 
 def build_exc_pattern_std(n_el: int = 16, dist: int = 1) -> np.ndarray:
