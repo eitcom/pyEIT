@@ -49,8 +49,6 @@ def create_mesh_plot(
     """
     Creates a plot to display a 2d mesh. Optionally plots electrode positions and adds coordinate labels.
 
-    (This is an alternative to pyeit.visual.plot.mesh_plot)
-
     Parameters
     ----------
     ax:

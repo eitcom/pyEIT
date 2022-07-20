@@ -1,10 +1,11 @@
-from pyeit.mesh.external import load_mesh, place_electrodes_equal_spacing
+import os
+import numpy as np
 import matplotlib.pyplot as plt
-from pyeit.visual.plot import create_mesh_plot_2, create_plot, mesh_plot
+from pyeit.mesh.external import load_mesh, place_electrodes_equal_spacing
+from pyeit.visual.plot import create_mesh_plot, create_plot
 import pyeit.eit.protocol as protocol
 from pyeit.eit.jac import JAC
 from pyeit.eit.fem import EITForward
-import numpy as np
 
 
 def main():
@@ -17,21 +18,13 @@ def main():
     )
     n_electrodes = 16
 
-    sim_mesh = load_mesh(simulation_mesh_filename)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    sim_mesh = load_mesh(os.path.join(current_dir, simulation_mesh_filename))
     electrode_nodes = place_electrodes_equal_spacing(sim_mesh, n_electrodes=16)
     sim_mesh.el_pos = np.array(electrode_nodes)
 
-    mesh_plot(
-        sim_mesh,
-        el_pos=electrode_nodes,
-        show_mesh=True,
-        show_number=True,
-        show_text=False,
-        figsize=None,
-    )
-
     fig, ax = plt.subplots()
-    create_mesh_plot_2(
+    create_mesh_plot(
         ax, sim_mesh, electrodes=electrode_nodes, coordinate_labels="radiological"
     )
 
@@ -45,7 +38,7 @@ def main():
     # Recon
     # Set up eit object
     pyeit_obj = JAC(sim_mesh, protocol_obj)
-    pyeit_obj.setup(p=0.5, lamb=0.001, method="kotre", perm=1)
+    pyeit_obj.setup(p=0.5, lamb=0.001, method="kotre", perm=1, jac_normalized=False)
 
     # # Dynamic solve simulated data
     ds_sim = pyeit_obj.solve(vi, vh, normalize=False)

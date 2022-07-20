@@ -39,7 +39,8 @@ v1 = fwd.solve_eit(perm=mesh_new.perm)
 """ 3. naive inverse solver using back-projection """
 eit = bp.BP(mesh_obj, protocol_obj)
 eit.setup(weight="none")
-ds = 192.0 * eit.solve(v1, v0, normalize=False)
+# the normalize for BP when dist_exc>4 should always be True
+ds = 192.0 * eit.solve(v1, v0, normalize=True)
 
 # extract node, element, alpha
 pts = mesh_obj.node
