@@ -13,7 +13,7 @@ import numpy as np
 from pyeit.io import ET3
 import pyeit.eit.protocol as protocol
 
-file_name = "/data/dhca/subj414/eh300/2020-11-16-09-07-21/EitRaw.ERD"
+file_name = "/data/dhca/dut/DATA.et3"
 # 1. using raw interface:
 #    averaged transfer impedance from raw data
 # et3_data = load(fstr, verbose=True)
