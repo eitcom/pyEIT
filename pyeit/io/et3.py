@@ -17,11 +17,8 @@ Please cite the following paper if you are using et3 in your research:
 import warnings
 import os
 from struct import unpack
-
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib import dates
 
 
 class ET3:
@@ -168,7 +165,7 @@ class ET3:
 
     def load(self):
         """load frames (header + data)"""
-        time_array = np.zeros(self.n_frame)
+        time_array = np.zeros(self.n_frame, dtype=np.double)
         x = np.zeros((self.n_frame, self.n_data), dtype=np.double)
         adc_array = np.zeros((self.n_frame, self.nadc), dtype=np.double)
         with open(self.file_name, "rb") as fh:
@@ -177,7 +174,7 @@ class ET3:
                 # get a whole frame
                 d = fh.read(self.frame_size)
                 # extract time ticks
-                time_array[i] = unpack("d", d[8:16])[0]
+                time_array[i] = unpack(self.p["ts_format"], d[8:16])[0]
                 # extract ADC samples (double precision)
                 dp = d[960 : self.header_size]
                 adc_array[i] = np.array(unpack("8d", dp))
@@ -217,7 +214,7 @@ class ET3:
         df = df[~df.index.duplicated()]
         return df
 
-    def to_dp(self, adc_filter=False):
+    def to_dp(self, adc_filter=False, window=17):
         """
         in new ET3 data, the left ear, right ear, Nasopharyngeal, rectal
         temperature are recorded in the headers of .et3 file.
@@ -242,7 +239,7 @@ class ET3:
             # filter auxillary sampled data
             for c in columns:
                 dp.loc[dp[c] == 0, c] = np.NAN
-                dp[c] = med_outlier(dp[c])
+                dp[c] = med_outlier(dp[c], window=window)
 
         return dp
 
@@ -256,14 +253,15 @@ class ET3:
         raise NotImplementedError
 
 
-def med_outlier(d, window=17):
-    """filter outliers using median filter"""
-    med = d.rolling(window, center=False).median()
-    std = d.rolling(window, center=False).std()
-    std[std == np.nan] = 0.0
+def med_outlier(d, window=17, delta=3):
+    """filter outliers using median filter [abs difference of median]"""
+    med = d.fillna(method="ffill").rolling(window, center=True).median()
+    diff = np.abs(d - med)
+    diff_med = np.nanmedian(diff) + 1e-8
+    mask = (diff / diff_med) > delta
     # replace med with d for outlier removal
-    df = med[(d <= med + 3 * std) & (d >= med - 3 * std)]
-    return df
+    d[mask] = med[mask]
+    return d
 
 
 def parse_header(d):
@@ -304,14 +302,22 @@ def parse_header(d):
 
     total header = 40 + 320 + 360 + 240 + 64 = 1024
     """
-    # extract version info {et0: NA, et3: 1, shi: 3}
+    # extract version info {et0: NA, et3: 1, shi: 3, erd: 4}
     version = int(unpack("I", d[:4])[0])
+    # extract timestamp
+    timestamp = unpack("H", d[14:16])[0]
+    if timestamp == 0:  # higher 8 bits are 0s
+        ts_format = "Q"  # d[8:16] is inferred as Uint64
+    else:
+        ts_format = "d"  # d[8:16] is double format
+    # extract configurations
     h = np.array(unpack("8I2f", d[360:400]))
     frequency = h[4]
     current = h[5]
     gain = h[6]
 
     p = {
+        "ts_format": ts_format,
         "version": version,
         "frequency": frequency,
         "current": current,
@@ -351,6 +357,7 @@ def parse_header_et0(d):
     gain = np.int(h[5])
 
     p = {
+        "ts_format": "c",
         "version": 0,  # .et0
         "frequency": frequency,
         "current": current,
@@ -414,37 +421,3 @@ def trim_pattern():
         idx[j + 7] = False
 
     return idx
-
-
-if __name__ == "__main__":
-    file_name = "/data/dhca/dut/DATA.et3"
-
-    # 1. using raw interface:
-    #    averaged transfer impedance from raw data
-    # et3_data = load(fstr, verbose=True)
-    # ts = load_time(fstr)
-    # ati = np.abs(et3_data).sum(axis=1)/192.0
-
-    # 2. using DataFrame interface:
-    #    's' is seconds (default)
-    #    'T' is minute
-    et3 = ET3(file_name, trim=True, verbose=False)
-    df = et3.to_df()  # rel_date='2019/01/10'
-    dp = et3.to_dp()
-    dp["ati"] = np.abs(df).sum(axis=1) / 192.0
-
-    # 3. plot
-    dp = dp[2000:]
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(111)
-    axt = ax.twinx()
-    ax.plot(dp.index, dp["tle"])
-    ax.plot(dp.index, dp["tre"])
-    ax.plot(dp.index, dp["tn"])
-    axt.plot(dp.index, dp["ati"])
-    ax.grid(True)
-    ax.legend(["Left ear", "Right ear", "Nasopharyngeal"])
-
-    hfmt = dates.DateFormatter("%y/%m/%d %H:%M")
-    ax.xaxis.set_major_formatter(hfmt)
-    fig.autofmt_xdate()
