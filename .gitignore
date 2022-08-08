@@ -36,3 +36,6 @@ var/
 .installed.cfg
 *.egg
 
+
+
+**/data/*

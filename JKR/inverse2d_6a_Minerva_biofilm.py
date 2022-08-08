@@ -218,6 +218,9 @@ for lognum,logname in enumerate(lognames):
             xmin,xmax=[149,180]
             ymin,ymax=[40,80]
 
+            slicecol = 63
+            xmin,xmax=[143,190]
+            ymin,ymax=[40,100]
             
             # slicecol = 135
             # xmin,xmax=[24,34]

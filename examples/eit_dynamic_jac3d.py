@@ -6,6 +6,10 @@ from __future__ import division, absolute_import, print_function
 
 import numpy as np
 
+# add path to find pyeit if run directly
+import sys
+sys.path.append('../')  
+
 import pyeit.mesh as mesh
 from pyeit.mesh import quality
 import pyeit.mesh.plot as mplot
@@ -16,7 +20,7 @@ import pyeit.eit.jac as jac
 
 # build tetrahedron
 # 3D tetrahedron must have a bbox
-bbox = [[-1, -1, -1], [1, 1, 1]]
+bbox = np.array([[-1, -1, -1], [1, 1, 1]])
 # save calling convention as distmesh 2D
 mesh_obj, el_pos = mesh.create(h0=0.2, bbox=bbox)
 
@@ -26,7 +30,7 @@ tri = mesh_obj["element"]
 # report the status of the 2D mesh
 quality.stats(pts, tri)
 
-""" 1. FEM forward simulations """
+""" 1. FEM forward simulations """ 
 # setup EIT scan conditions
 el_dist, step = 7, 1
 ex_mat = eit_scan_lines(16, el_dist)
