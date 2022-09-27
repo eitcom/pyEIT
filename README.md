@@ -1,4 +1,6 @@
-# ![pyeit](https://raw.githubusercontent.com/liubenyuan/pyEIT/master/doc/images/logo.png)
+# ![pyeit](https://raw.githubusercontent.com/eitcom/pyEIT/master/doc/images/logo.png)
+
+**Note, the upstream of `pyeit` goes here: [eitcom/pyeit](https://github.com/eitcom/pyEIT).**
 
 `pyEIT` is a python-based, open-source framework for Electrical Impedance Tomography (EIT). The design priciples of `pyEIT` are **modularity, minimalism, extensibility and OOP.**
 
@@ -43,19 +45,19 @@ From the example folder, pick one demo and run!
 
 **Using** `examples/eit_dynamic_bp.py`
 
-![demo_bp](https://raw.githubusercontent.com/liubenyuan/pyEIT/master/doc/images/demo_bp.png)
+![demo_bp](https://raw.githubusercontent.com/eitcom/pyEIT/master/doc/images/demo_bp.png)
 
 **Using** `examples/eit_dynamic_greit.py`
 
-![demo_greit](https://raw.githubusercontent.com/liubenyuan/pyEIT/master/doc/images/demo_greit.png)
+![demo_greit](https://raw.githubusercontent.com/eitcom/pyEIT/master/doc/images/demo_greit.png)
 
 **Using** `examples/eit_dynamic_jac.py`
 
-![demo_greit](https://raw.githubusercontent.com/liubenyuan/pyEIT/master/doc/images/demo_jac.png)
+![demo_greit](https://raw.githubusercontent.com/eitcom/pyEIT/master/doc/images/demo_jac.png)
 
 **Using** `examples/eit_static_jac.py`
 
-![demo_static](https://raw.githubusercontent.com/liubenyuan/pyEIT/master/doc/images/demo_static.png)
+![demo_static](https://raw.githubusercontent.com/eitcom/pyEIT/master/doc/images/demo_static.png)
 
 ### 2.2 (3D) forward and inverse computing
 
