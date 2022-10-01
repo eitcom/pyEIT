@@ -47,13 +47,26 @@ ax.set_title(r"$\Delta$ Conductivities")
 eit = jac.JAC(mesh_obj, protocol_obj)
 eit.setup(p=0.25, lamb=1.0, method="lm")
 # lamb = lamb * lamb_decay
-ds = eit.gn(v1, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
-
 # plot
+plt.ion()
 fig, ax = plt.subplots(figsize=(9, 6))
-im = ax.tripcolor(xx, yy, tri, np.real(ds), alpha=1.0, cmap="viridis")
 ax.axis("equal")
 ax.set_title("Conductivities Reconstructed")
-fig.colorbar(im)
+
+# Calculate then show the results
+# ds = eit.gn(v1, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True)
+# im = ax.tripcolor(xx, yy, tri, np.real(ds), alpha=1.0, cmap="viridis")
+# fig.colorbar(im)
+
+# Real time update version
+colorbar = None
+for ds in eit.gn(v1, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True, generator=True):
+    im = ax.tripcolor(xx, yy, tri, np.real(ds), alpha=1.0, cmap="viridis")
+    if colorbar is not None:  # Update the colorbar as the min and max values are changing
+        colorbar.remove()
+    colorbar = fig.colorbar(im)
+    fig.canvas.draw()  # Update the canvas
+    fig.canvas.flush_events()  # Flush the drawing queue
+
 # fig.savefig('../doc/images/demo_static.png', dpi=96)
-plt.show()
+plt.show(block=True)  # Very important when using the generator version, otherwise the program exits automatically
