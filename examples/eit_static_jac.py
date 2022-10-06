@@ -64,15 +64,13 @@ for ds in eit.gn(
     v1, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True, generator=True
 ):
     im = ax.tripcolor(xx, yy, tri, np.real(ds), alpha=1.0, cmap="viridis")
-    if (
-        colorbar is not None
-    ):  # Update the colorbar as the min and max values are changing
+    # Update the colorbar as the min and max values are changing
+    if colorbar is not None:
         colorbar.remove()
     colorbar = fig.colorbar(im)
     fig.canvas.draw()  # Update the canvas
     fig.canvas.flush_events()  # Flush the drawing queue
 
 # fig.savefig('../doc/images/demo_static.png', dpi=96)
-plt.show(
-    block=True
-)  # Very important when using the generator version, otherwise the program exits automatically
+# Very important when using the generator version, otherwise the program exits automatically
+plt.show(block=True)
