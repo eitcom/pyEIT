@@ -8,6 +8,12 @@ import pyeit.mesh as mesh
 import math
 import cv2
 
+import numpy as np
+import matplotlib.pyplot as plt
+import pyeit.mesh as mesh
+import math
+import cv2
+
 # Option to plot the generated mesh.
 def plot_mesh(mesh_obj, el_pos):
     """
