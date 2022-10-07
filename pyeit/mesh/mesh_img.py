@@ -1,22 +1,27 @@
-# The wrapper function to transform a 200x200 picture to the pyEIT mesh.
-# For examples see: https://github.com/JacobTh98/pyEIT_image_wrapper
-# With pyeit version <1.2.0 look on the linked repository too.
-
 import numpy as np
-import pyeit.mesh as mesh
-from pyeit.mesh import create
+from .wrapper import create
 
 def groundtruth_IMG_based(IMG, n_el=16, perm_empty_gnd = 1,perm_obj = 10, h0 = 0.1):
     """
     Wraps a image to the PyEITMesh unit circle area.
     
-    input:  - 200x200 image
-            - n_el: number of electrodes
-            - perm_empty_gnd: perm of the empty ground
-            - perm_obj: perm ob the object area
-            - h0: refinement of the mesh
-            
-    return: mesh_obj (PyEITMesh)
+    Parameters
+    ----------
+    IMG : np.ndarray
+        200x200 image
+    n_el : int
+        number of electrodes
+    perm_empty_gnd : int
+        perm of the empty ground
+    perm_obj : int
+        perm ob the object area
+    h0 : float
+        refinement of the mesh
+    
+    Returns
+    -------
+    PyEITMesh
+        mesh object
     """
     mesh_obj = create(n_el=n_el, h0=h0)
     X_Y=np.array(np.where(IMG==1))

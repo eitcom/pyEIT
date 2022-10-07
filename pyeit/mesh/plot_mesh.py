@@ -1,14 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import pyeit.mesh as mesh
 
-# Option to plot the generated mesh.
 def plot_mesh(mesh_obj):
-    """
-    Plot mesh
-    
-    input:  - mesh_obj: mesh_obj (PyEITMesh)
-    """
+    """Plot PyEITMesh """
     plt.style.use('default')
     pts = mesh_obj.node
     tri = mesh_obj.element
