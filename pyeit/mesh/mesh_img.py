@@ -1,6 +1,6 @@
 import numpy as np
-#Was üassoe
-#from wrapper import create
+from .wrapper import create
+
 
 def groundtruth_IMG_based(IMG, n_el=16, perm_empty_gnd = 1,perm_obj = 10, h0 = 0.1):
     """
