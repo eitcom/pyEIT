@@ -197,7 +197,7 @@ if __name__ == "__main__":
     ti = et4_data.sum(axis=1) / 192.0
     ti_real = np.real(ti)
     ti_imag = np.imag(ti)
-    ti_abs = np.sqrt(ti_real**2 + ti_imag**2)
+    ti_abs = np.sqrt(ti_real ** 2 + ti_imag ** 2)
     print("max = ", np.max(ti_abs))
     print("min = ", np.min(ti_abs))
 

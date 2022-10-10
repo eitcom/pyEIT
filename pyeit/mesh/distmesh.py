@@ -171,7 +171,7 @@ class DISTMESH:
         # density control on bars
         hbars = self.fh((bars_a + bars_b) / 2.0).reshape((-1, 1))
         # L0 : desired lengths (Fscale matters!)
-        L0 = hbars * self.Fscale * sqrt(np.sum(L**2) / np.sum(hbars**2))
+        L0 = hbars * self.Fscale * sqrt(np.sum(L ** 2) / np.sum(hbars ** 2))
 
         return L, L0, barvec
 

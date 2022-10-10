@@ -195,7 +195,7 @@ def mesh_plot(
     for i, el in enumerate(mesh_obj.el_pos):
         xy = np.array([p[el, 0], p[el, 1]])
         text_xy = (xy - mesh_center) * [1, -1]
-        text_dist = np.sqrt(np.sum(text_xy**2))
+        text_dist = np.sqrt(np.sum(text_xy ** 2))
         text_offset = text_xy * (10 / text_dist)
         ax.annotate(
             str(i + 1),

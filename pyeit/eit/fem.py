@@ -146,10 +146,7 @@ class EITForward(Forward):
 The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes "
             )
 
-    def solve_eit(
-        self,
-        perm: Union[int, float, np.ndarray] = None,
-    ) -> np.ndarray:
+    def solve_eit(self, perm: Union[int, float, np.ndarray] = None,) -> np.ndarray:
         """
         EIT simulation, generate forward v measurements
 
@@ -175,9 +172,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         return v.reshape(-1)
 
     def compute_jac(
-        self,
-        perm: Union[int, float, np.ndarray] = None,
-        normalize: bool = False,
+        self, perm: Union[int, float, np.ndarray] = None, normalize: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Compute the Jacobian matrix and initial boundary voltage meas.
@@ -230,8 +225,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         return jac, v0
 
     def compute_b_matrix(
-        self,
-        perm: Union[int, float, np.ndarray] = None,
+        self, perm: Union[int, float, np.ndarray] = None,
     ) -> np.ndarray:
         """
         Compute back-projection mappings (smear matrix)

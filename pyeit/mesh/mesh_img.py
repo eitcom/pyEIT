@@ -22,7 +22,7 @@ def groundtruth_IMG_based(IMG, n_el=16, perm_empty_gnd=1, perm_obj=10, h0=0.1):
     pts = mesh_obj.element
     tri = mesh_obj.node
     perm = mesh_obj.perm.copy()
-    tri_centers = np.mean(tri[pts], axis=1) 
+    tri_centers = np.mean(tri[pts], axis=1)
     mesh_x = np.round(tri_centers[:, 0] * 100)
     mesh_y = np.round(tri_centers[:, 1] * 100)
     Perm = np.ones(tri_centers.shape[0]) * perm_empty_gnd

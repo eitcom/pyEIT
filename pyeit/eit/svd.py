@@ -67,7 +67,7 @@ class SVD(JAC):
             U = U[:, idx[:n_ord]]
 
             # pseudo inverse
-            JtJ_inv = np.dot(U, np.dot(np.diag(s**-1), U.T))
+            JtJ_inv = np.dot(U, np.dot(np.diag(s ** -1), U.T))
             self.H = np.dot(JtJ_inv, self.J.T)
         self.is_ready = True
 

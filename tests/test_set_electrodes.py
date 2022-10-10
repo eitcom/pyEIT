@@ -289,8 +289,5 @@ def test_map_points_to_perimeter():
     intersections_list = [(i.x, i.y) for i in intersections]
 
     assert np.all(
-        np.isclose(
-            np.array(intersections_list),
-            np.array(correct_intersections_list),
-        )
+        np.isclose(np.array(intersections_list), np.array(correct_intersections_list),)
     )

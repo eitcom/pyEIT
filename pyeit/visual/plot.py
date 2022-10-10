@@ -423,10 +423,7 @@ def create_layered_image_plot(
     """
     values = list(range(1, len(labels) + 1))
     img_array = np.full(np.shape(layers[0]), np.nan)
-    for (
-        i,
-        layer,
-    ) in enumerate(layers):
+    for (i, layer,) in enumerate(layers):
         img_array[np.where(np.logical_and(~np.isnan(layer), layer))] = values[i]
 
     img = ax.imshow(img_array, origin=origin)

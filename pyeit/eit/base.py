@@ -25,11 +25,7 @@ class EitBase(ABC):
     Base EIT solver.
     """
 
-    def __init__(
-        self,
-        mesh: PyEITMesh,
-        protocol: PyEITProtocol,
-    ) -> None:
+    def __init__(self, mesh: PyEITMesh, protocol: PyEITProtocol,) -> None:
         """
         An EIT solver.
 
