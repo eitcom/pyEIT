@@ -5,13 +5,13 @@ from wrapper import create
 def groundtruth_IMG_based(IMG, n_el=16, perm_empty_gnd=1, perm_obj=10, h0=0.1):
     """
     Wraps a image to the PyEITMesh unit circle area.
-     
+
     input:   - 200x200 image
              - n_el: number of electrodes
              - perm_empty_gnd: perm of the empty ground
              - perm_obj: perm ob the object area
              - h0: refinement of the mesh
-             
+
     return: mesh_obj (PyEITMesh)
     """
 
@@ -21,7 +21,6 @@ def groundtruth_IMG_based(IMG, n_el=16, perm_empty_gnd=1, perm_obj=10, h0=0.1):
     Y = (X_Y[0, :] - 100) * -1
     pts = mesh_obj.element
     tri = mesh_obj.node
-    perm = mesh_obj.perm.copy()
     tri_centers = np.mean(tri[pts], axis=1)
     mesh_x = np.round(tri_centers[:, 0] * 100)
     mesh_y = np.round(tri_centers[:, 1] * 100)
