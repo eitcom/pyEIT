@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 def plot_mesh(mesh_obj):
-    """Plot PyEITMesh """
+    """Plot PyEITMesh"""
     plt.style.use("default")
     pts = mesh_obj.node
     tri = mesh_obj.element
