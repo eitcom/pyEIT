@@ -184,6 +184,7 @@ class JAC(EitBase):
         lamb_min: float = 0.0,
         method: str = "kotre",
         verbose: bool = False,
+        generator: bool = False,
         **kwargs,
     ):
         """
@@ -246,33 +247,44 @@ class JAC(EitBase):
         # convergence test
         x0_norm = np.linalg.norm(x0)
 
-        for i in range(maxiter):
+        def generator_gn():
+            nonlocal x0, lamb
+            for i in range(maxiter):
 
-            # forward solver,
-            jac, v0 = self.fwd.compute_jac(x0)
-            # Residual
-            r0 = v - v0
+                # forward solver,
+                jac, v0 = self.fwd.compute_jac(x0)
+                # Residual
+                r0 = v - v0
 
-            # Damped Gaussian-Newton
-            h_mat = self._compute_h(jac, p, lamb, method)
+                # Damped Gaussian-Newton
+                h_mat = self._compute_h(jac, p, lamb, method)
 
-            # update
-            d_k = np.dot(h_mat, r0)
-            x0 = x0 - d_k
+                # update
+                d_k = np.dot(h_mat, r0)
+                x0 = x0 - d_k
 
-            # convergence test
-            c = np.linalg.norm(d_k) / x0_norm
-            if c < gtol:
-                break
+                # convergence test
+                c = np.linalg.norm(d_k) / x0_norm
+                if c < gtol:
+                    break
 
-            if verbose:
-                print("iter = %d, lamb = %f, gtol = %f" % (i, lamb, c))
+                if verbose:
+                    print("iter = %d, lamb = %f, gtol = %f" % (i, lamb, c))
 
-            # update regularization parameter
-            # lambda can be given in user defined decreasing lists
-            lamb *= lamb_decay
-            lamb = max(lamb, lamb_min)
-        return x0
+                # update regularization parameter
+                # lambda can be given in user defined decreasing lists
+                lamb *= lamb_decay
+                lamb = max(lamb, lamb_min)
+                yield x0
+
+        real_gen = generator_gn
+        if not generator:
+            item = None
+            for item in real_gen():
+                pass
+            return item
+        else:
+            return real_gen()
 
     def project(self, ds: np.ndarray):
         """
