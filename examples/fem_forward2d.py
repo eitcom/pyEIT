@@ -11,6 +11,7 @@ import pyeit.mesh as mesh
 from pyeit.eit.fem import Forward
 from pyeit.mesh.shape import thorax
 from pyeit.mesh.wrapper import PyEITAnomaly_Circle
+from pyeit.eit.interp2d import sim2pts, pdegrad
 
 """ 0. build mesh """
 n_el = 16  # nb of electrodes
@@ -19,7 +20,7 @@ if use_customize_shape:
     # Mesh shape is specified with fd parameter in the instantiation, e.g : fd=thorax
     mesh_obj = mesh.create(n_el, h0=0.1, fd=thorax)
 else:
-    mesh_obj = mesh.create(n_el, h0=0.1)
+    mesh_obj = mesh.create(n_el, h0=0.05)
 el_pos = mesh_obj.el_pos
 
 # extract node, element, alpha
@@ -46,8 +47,7 @@ f = fwd.solve(ex_line)
 f = np.real(f)
 
 """ 2. plot """
-fig = plt.figure()
-ax1 = fig.add_subplot(111)
+fig, ax1 = plt.subplots(figsize=(9, 6))
 # draw equi-potential lines
 vf = np.linspace(min(f), max(f), 32)
 # vf = np.sort(f[el_pos])
@@ -77,4 +77,19 @@ ax1.set_ylim([-1.2, 1.2])
 ax1.set_xlim([-1.2, 1.2])
 fig.set_size_inches(6, 6)
 # fig.savefig('demo_bp.png', dpi=96)
+plt.show()
+
+ux, uy = pdegrad(pts, tri, f)
+uf = ux**2 + uy**2
+uf_pts = sim2pts(pts, tri, uf)
+uf_logpwr = 10 * np.log10(uf_pts)
+
+fig, ax = plt.subplots(figsize=(9, 6))
+# Draw contour lines on an unstructured triangular grid.
+ax.tripcolor(x, y, tri, uf_logpwr, cmap=plt.cm.viridis)
+ax.tricontour(x, y, tri, uf_logpwr, 10, cmap=plt.cm.hot)
+ax.set_aspect("equal")
+ax.set_ylim([-1.2, 1.2])
+ax.set_xlim([-1.2, 1.2])
+ax.set_title("E field (logmag)")
 plt.show()

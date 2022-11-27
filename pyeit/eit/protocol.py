@@ -6,7 +6,7 @@
 from __future__ import absolute_import, division, print_function, annotations
 
 from dataclasses import dataclass
-from typing import Union, List
+from typing import Union, List, Tuple
 
 import numpy as np
 
@@ -148,7 +148,7 @@ class PyEITProtocol:
         int
             number of electrodes used in the excitation and
         """
-        return max(max(self.ex_mat.flatten()), max(self.meas_mat.flatten())) + 1
+        return int(max(max(self.ex_mat.flatten()), max(self.meas_mat.flatten()))) + 1
 
 
 def create(
@@ -204,7 +204,7 @@ def build_meas_pattern_std(
     n_el: int = 16,
     step: int = 1,
     parser: Union[str, List[str]] = "std",
-) -> np.ndarray:
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Build the measurement pattern (subtract_row-voltage pairs [N, M])
     for all excitations on boundary electrodes.

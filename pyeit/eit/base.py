@@ -46,12 +46,12 @@ class EitBase(ABC):
         self.fwd = EITForward(mesh=mesh, protocol=protocol)
 
         # initialize other parameters
-        self.params = None
-        self.xg = None
-        self.yg = None
-        self.mask = None
+        self.params: dict = {}
+        self.xg: np.ndarray = np.zeros(mesh.n_elems)
+        self.yg: np.ndarray = np.zeros(mesh.n_elems)
+        self.mask: np.ndarray = np.zeros(mesh.n_elems)
         # user must run solver.setup() manually to get correct H
-        self.H = None
+        self.H: np.ndarray = np.zeros((mesh.n_elems, protocol.n_meas), dtype=mesh.dtype)
         self.is_ready = False
 
     @property
@@ -77,7 +77,7 @@ class EitBase(ABC):
         """
 
     @abstractmethod
-    def _compute_h(self) -> np.ndarray:
+    def _compute_h(self):
         """
         Compute H matrix for solving inv problem
 
@@ -96,7 +96,7 @@ class EitBase(ABC):
         v0: np.ndarray,
         normalize: bool = False,
         log_scale: bool = False,
-    ) -> np.ndarray:
+    ):
         """
         Dynamic imaging (conductivities imaging)
 
@@ -128,7 +128,7 @@ class EitBase(ABC):
             ds = np.exp(ds) - 1.0
         return ds
 
-    def map(self, dv: np.ndarray) -> np.ndarray:
+    def map(self, dv: np.ndarray):
         """
         (NOT USED, Deprecated?) simple mat using projection matrix
 
@@ -167,7 +167,7 @@ class EitBase(ABC):
             msg = "User must first run {type(self).__name__}.setup() before imaging."
             raise SolverNotReadyError(msg)
 
-    def _normalize(self, v1: np.ndarray, v0: np.ndarray) -> np.ndarray:
+    def _normalize(self, v1: np.ndarray, v0: np.ndarray):
         """
         Normalize current frame using the amplitude of the reference frame.
         Boundary measurements v are complex-valued, we can use the real part of v,

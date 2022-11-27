@@ -7,7 +7,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function, annotations
 
-from typing import Union
+from typing import Union, Optional
 import numpy as np
 import scipy.linalg as la
 from .base import EitBase
@@ -21,7 +21,7 @@ class JAC(EitBase):
         p: float = 0.20,
         lamb: float = 0.001,
         method: str = "kotre",
-        perm: Union[int, float, np.ndarray] = None,
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
         jac_normalized: bool = False,
     ) -> None:
         """
@@ -44,7 +44,7 @@ class JAC(EitBase):
             default False
         """
         # passing imaging parameters
-        self.params = {
+        self.params: dict = {
             "p": p,
             "lamb": lamb,
             "method": method,
@@ -56,9 +56,9 @@ class JAC(EitBase):
         self.H = self._compute_h(self.J, p, lamb, method)
         self.is_ready = True
 
-    def _compute_h(
+    def _compute_h(  # type: ignore[override]
         self, jac: np.ndarray, p: float, lamb: float, method: str = "kotre"
-    ) -> np.ndarray:
+    ):
         """
         Compute self.H matrix for JAC solver
 
@@ -102,7 +102,7 @@ class JAC(EitBase):
         # build H
         return np.dot(la.inv(j_w_j + lamb * r_mat), jac.transpose())
 
-    def solve_gs(self, v1: np.ndarray, v0: np.ndarray) -> np.ndarray:
+    def solve_gs(self, v1: np.ndarray, v0: np.ndarray):
         """
         Solving by weighted frequency
 
@@ -129,9 +129,7 @@ class JAC(EitBase):
         # return ds average epsilon on element
         return -np.dot(self.H, dv.transpose())
 
-    def jt_solve(
-        self, v1: np.ndarray, v0: np.ndarray, normalize: bool = True
-    ) -> np.ndarray:
+    def jt_solve(self, v1: np.ndarray, v0: np.ndarray, normalize: bool = True):
         """
         a 'naive' back projection using the transpose of Jac.
         This scheme is the one published by kotre (1989), see note [1].
@@ -177,17 +175,17 @@ class JAC(EitBase):
     def gn(
         self,
         v: np.ndarray,
-        x0: Union[int, float, np.ndarray] = None,
+        x0: Optional[Union[int, float, complex, np.ndarray]] = None,
         maxiter: int = 1,
         gtol: float = 1e-4,
-        p: float = None,
-        lamb: float = None,
+        p: Optional[float] = None,
+        lamb: Optional[float] = None,
         lamb_decay: float = 1.0,
         lamb_min: float = 0.0,
         method: str = "kotre",
         verbose: bool = False,
         **kwargs,
-    ) -> np.ndarray:
+    ):
         """
         Gaussian Newton Static Solver
         You can use a different p, lamb other than the default ones in setup
@@ -276,7 +274,7 @@ class JAC(EitBase):
             lamb = max(lamb, lamb_min)
         return x0
 
-    def project(self, ds: np.ndarray) -> np.ndarray:
+    def project(self, ds: np.ndarray):
         """
         Project ds using spatial difference filter (deprecated)
 
@@ -305,9 +303,7 @@ class JAC(EitBase):
         return np.dot(d_mat, ds)
 
 
-def h_matrix(
-    jac: np.ndarray, p: float, lamb: float, method: str = "kotre"
-) -> np.ndarray:
+def h_matrix(jac: np.ndarray, p: float, lamb: float, method: str = "kotre"):
     """
     (NOT USED in JAC solver)
     JAC method of dynamic EIT solver:
