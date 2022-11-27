@@ -5,7 +5,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function, annotations
 
-from typing import Union
+from typing import Union, Optional
 import numpy as np
 from .base import EitBase
 
@@ -14,7 +14,9 @@ class BP(EitBase):
     """A naive inversion of (Euclidean) back projection."""
 
     def setup(
-        self, weight: str = "none", perm: Union[int, float, np.ndarray] = None
+        self,
+        weight: str = "none",
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
     ) -> None:
         """
         Setup BP solver
@@ -34,7 +36,7 @@ class BP(EitBase):
         self.H = self._compute_h(b_matrix=self.B)
         self.is_ready = True
 
-    def _compute_h(self, b_matrix: np.ndarray) -> np.ndarray:
+    def _compute_h(self, b_matrix: np.ndarray) -> np.ndarray:  # type: ignore[override]
         """
         Compute H matrix for BP solver
 
@@ -53,7 +55,7 @@ class BP(EitBase):
             b_matrix = weights * b_matrix
         return b_matrix.T
 
-    def solve_gs(self, v1: np.ndarray, v0: np.ndarray) -> np.ndarray:
+    def solve_gs(self, v1: np.ndarray, v0: np.ndarray):
         """
         Solving using gram-schmidt orthogonalization
 
@@ -79,7 +81,7 @@ class BP(EitBase):
         vn = -(v1 - a * v0) / np.sign(v0.real)
         return np.dot(self.H, vn.transpose())
 
-    def _normalize(self, v1: np.ndarray, v0: np.ndarray) -> np.ndarray:
+    def _normalize(self, v1: np.ndarray, v0: np.ndarray):
         """
         redefine normalize for BP (without amplitude normalization) using
         only the sign of v0.real. [experimental]
@@ -101,7 +103,7 @@ class BP(EitBase):
         """
         return (v1 - v0) / np.sign(v0.real)
 
-    def _simple_weight(self, num_voltages: int) -> np.ndarray:
+    def _simple_weight(self, num_voltages: int):
         """
         Build weighting matrix : simple, normalize by radius.
 

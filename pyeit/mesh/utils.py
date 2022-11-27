@@ -4,12 +4,12 @@
 # Copyright (c) Benyuan Liu. All rights reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
-
+from typing import Any
 import numpy as np
 import scipy.linalg as la
 
 
-def dist(p):
+def dist(p: np.ndarray) -> Any:
     """distances to origin of nodes. '3D', 'ND' compatible
 
     Parameters

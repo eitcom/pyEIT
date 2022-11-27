@@ -4,7 +4,7 @@
 # Copyright (c) Benyuan Liu. All rights reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function
-
+from typing import Any, List, Union
 import numpy as np
 
 from .utils import dist, edge_project
@@ -12,7 +12,7 @@ from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
 
-def circle(pts, pc=None, r=1.0):
+def circle(pts, pc: Union[np.ndarray, List] = [0, 0], r: float = 1.0) -> Any:
     """
     Distance function for the circle centered at pc = [xc, yc]
 
@@ -34,19 +34,15 @@ def circle(pts, pc=None, r=1.0):
     ----
     copied and modified from https://github.com/ckhroulev/py_distmesh2d
     """
-    if pc is None:
-        pc = [0, 0]
     return dist(pts - pc) - r
 
 
-def ellipse(pts, pc=None, ab=None):
+def ellipse(
+    pts, pc: Union[np.ndarray, List] = [0, 0], ab: Union[np.ndarray, List] = [1.0, 2.0]
+):
     """Distance function for the ellipse
     centered at pc = [xc, yc], with a, b = [a, b]
     """
-    if pc is None:
-        pc = [0, 0]
-    if ab is None:
-        ab = [1.0, 2.0]
     return dist((pts - pc) / ab) - 1.0
 
 
@@ -60,7 +56,7 @@ def box_circle(pts):
     return circle(pts, pc=[0.5, 0.5], r=0.5)
 
 
-def ball(pts, pc=None, r=1.0):
+def ball(pts, pc: Union[np.ndarray, List] = [0, 0, 0], r: float = 1.0):
     """
     generate balls in 3D (default: unit ball)
 
@@ -68,8 +64,6 @@ def ball(pts, pc=None, r=1.0):
     --------
     circle : generate circles in 2D
     """
-    if pc is None:
-        pc = [0, 0, 0]
     return circle(pts, pc, r)
 
 
@@ -78,7 +72,9 @@ def unit_ball(pts):
     return ball(pts)
 
 
-def rectangle0(pts, p1=None, p2=None):
+def rectangle0(
+    pts, p1: Union[np.ndarray, List] = [0, 0], p2: Union[np.ndarray, List] = [1, 1]
+):
     """
     Distance function for the rectangle p1=[x1, y1] and p2=[x2, y2]
 
@@ -100,10 +96,6 @@ def rectangle0(pts, p1=None, p2=None):
     array_like
         distance
     """
-    if p1 is None:
-        p1 = [0, 0]
-    if p2 is None:
-        p2 = [1, 1]
     if pts.ndim == 1:
         pts = pts[np.newaxis]
     pd_left = [-min(row) for row in pts - p1]
@@ -112,17 +104,15 @@ def rectangle0(pts, p1=None, p2=None):
     return np.maximum(pd_left, pd_right)
 
 
-def rectangle(pts, p1=None, p2=None):
+def rectangle(
+    pts, p1: Union[np.ndarray, List] = [0, 0], p2: Union[np.ndarray, List] = [1, 1]
+):
     """
     smoothed rectangle
 
     p1: buttom-left corner
     p2: top-right corner
     """
-    if p1 is None:
-        p1 = [0, 0]
-    if p2 is None:
-        p2 = [1, 1]
     if pts.ndim == 1:
         pts = pts[np.newaxis]
 
@@ -155,7 +145,7 @@ def rectangle(pts, p1=None, p2=None):
     return d
 
 
-def fix_points_fd(fd, n_el=16, pc=None):
+def fix_points_fd(fd, n_el: int = 16, pc: Union[np.ndarray, List] = [0, 0]):
     """
     return fixed and uniformly distributed points on
     fd with equally distributed angles
@@ -172,15 +162,12 @@ def fix_points_fd(fd, n_el=16, pc=None):
     array_like
         coordinates of fixed points
     """
-    if pc is None:
-        pc = [0, 0]
-
     # initialize points
-    r = 10.0
-    theta = 2.0 * np.pi * np.arange(n_el) / float(n_el)
+    r0: float = 10.0
+    theta: np.ndarray = 2.0 * np.pi * np.arange(n_el) / float(n_el)
     # add offset of theta
     # theta += theta[1] / 2.0
-    p_fix = [[-r * np.cos(th), r * np.sin(th)] for th in theta]
+    p_fix = [[-r0 * np.cos(th), r0 * np.sin(th)] for th in theta]
     pts = np.array(p_fix) + pc
 
     # project back on edges
@@ -203,7 +190,12 @@ def fix_points_fd(fd, n_el=16, pc=None):
     return pts_new
 
 
-def fix_points_circle(pc=None, offset=0, r=1.0, ppl=16):
+def fix_points_circle(
+    pc: Union[np.ndarray, List] = [0, 0],
+    offset: float = 0,
+    r: float = 1.0,
+    ppl: int = 16,
+):
     """
     return fixed and uniformly distributed points on
     a circle with radius r
@@ -221,16 +213,18 @@ def fix_points_circle(pc=None, offset=0, r=1.0, ppl=16):
     array_like
         coordinates of fixed points
     """
-    if pc is None:
-        pc = [0, 0]
-
     delta_theta = 2.0 * np.pi / float(ppl)
     theta = np.arange(ppl) * delta_theta + delta_theta * offset
     p_fix = [[-r * np.cos(th), r * np.sin(th)] for th in theta]
     return np.array(p_fix) + pc
 
 
-def fix_points_ball(pc=None, r=1.0, z=0.0, n_el=16):
+def fix_points_ball(
+    pc: Union[np.ndarray, List] = [0, 0, 0],
+    r: float = 1.0,
+    z: float = 0.0,
+    n_el: int = 16,
+):
     """
     return fixed and uniformly distributed points on
     a circle with radius r
@@ -250,9 +244,6 @@ def fix_points_ball(pc=None, r=1.0, z=0.0, n_el=16):
     array_like
         coordinates of fixed points
     """
-    if pc is None:
-        pc = [0, 0, 0]
-
     ry = np.sqrt(r**2 - z**2)
     theta = 2.0 * np.pi * np.arange(n_el) / float(n_el)
     p_fix = [[ry * np.sin(th), ry * np.cos(th), z] for th in theta]
@@ -323,7 +314,7 @@ def dist_union(d1, d2):
     return np.minimum(d1, d2)
 
 
-def area_uniform(p):
+def area_uniform(p: np.ndarray):
     """uniform mesh distribution
 
     Parameters

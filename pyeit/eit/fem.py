@@ -6,7 +6,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function, annotations
 
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 import numpy as np
 import numpy.linalg as la
 from scipy import sparse
@@ -40,7 +40,9 @@ class Forward:
         self.se = calculate_ke(self.mesh.node, self.mesh.element)
         self.assemble_pde(self.mesh.perm)
 
-    def assemble_pde(self, perm: Union[int, float, np.ndarray]) -> None:
+    def assemble_pde(
+        self, perm: Optional[Union[int, float, complex, np.ndarray]] = None
+    ) -> None:
         """
         assemble PDE
 
@@ -53,12 +55,16 @@ class Forward:
         """
         if perm is None:
             return
-        perm = self.mesh.get_valid_perm(perm)
+        perm_array = self.mesh.get_valid_perm_array(perm)
         self.kg = assemble(
-            self.se, self.mesh.element, perm, self.mesh.n_nodes, ref=self.mesh.ref_node
+            self.se,
+            self.mesh.element,
+            perm_array,
+            self.mesh.n_nodes,
+            ref=self.mesh.ref_node,
         )
 
-    def solve(self, ex_line: np.ndarray = None) -> np.ndarray:
+    def solve(self, ex_line: np.ndarray = np.array([0, 1])):
         """
         Calculate and compute the potential distribution (complex-valued)
         corresponding to the permittivity distribution `perm ` for a
@@ -148,7 +154,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
 
     def solve_eit(
         self,
-        perm: Union[int, float, np.ndarray] = None,
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
     ) -> np.ndarray:
         """
         EIT simulation, generate forward v measurements
@@ -165,9 +171,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
             simulated boundary voltage measurements; shape(n_exe*n_el,)
         """
         self.assemble_pde(perm)
-        v = np.zeros(
-            (self.protocol.n_exc, self.protocol.n_meas), dtype=self.mesh.perm.dtype
-        )
+        v = np.zeros((self.protocol.n_exc, self.protocol.n_meas), dtype=self.mesh.dtype)
         for i, ex_line in enumerate(self.protocol.ex_mat):
             f = self.solve(ex_line)
             v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
@@ -176,7 +180,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
 
     def compute_jac(
         self,
-        perm: Union[int, float, np.ndarray] = None,
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
         normalize: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -206,11 +210,9 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         # calculate v, jac per excitation pattern (ex_line)
         _jac = np.zeros(
             (self.protocol.n_exc, self.protocol.n_meas, self.mesh.n_elems),
-            dtype=self.mesh.perm.dtype,
+            dtype=self.mesh.dtype,
         )
-        v = np.zeros(
-            (self.protocol.n_exc, self.protocol.n_meas), dtype=self.mesh.perm.dtype
-        )
+        v = np.zeros((self.protocol.n_exc, self.protocol.n_meas), dtype=self.mesh.dtype)
         for i, ex_line in enumerate(self.protocol.ex_mat):
             f = self.solve(ex_line)
             v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
@@ -221,7 +223,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
                 _jac[i, :, e] = np.dot(np.dot(ri[:, ijk], self.se[e]), f[ijk])
 
         # measurement protocol
-        jac = np.vstack(_jac)
+        jac = np.concatenate(_jac)
         v0 = v.reshape(-1)
 
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])
@@ -231,8 +233,8 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
 
     def compute_b_matrix(
         self,
-        perm: Union[int, float, np.ndarray] = None,
-    ) -> np.ndarray:
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
+    ):
         """
         Compute back-projection mappings (smear matrix)
 
@@ -251,7 +253,8 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         self.assemble_pde(perm)
         b_mat = np.zeros((self.protocol.n_exc, self.protocol.n_meas, self.mesh.n_nodes))
 
-        for i, ex_line in enumerate(self.protocol.ex_mat):
+        for i in range(self.protocol.n_exc):
+            ex_line = self.protocol.ex_mat[i]
             f = self.solve(ex_line=ex_line)
             f_el = f[self.mesh.el_pos]
             # build bp projection matrix
@@ -260,10 +263,10 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
             # 2. or, simply smear at the nodes using f
             b_mat[i] = _smear(f, f_el, self.protocol.meas_mat[i])
 
-        return np.vstack(b_mat)
+        return np.concatenate(b_mat)
 
 
-def _smear(f: np.ndarray, fb: np.ndarray, pairs: np.ndarray) -> np.ndarray:
+def _smear(f: np.ndarray, fb: np.ndarray, pairs: np.ndarray):
     """
     Build smear matrix B for bp for one exitation
 
@@ -329,7 +332,7 @@ def smear_nd(
         f_max = np.repeat(f_max[:, :, np.newaxis], n_pts, axis=2)
         f0 = np.repeat(f[:, :, np.newaxis], n_meas, axis=2)
         f0 = f0.swapaxes(1, 2)
-        return (f_min < f0) & (f0 <= f_max)
+        return np.array((f_min < f0) & (f0 <= f_max))
     else:
         # Replacing the below code by a faster implementation in Numpy
         def b_matrix_init(k):
@@ -338,7 +341,7 @@ def smear_nd(
         return np.array(list(map(b_matrix_init, np.arange(f.shape[0]))))
 
 
-def subtract_row(v: np.ndarray, meas_pattern: np.ndarray) -> np.ndarray:
+def subtract_row(v: np.ndarray, meas_pattern: np.ndarray):
     """
     Build the voltage differences on axis=1 using the meas_pattern.
     v_diff[k] = v[i, :] - v[j, :]
@@ -362,7 +365,7 @@ def subtract_row(v: np.ndarray, meas_pattern: np.ndarray) -> np.ndarray:
 
 def assemble(
     ke: np.ndarray, tri: np.ndarray, perm: np.ndarray, n_pts: int, ref: int = 0
-) -> np.ndarray:
+):
     """
     Assemble the stiffness matrix (using sparse matrix)
 
@@ -458,7 +461,7 @@ def calculate_ke(pts: np.ndarray, tri: np.ndarray) -> np.ndarray:
     return ke_array
 
 
-def _k_triangle(xy: np.ndarray) -> np.ndarray:
+def _k_triangle(xy: np.ndarray):
     """
     Given a point-matrix of an element, solving for Kij analytically
     using barycentric coordinates (simplex coordinates)
@@ -485,12 +488,12 @@ def _k_triangle(xy: np.ndarray) -> np.ndarray:
     return np.dot(s, s.T) / (4.0 * at)
 
 
-def det2x2(s1: np.ndarray, s2: np.ndarray) -> float:
+def det2x2(s1: np.ndarray, s2: np.ndarray):
     """Calculate the determinant of a 2x2 matrix"""
     return s1[0] * s2[1] - s1[1] * s2[0]
 
 
-def _k_tetrahedron(xy: np.ndarray) -> np.ndarray:
+def _k_tetrahedron(xy: np.ndarray):
     """
     Given a point-matrix of an element, solving for Kij analytically
     using barycentric coordinates (simplex coordinates)
@@ -525,7 +528,3 @@ def _k_tetrahedron(xy: np.ndarray) -> np.ndarray:
 
     # local (e for element) stiffness matrix
     return np.dot(a, a.transpose()) / (36.0 * vt)
-
-
-if __name__ == "__main__":
-    """"""
