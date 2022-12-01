@@ -5,7 +5,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import absolute_import, division, print_function, annotations
 
-from typing import Tuple
+from typing import Tuple, Union, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -94,7 +94,7 @@ def _build_grid(
     return xg, yg
 
 
-def _build_mask(pts_edges: np.ndarray, xg: np.ndarray, yg: np.ndarray) -> np.ndarray:
+def _build_mask(pts_edges: np.ndarray, xg: np.ndarray, yg: np.ndarray):
     """
     find whether meshgrids is interior of mesh
 
@@ -141,9 +141,7 @@ def _hull_points(pts: np.ndarray) -> np.ndarray:
     return pts_2D[hull_nodes, :]
 
 
-def _distance2d(
-    x: np.ndarray, y: np.ndarray, center: Tuple[str, list] = "mean"
-) -> np.ndarray:
+def _distance2d(x: np.ndarray, y: np.ndarray, center: Union[str, list] = "mean"):
     """
     Calculate radius given center.
     This function can be OPTIMIZED using numba or cython.
@@ -203,7 +201,7 @@ def _distance_matrix2d(xy: np.ndarray, xyi: np.ndarray) -> np.ndarray:
 
 def weight_sigmod(
     xy: np.ndarray, xyi: np.ndarray, ratio: float = 0.05, s: float = 20.0
-) -> np.ndarray:
+):
     """
     (2D only)
     local weight/interpolate by sigmod function (GREIT3D)
@@ -236,9 +234,7 @@ def weight_sigmod(
     return weight / weight.sum(axis=0)
 
 
-def weight_idw(
-    xy: np.ndarray, xyi: np.ndarray, k: int = 6, p: float = 1.0
-) -> np.ndarray:
+def weight_idw(xy: np.ndarray, xyi: np.ndarray, k: int = 6, p: float = 1.0):
     """
     (2D only)
     local weight/interpolate by inverse distance
@@ -271,7 +267,7 @@ def weight_idw(
     return weight / weight.sum(axis=0)
 
 
-def weight_linear_rbf(xy: np.ndarray, xyi: np.ndarray, z: np.ndarray) -> np.ndarray:
+def weight_linear_rbf(xy: np.ndarray, xyi: np.ndarray, z: np.ndarray):
     """
     (2D only)
     local weight/interpolate by linear rbf function (z value required)
@@ -316,7 +312,7 @@ def weight_barycentric_gradient():
     raise NotImplementedError()
 
 
-def sim2pts(pts: np.ndarray, sim: np.ndarray, sim_values: np.ndarray) -> np.ndarray:
+def sim2pts(pts: np.ndarray, sim: np.ndarray, sim_values: np.ndarray):
     """
     (2D/3D) compatible.
 
@@ -365,7 +361,7 @@ def sim2pts(pts: np.ndarray, sim: np.ndarray, sim_values: np.ndarray) -> np.ndar
     return f / w
 
 
-def pts2sim(sim: np.ndarray, pts_values: np.ndarray) -> np.ndarray:
+def pts2sim(sim: np.ndarray, pts_values: np.ndarray):
     """
     (2D/3D) compatible.
 
@@ -452,7 +448,7 @@ def tet_volume(pts: np.ndarray, sim: np.ndarray) -> np.ndarray:
     return v / 6.0
 
 
-def pdetrg(pts: np.ndarray, tri: np.ndarray) -> np.ndarray:
+def pdetrg(pts: np.ndarray, tri: np.ndarray) -> Tuple[Any, Any, Any]:
     """
     (Deprecated)
     analytical calculate the Area and grad(phi_i) using
@@ -550,7 +546,7 @@ def demo() -> None:
     mesh_new = set_perm(mesh_obj, anomaly=anomaly)
 
     # 2. interpolate using averaged neighbor triangle area
-    perm_node = sim2pts(pts, tri, mesh_new.perm)
+    perm_node = sim2pts(pts, tri, mesh_new.perm_array)
 
     # plot mesh and interpolated mesh (tri2pts)
     fig_size = (6, 4)

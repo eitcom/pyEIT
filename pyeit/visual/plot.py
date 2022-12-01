@@ -9,7 +9,7 @@ import numpy as np
 from matplotlib import dates
 from pyeit.mesh import PyEITMesh
 import matplotlib.collections
-from numpy.typing import ArrayLike
+from typing import Optional
 from matplotlib import (
     pyplot as plt,
     patches as mpatches,
@@ -37,14 +37,14 @@ def ts_plot(ts, figsize=(6, 4), ylabel="ATI (Ohm)", ylim=None, xdate_format=True
 
 def create_mesh_plot(
     ax: mpl_axes.Axes,
-    mesh: PyEITMesh = None,
-    ax_kwargs: dict = None,
-    electrodes: ArrayLike = None,
-    coordinate_labels: str = None,
-    marker_kwargs: dict = None,
-    marker_text_kwargs: dict = None,
-    coord_label_text_kwargs: dict = None,
-    flat_plane: str = "z",
+    mesh: PyEITMesh,
+    ax_kwargs: Optional[dict] = {},
+    electrodes: Optional[np.ndarray] = None,
+    coordinate_labels: Optional[str] = "",
+    marker_kwargs: Optional[dict] = {},
+    marker_text_kwargs: Optional[dict] = {},
+    coord_label_text_kwargs: Optional[dict] = {},
+    flat_plane: Optional[str] = "z",
 ):
     """
     Creates a plot to display a 2d mesh. Optionally plots electrode positions and adds coordinate labels.
@@ -77,9 +77,6 @@ def create_mesh_plot(
         matplotlib artists
 
     """
-    if ax_kwargs is None:
-        ax_kwargs = {"title": "Mesh plot"}
-
     ax.set_aspect(
         "equal"
     )  # Default aspect is auto. Set to equal so plot is not distorted
@@ -122,8 +119,8 @@ def create_mesh_plot(
 def add_electrode_markers(
     ax: mpl_axes.Axes,
     electrode_points: list,
-    marker_kwargs: dict = None,
-    text_kwargs: dict = None,
+    marker_kwargs: Optional[dict] = None,
+    text_kwargs: Optional[dict] = None,
 ):
     """
     Add markers to a plot to indicate the position of electrodes
@@ -163,7 +160,9 @@ def add_electrode_markers(
 
 
 def add_coordinate_labels(
-    ax: mpl_axes.Axes, coordinate_labels: str = None, text_kwargs: dict = None
+    ax: mpl_axes.Axes,
+    coordinate_labels: Optional[str] = None,
+    text_kwargs: Optional[dict] = None,
 ):
     """
     Add labels to a plot to clarify the relationship between the plot coordinate system and the coordinate system of the
@@ -190,7 +189,6 @@ def add_coordinate_labels(
     if text_kwargs is None:
         text_kwargs = {}
 
-    coord_labels = []
     if coordinate_labels == "radiological":
         l1 = ax.text(
             0.01,
@@ -275,17 +273,17 @@ def alignment_opposing_center(ax: mpl_axes.Axes, x: float, y: float) -> dict:
 
 def create_plot(
     ax: mpl_axes.Axes,
-    eit_image: ArrayLike,
+    eit_image: np.ndarray,
     mesh: PyEITMesh,
-    vmin: float = None,
-    vmax: float = None,
-    ax_kwargs: dict = None,
-    electrodes: ArrayLike = None,
-    coordinate_labels: str = None,
-    marker_kwargs: dict = None,
-    marker_text_kwargs: dict = None,
-    coord_label_text_kwargs: dict = None,
-    flat_plane: str = "z",
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    ax_kwargs: Optional[dict] = None,
+    electrodes: Optional[np.ndarray] = None,
+    coordinate_labels: Optional[str] = None,
+    marker_kwargs: Optional[dict] = None,
+    marker_text_kwargs: Optional[dict] = None,
+    coord_label_text_kwargs: Optional[dict] = None,
+    flat_plane: Optional[str] = "z",
 ):
     """
     Creates a plot of a reconstructed EIT image. Optionally plots electrode positions and adds coordinate labels.

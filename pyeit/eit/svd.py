@@ -5,7 +5,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division, absolute_import, print_function, annotations
 
-from typing import Union
+from typing import Union, Optional
 import numpy as np
 from .jac import JAC
 
@@ -13,12 +13,12 @@ from .jac import JAC
 class SVD(JAC):
     """implementing a sensitivity-based EIT imaging class"""
 
-    def setup(
+    def setup(  # type: ignore[override]
         self,
         n: int = 25,
         rcond: float = 1e-2,
         method: str = "svd",
-        perm: Union[int, float, np.ndarray] = None,
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
         jac_normalized: bool = False,
     ) -> None:
         """

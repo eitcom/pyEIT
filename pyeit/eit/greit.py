@@ -13,7 +13,7 @@ Note, that, the advantages of greit is NOT on simulated data, but
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import absolute_import, division, print_function, annotations
 
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 import numpy as np
 import scipy.linalg as la
 from .base import EitBase
@@ -26,13 +26,13 @@ class GREIT(EitBase):
     def setup(
         self,
         method: str = "dist",
-        w: np.ndarray = None,
+        w: Optional[np.ndarray] = None,
         p: float = 0.20,
         lamb: float = 1e-2,
         n: int = 32,
         s: float = 20.0,
         ratio: float = 0.1,
-        perm: Union[int, float, np.ndarray] = None,
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
         jac_normalized: bool = False,
     ) -> None:
         """
@@ -98,7 +98,7 @@ class GREIT(EitBase):
         self.H = self._compute_h(jac=self.J, w_mat=w_mat)
         self.is_ready = True
 
-    def _compute_h(self, jac: np.ndarray, w_mat: np.ndarray) -> np.ndarray:
+    def _compute_h(self, jac: np.ndarray, w_mat: np.ndarray):  # type: ignore[override]
         """
         Generate H (or R) using distribution method for GREIT solver
 
@@ -164,7 +164,7 @@ class GREIT(EitBase):
         ds = ds.reshape(self.xg.shape)
         return self.xg, self.yg, ds
 
-    def _compute_grid_weights(self, xg: np.ndarray, yg: np.ndarray) -> np.ndarray:
+    def _compute_grid_weights(self, xg: np.ndarray, yg: np.ndarray):
         """
         Compute weights for given grid (xg,yg)
 
@@ -190,7 +190,7 @@ class GREIT(EitBase):
         return weight_sigmod(xy, xyi, ratio=ratio, s=s)
 
     @staticmethod
-    def build_set(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def build_set(x: np.ndarray, y: np.ndarray):
         """generate R from a set of training sets (deprecate)."""
         # E_w[yy^T]
         y_y_t = la.inv(np.dot(y, y.transpose()))

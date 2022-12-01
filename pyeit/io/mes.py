@@ -55,7 +55,7 @@ def load(fstr, mirror=False) -> PyEITMesh:
 
     if mirror:
         ne = np.size(el_pos)
-        ne_start = np.int(ne / 2)
+        ne_start = int(ne / 2)
         el_index = np.mod(np.arange(ne_start, -ne_start, -1), ne)
         el_pos = el_pos[el_index]
 
@@ -218,23 +218,24 @@ if __name__ == "__main__":
     # How to load and use a .mes file (github.com/liubenyuan/eitmesh)
     mstr = resource_filename("eitmesh", "data/IM470.mes")
     imstr = mstr.replace(".mes", ".bmp")
-    mesh_obj = load(fstr=mstr)
+    mesh_obj1 = load(fstr=mstr)
 
     # print the size
-    e, pts, perm = mesh_obj.element, mesh_obj.node, mesh_obj.perm
+    e, pts, perm = mesh_obj1.element, mesh_obj1.node, mesh_obj1.perm
     # print('tri size = (%d, %d)' % e.shape)
     # print('pts size = (%d, %d)' % pts.shape)
     fig, ax = plt.subplots(1, figsize=(6, 6))
-    mesh_plot(ax, mesh_obj, imstr=imstr)
+    mesh_plot(ax, mesh_obj1, imstr=imstr)
     # fig.savefig("IM470.png", dpi=100)
 
     # compare two mesh
     mstr = resource_filename("eitmesh", "data/DLS2.mes")
     mesh_obj2 = load(fstr=mstr)
-    mesh_array = [[mesh_obj, "IM470"], [mesh_obj2, "DLS2"]]
+    mesh_array = [[mesh_obj1, "IM470"], [mesh_obj2, "DLS2"]]
 
-    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
-    for i, ax in enumerate(axs):
-        mesh, title = mesh_array[i]
-        mesh_plot(ax, mesh, title=title)
+    fig, axs = plt.subplots(figsize=(9, 6))
+    mesh_plot(axs, mesh_obj1, title="IM470")
+    # for i, ax in enumerate(axs):
+    #     mesh_obj, title = mesh_array[i]
+    #     mesh_plot(ax, mesh_obj, title=title)
     # fig.savefig("mesh_plot.png", dpi=100)

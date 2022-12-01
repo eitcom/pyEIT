@@ -1,9 +1,8 @@
 from __future__ import annotations
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import numpy as np
 import struct
 import trimesh
-from numpy.typing import ArrayLike
 import shapely
 from shapely.geometry import Polygon, Point
 from . import PyEITMesh
@@ -73,7 +72,7 @@ def place_electrodes_equal_spacing(
     counter_clockwise: bool = False,
     chest_and_spine_ratio: float = 1,
     flat_plane: str = "z",
-    output_obj: dict = None,
+    output_obj: Optional[dict] = None,
 ) -> List[int]:
     """
     Creates a list of coordinate indices representing electrodes equally spaced around the perimeter of the 2D input mesh
@@ -124,7 +123,7 @@ def place_electrodes_equal_spacing(
     trimesh_obj = trimesh.Trimesh(np.delete(mesh.node, flat_ind, axis=1), mesh.element)
 
     exterior_polygon = create_exterior_polygon(trimesh_obj)
-    plotting_obj = {}
+    plotting_obj: dict = {}
     intersection = perimeter_point_from_centroid(
         exterior_polygon, starting_angle, plotting_obj
     )
@@ -173,7 +172,7 @@ def place_electrodes_equal_spacing(
     ex_poly_xy = exterior_polygon.exterior.xy
     exterior_polygon_points = np.array(list(zip(ex_poly_xy[0], ex_poly_xy[1])))
     electrode_nodes_exterior_polygon = [
-        find_closest_point([point.x, point.y], exterior_polygon_points)
+        find_closest_point(np.array([point.x, point.y]), exterior_polygon_points)
         for point in electrode_points
     ]
     electrode_nodes = [
@@ -191,7 +190,7 @@ def place_electrodes_equal_spacing(
 
 def create_exterior_polygon(
     trimesh_obj: trimesh.Trimesh,
-) -> List[shapely.geometry.Polygon]:
+) -> shapely.geometry.Polygon:
     """
     Create a polygon representing the exterior edge of the input mesh. The polygon is created by identifying the edges
     of the input mesh which are only referenced by one triangle. These are the edges of the polygon.
@@ -212,7 +211,7 @@ def create_exterior_polygon(
         Polygon representing the exterior edge of the input mesh
 
     """
-    edge_dict = {}
+    edge_dict: dict = {}
     for (
         edge
     ) in (
@@ -245,7 +244,7 @@ def create_exterior_polygon(
 
 
 def perimeter_point_from_centroid(
-    polygon: Polygon, angle: float, output_obj: dict = None
+    polygon: Polygon, angle: float, output_obj: Optional[dict] = None
 ) -> Point:
     """
     Calculates a point on the perimeter of the input polygon which intersects with a line drawn from the centroid at a
@@ -358,7 +357,7 @@ def equal_spaced_interpolate_distance(
     return interpolate_distance
 
 
-def find_closest_point(point: np.ndarray, point_list: ArrayLike) -> int:
+def find_closest_point(point: np.ndarray, point_list: np.ndarray) -> int:
     """
     Find the closest match between an input point and the elements of a point list
 
@@ -369,14 +368,14 @@ def find_closest_point(point: np.ndarray, point_list: ArrayLike) -> int:
     """
 
     index = np.argmin([np.linalg.norm(point - point_b) for point_b in point_list])
-    return index
+    return int(index)
 
 
 def map_points_to_perimeter(
     mesh: PyEITMesh,
     points: List[Tuple[float, float]],
-    output_obj: dict = None,
-    map_to_nodes: bool = True,
+    output_obj: Optional[dict] = None,
+    map_to_nodes: Optional[bool] = True,
 ) -> List[Point]:
     """
     Map a list of coordinates to points on the perimeter of a mesh. Coordinates are mapped by drawing a line
