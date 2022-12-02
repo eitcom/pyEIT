@@ -1,18 +1,35 @@
 import numpy as np
-from wrapper import create
+
+from . import PyEITMesh
+from .wrapper import create
 
 
-def groundtruth_IMG_based(IMG, n_el=16, perm_empty_gnd=1, perm_obj=10, h0=0.1):
+def groundtruth_IMG_based(
+    IMG: np.ndarray,
+    n_el: int = 16,
+    perm_empty_gnd: float = 1,
+    perm_obj: float = 10,
+    h0: float = 0.1,
+) -> PyEITMesh:
     """
     Wraps a image to the PyEITMesh unit circle area.
 
-    input:   - 200x200 image
-             - n_el: number of electrodes
-             - perm_empty_gnd: perm of the empty ground
-             - perm_obj: perm ob the object area
-             - h0: refinement of the mesh
+    Parameters
+    ----------
+    IMG : np.ndarray
+        200x200 image
+    n_el : int
+        Number of electrodes.
+    perm_empty_gnd : float
+        Permittivity of the empty ground.
+    perm_obj : float
+        Permittivity ob the object area.
+    h0 : float
+        Refinement of the mesh.
 
-    return: mesh_obj (PyEITMesh)
+    Returns
+    -------
+    mesh_obj: PyEITMesh
     """
 
     mesh_obj = create(n_el=n_el, h0=h0)

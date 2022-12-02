@@ -1,9 +1,18 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
+from . import PyEITMesh
 
 
-def plot_mesh(mesh_obj):
-    """Plot PyEITMesh"""
+def plot_mesh(mesh_obj: PyEITMesh) -> None:
+    """
+    Plot a PyEITMesh
+
+    Parameters
+    ----------
+    mesh_obj : PyEITMesh
+
+    """
     plt.style.use("default")
     pts = mesh_obj.node
     tri = mesh_obj.element
