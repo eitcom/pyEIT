@@ -41,7 +41,7 @@ class Forward:
         self.assemble_pde(self.mesh.perm)
 
     def assemble_pde(
-            self, perm: Optional[Union[int, float, complex, np.ndarray]] = None
+        self, perm: Optional[Union[int, float, complex, np.ndarray]] = None
     ) -> None:
         """
         assemble PDE
@@ -118,9 +118,11 @@ class Forward:
         b = np.zeros((ex_mat.shape[0] if ex_mat is not None else 1, self.mesh.n_nodes))
         b[np.arange(b.shape[0])[:, None], self.mesh.el_pos[ex_mat]] = [1, -1]
 
-        result = np.empty((ex_mat.shape[0] if ex_mat is not None else 1, self.kg.shape[0]))
+        result = np.empty(
+            (ex_mat.shape[0] if ex_mat is not None else 1, self.kg.shape[0])
+        )
 
-        #TODO Need to inspect this deeper
+        # TODO Need to inspect this deeper
         for i in range(result.shape[0]):
             result[i] = sparse.linalg.spsolve(self.kg, b[i])
 
@@ -158,7 +160,7 @@ class EITForward(Forward):
         self.protocol = protocol
 
     def _check_mesh_protocol_compatibility(
-            self, mesh: PyEITMesh, protocol: PyEITProtocol
+        self, mesh: PyEITMesh, protocol: PyEITProtocol
     ) -> None:
         """
         Check if mesh and protocol are compatible
@@ -188,8 +190,8 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
             )
 
     def solve_eit(
-            self,
-            perm: Optional[Union[int, float, complex, np.ndarray]] = None,
+        self,
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
     ) -> np.ndarray:
         """
         EIT simulation, generate forward v measurements
@@ -215,9 +217,9 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         return v.reshape(-1)
 
     def compute_jac(
-            self,
-            perm: Optional[Union[int, float, complex, np.ndarray]] = None,
-            normalize: bool = False,
+        self,
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
+        normalize: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Compute the Jacobian matrix and initial boundary voltage meas.
@@ -259,8 +261,20 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         se = np.full((self.protocol.ex_mat.shape[0],) + self.se.shape, self.se)
 
         _jac = np.array(
-            [np.array(list(map(lambda r, s, y: np.dot(np.dot(r[:, ijk], s[e]), y[ijk]), ri, se, f))).T for (e, ijk) in
-             enumerate(self.mesh.element)]).T
+            [
+                np.array(
+                    list(
+                        map(
+                            lambda r, s, y: np.dot(np.dot(r[:, ijk], s[e]), y[ijk]),
+                            ri,
+                            se,
+                            f,
+                        )
+                    )
+                ).T
+                for (e, ijk) in enumerate(self.mesh.element)
+            ]
+        ).T
 
         # for i, ex_line in enumerate(self.protocol.ex_mat):
         #     f = self.solve(ex_line)
@@ -281,8 +295,8 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         return jac, v0
 
     def compute_b_matrix(
-            self,
-            perm: Optional[Union[int, float, complex, np.ndarray]] = None,
+        self,
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
     ):
         """
         Compute back-projection mappings (smear matrix)
@@ -342,7 +356,7 @@ def _smear(f: np.ndarray, fb: np.ndarray, pairs: np.ndarray):
 
 
 def smear_nd(
-        f: np.ndarray, fb: np.ndarray, meas_pattern: np.ndarray, new: bool = False
+    f: np.ndarray, fb: np.ndarray, meas_pattern: np.ndarray, new: bool = False
 ) -> np.ndarray:
     """
     Build smear matrix B for bp
@@ -436,7 +450,7 @@ def subtract_row_vectorized(v: np.ndarray, meas_pattern: np.ndarray):
 
 
 def assemble(
-        ke: np.ndarray, tri: np.ndarray, perm: np.ndarray, n_pts: int, ref: int = 0
+    ke: np.ndarray, tri: np.ndarray, perm: np.ndarray, n_pts: int, ref: int = 0
 ):
     """
     Assemble the stiffness matrix (using sparse matrix)

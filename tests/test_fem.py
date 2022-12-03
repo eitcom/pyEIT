@@ -137,7 +137,9 @@ class TestFem(unittest.TestCase):
         n_el = 16
         n_rows = 3
         v = np.full((n_rows, n_el), np.random.randn(n_el))
-        diff_pairs = np.array([[np.random.permutation(n_el)[:2] for _ in range(n_exe)]]*n_rows)
+        diff_pairs = np.array(
+            [[np.random.permutation(n_el)[:2] for _ in range(n_exe)]] * n_rows
+        )
         vd_truth = np.zeros((n_rows, 10))
         for i in range(vd_truth.shape[0]):
             vd_truth[i] = np.array([v[i, d[0]] - v[i, d[1]] for d in diff_pairs[i]])

@@ -17,12 +17,12 @@ class JAC(EitBase):
     """A sensitivity-based EIT imaging class"""
 
     def setup(
-            self,
-            p: float = 0.20,
-            lamb: float = 0.001,
-            method: str = "kotre",
-            perm: Optional[Union[int, float, complex, np.ndarray]] = None,
-            jac_normalized: bool = False,
+        self,
+        p: float = 0.20,
+        lamb: float = 0.001,
+        method: str = "kotre",
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
+        jac_normalized: bool = False,
     ) -> None:
         """
         Setup JAC solver
@@ -57,7 +57,7 @@ class JAC(EitBase):
         self.is_ready = True
 
     def _compute_h(  # type: ignore[override]
-            self, jac: np.ndarray, p: float, lamb: float, method: str = "kotre"
+        self, jac: np.ndarray, p: float, lamb: float, method: str = "kotre"
     ):
         """
         Compute self.H matrix for JAC solver
@@ -173,19 +173,19 @@ class JAC(EitBase):
         return np.exp(ds) - 1.0
 
     def gn(
-            self,
-            v: np.ndarray,
-            x0: Optional[Union[int, float, complex, np.ndarray]] = None,
-            maxiter: int = 1,
-            gtol: float = 1e-4,
-            p: Optional[float] = None,
-            lamb: Optional[float] = None,
-            lamb_decay: float = 1.0,
-            lamb_min: float = 0.0,
-            method: str = "kotre",
-            verbose: bool = False,
-            generator: bool = False,
-            **kwargs,
+        self,
+        v: np.ndarray,
+        x0: Optional[Union[int, float, complex, np.ndarray]] = None,
+        maxiter: int = 1,
+        gtol: float = 1e-4,
+        p: Optional[float] = None,
+        lamb: Optional[float] = None,
+        lamb_decay: float = 1.0,
+        lamb_min: float = 0.0,
+        method: str = "kotre",
+        verbose: bool = False,
+        generator: bool = False,
+        **kwargs,
     ):
         """
         Gaussian Newton Static Solver

@@ -23,10 +23,11 @@ def compute_first():
 
 # Real time update version
 
+
 def real_time():
     colorbar = None
     for ds in eit.gn(
-            v1, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True, generator=True
+        v1, lamb_decay=0.1, lamb_min=1e-5, maxiter=20, verbose=True, generator=True
     ):
         im = ax.tripcolor(xx, yy, tri, np.real(ds), alpha=1.0, cmap="viridis")
         # Update the colorbar as the min and max values are changing
