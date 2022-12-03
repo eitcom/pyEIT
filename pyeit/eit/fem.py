@@ -41,7 +41,7 @@ class Forward:
         self.assemble_pde(self.mesh.perm)
 
     def assemble_pde(
-        self, perm: Optional[Union[int, float, complex, np.ndarray]] = None
+            self, perm: Optional[Union[int, float, complex, np.ndarray]] = None
     ) -> None:
         """
         assemble PDE
@@ -92,6 +92,41 @@ class Forward:
         # solve
         return scipy.sparse.linalg.spsolve(self.kg, b)
 
+    def solve_vectorized(self, ex_mat: np.ndarray = None) -> np.ndarray:
+        """
+        Calculate and compute the potential distribution (complex-valued)
+        corresponding to the permittivity distribution `perm ` for a
+        excitation contained specified by `ex_line` (Neumann BC)
+
+        Parameters
+        ----------
+        ex_line : np.ndarray, optional
+            stimulation/excitation matrix, of shape (2,)
+
+        Returns
+        -------
+        np.ndarray
+            potential on nodes ; shape (n_pts,)
+
+        Notes
+        -----
+        Currently, only simple electrode model is supported,
+        CEM (complete electrode model) is under development.
+        """
+
+        # using natural boundary conditions
+        b = np.zeros((ex_mat.shape[0] if ex_mat is not None else 1, self.mesh.n_nodes))
+        b[np.arange(b.shape[0])[:, None], self.mesh.el_pos[ex_mat]] = [1, -1]
+
+        result = np.empty((ex_mat.shape[0] if ex_mat is not None else 1, self.kg.shape[0]))
+
+        #TODO Need to inspect this deeper
+        for i in range(result.shape[0]):
+            result[i] = sparse.linalg.spsolve(self.kg, b[i])
+
+        # solve
+        return result
+
 
 class EITForward(Forward):
     """EIT Forward simulation, depends on mesh and protocol"""
@@ -123,7 +158,7 @@ class EITForward(Forward):
         self.protocol = protocol
 
     def _check_mesh_protocol_compatibility(
-        self, mesh: PyEITMesh, protocol: PyEITProtocol
+            self, mesh: PyEITMesh, protocol: PyEITProtocol
     ) -> None:
         """
         Check if mesh and protocol are compatible
@@ -153,8 +188,8 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
             )
 
     def solve_eit(
-        self,
-        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
+            self,
+            perm: Optional[Union[int, float, complex, np.ndarray]] = None,
     ) -> np.ndarray:
         """
         EIT simulation, generate forward v measurements
@@ -171,17 +206,18 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
             simulated boundary voltage measurements; shape(n_exe*n_el,)
         """
         self.assemble_pde(perm)
-        v = np.zeros((self.protocol.n_exc, self.protocol.n_meas), dtype=self.mesh.dtype)
-        for i, ex_line in enumerate(self.protocol.ex_mat):
-            f = self.solve(ex_line)
-            v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
+        # for i, ex_line in enumerate(self.protocol.ex_mat):
+        #     f = self.solve(ex_line)
+        #     v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
+        f = self.solve_vectorized(self.protocol.ex_mat)
+        v = subtract_row_vectorized(f[:, self.mesh.el_pos], self.protocol.meas_mat)
 
         return v.reshape(-1)
 
     def compute_jac(
-        self,
-        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
-        normalize: bool = False,
+            self,
+            perm: Optional[Union[int, float, complex, np.ndarray]] = None,
+            normalize: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Compute the Jacobian matrix and initial boundary voltage meas.
@@ -212,15 +248,28 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
             (self.protocol.n_exc, self.protocol.n_meas, self.mesh.n_elems),
             dtype=self.mesh.dtype,
         )
-        v = np.zeros((self.protocol.n_exc, self.protocol.n_meas), dtype=self.mesh.dtype)
-        for i, ex_line in enumerate(self.protocol.ex_mat):
-            f = self.solve(ex_line)
-            v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
-            ri = subtract_row(r_el, self.protocol.meas_mat[i])
-            # Build Jacobian matrix column wise (element wise)
-            #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
-            for (e, ijk) in enumerate(self.mesh.element):
-                _jac[i, :, e] = np.dot(np.dot(ri[:, ijk], self.se[e]), f[ijk])
+        # v = np.zeros((self.protocol.n_exc, self.protocol.n_meas), dtype=self.mesh.dtype)
+
+        f = self.solve_vectorized(self.protocol.ex_mat)
+        r_el = np.full((self.protocol.ex_mat.shape[0],) + r_el.shape, r_el)
+        v = subtract_row_vectorized(f[:, self.mesh.el_pos], self.protocol.meas_mat)
+        ri = subtract_row_vectorized(r_el, self.protocol.meas_mat)
+        # Build Jacobian matrix column wise (element wise)
+        #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
+        se = np.full((self.protocol.ex_mat.shape[0],) + self.se.shape, self.se)
+
+        _jac = np.array(
+            [np.array(list(map(lambda r, s, y: np.dot(np.dot(r[:, ijk], s[e]), y[ijk]), ri, se, f))).T for (e, ijk) in
+             enumerate(self.mesh.element)]).T
+
+        # for i, ex_line in enumerate(self.protocol.ex_mat):
+        #     f = self.solve(ex_line)
+        #     v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
+        #     ri = subtract_row(r_el, self.protocol.meas_mat[i])
+        #     # Build Jacobian matrix column wise (element wise)
+        #     #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
+        #     for (e, ijk) in enumerate(self.mesh.element):
+        #         _jac[i, :, e] = np.dot(np.dot(ri[:, ijk], self.se[e]), f[ijk])
 
         # measurement protocol
         jac = np.concatenate(_jac)
@@ -232,8 +281,8 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         return jac, v0
 
     def compute_b_matrix(
-        self,
-        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
+            self,
+            perm: Optional[Union[int, float, complex, np.ndarray]] = None,
     ):
         """
         Compute back-projection mappings (smear matrix)
@@ -293,7 +342,7 @@ def _smear(f: np.ndarray, fb: np.ndarray, pairs: np.ndarray):
 
 
 def smear_nd(
-    f: np.ndarray, fb: np.ndarray, meas_pattern: np.ndarray, new: bool = False
+        f: np.ndarray, fb: np.ndarray, meas_pattern: np.ndarray, new: bool = False
 ) -> np.ndarray:
     """
     Build smear matrix B for bp
@@ -363,8 +412,31 @@ def subtract_row(v: np.ndarray, meas_pattern: np.ndarray):
     return v[meas_pattern[:, 0]] - v[meas_pattern[:, 1]]
 
 
+def subtract_row_vectorized(v: np.ndarray, meas_pattern: np.ndarray):
+    """
+    Build the voltage differences on axis=1 using the meas_pattern.
+    v_diff[k] = v[i, :] - v[j, :]
+
+    New implementation 33% less computation time
+
+    Parameters
+    ----------
+    v: np.ndarray
+        Nx1 boundary measurements vector or NxM matrix; shape (n_exc,n_el,1)
+    meas_pattern: np.ndarray
+        Nx2 subtract_row pairs; shape (n_exc, n_meas, 2)
+
+    Returns
+    -------
+    np.ndarray
+        difference measurements v_diff
+    """
+    idx = np.indices(meas_pattern.shape[:-1])[0]
+    return v[idx, meas_pattern[:, :, 0]] - v[idx, meas_pattern[:, :, 1]]
+
+
 def assemble(
-    ke: np.ndarray, tri: np.ndarray, perm: np.ndarray, n_pts: int, ref: int = 0
+        ke: np.ndarray, tri: np.ndarray, perm: np.ndarray, n_pts: int, ref: int = 0
 ):
     """
     Assemble the stiffness matrix (using sparse matrix)
