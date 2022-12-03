@@ -131,6 +131,21 @@ class TestFem(unittest.TestCase):
         self.assertTrue(vd_truth.size == vd.size)
         self.assertTrue(np.allclose(vd.ravel(), vd_truth.ravel()))
 
+    def test_subtract_row_vectorized(self):
+        """calculate f[diff_op[0]] - f[diff_op[1]]"""
+        n_exe = 10
+        n_el = 16
+        n_rows = 3
+        v = np.full((n_rows, n_el), np.random.randn(n_el))
+        diff_pairs = np.array([[np.random.permutation(n_el)[:2] for _ in range(n_exe)]]*n_rows)
+        vd_truth = np.zeros((n_rows, 10))
+        for i in range(vd_truth.shape[0]):
+            vd_truth[i] = np.array([v[i, d[0]] - v[i, d[1]] for d in diff_pairs[i]])
+        vd = pyeit.eit.fem.subtract_row_vectorized(v, diff_pairs)
+
+        self.assertTrue(vd_truth.size == vd.size)
+        self.assertTrue(np.allclose(vd.ravel(), vd_truth.ravel()))
+
     def test_k(self):
         """test Forward.kg using a simple, determinant mesh structure"""
         k_truth = np.array(
