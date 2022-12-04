@@ -115,12 +115,9 @@ class Forward:
         """
 
         # using natural boundary conditions
-        b = np.zeros((ex_mat.shape[0] if ex_mat is not None else 1, self.mesh.n_nodes))
+        b = np.zeros((ex_mat.shape[0], self.mesh.n_nodes))
         b[np.arange(b.shape[0])[:, None], self.mesh.el_pos[ex_mat]] = [1, -1]
-
-        result = np.empty(
-            (ex_mat.shape[0] if ex_mat is not None else 1, self.kg.shape[0])
-        )
+        result = np.empty((ex_mat.shape[0], self.kg.shape[0]))
 
         # TODO Need to inspect this deeper
         for i in range(result.shape[0]):
@@ -259,7 +256,6 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         ri = subtract_row_vectorized(r_el, self.protocol.meas_mat)
         # Build Jacobian matrix column wise (element wise)
         #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
-
         for i in range(self.protocol.ex_mat.shape[0]):
             for (e, ijk) in enumerate(self.mesh.element):
                 _jac[i, :, e] = np.dot(np.dot(ri[i][:, ijk], self.se[e]), f[i][ijk])
@@ -268,8 +264,6 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         #     f = self.solve(ex_line)
         #     v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
         #     ri = subtract_row(r_el, self.protocol.meas_mat[i])
-        #     # Build Jacobian matrix column wise (element wise)
-        #     #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
         #     for (e, ijk) in enumerate(self.mesh.element):
         #         _jac[i, :, e] = np.dot(np.dot(ri[:, ijk], self.se[e]), f[ijk])
 
