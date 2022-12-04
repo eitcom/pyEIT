@@ -258,23 +258,10 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         ri = subtract_row_vectorized(r_el, self.protocol.meas_mat)
         # Build Jacobian matrix column wise (element wise)
         #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
-        se = np.full((self.protocol.ex_mat.shape[0],) + self.se.shape, self.se)
 
-        _jac = np.array(
-            [
-                np.array(
-                    list(
-                        map(
-                            lambda r, s, y: np.dot(np.dot(r[:, ijk], s[e]), y[ijk]),
-                            ri,
-                            se,
-                            f,
-                        )
-                    )
-                ).T
-                for (e, ijk) in enumerate(self.mesh.element)
-            ]
-        ).T
+        for i in range(self.protocol.ex_mat.shape[0]):
+            for (e, ijk) in enumerate(self.mesh.element):
+                _jac[i, :, e] = np.dot(np.dot(ri[i][:, ijk], self.se[e]), f[i][ijk])
 
         # for i, ex_line in enumerate(self.protocol.ex_mat):
         #     f = self.solve(ex_line)
