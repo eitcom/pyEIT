@@ -6,12 +6,29 @@ from __future__ import absolute_import, division, print_function
 
 import matplotlib.pyplot as plt
 import numpy as np
+
 import pyeit.eit.jac as jac
 import pyeit.eit.protocol as protocol
 from pyeit.eit.fem import EITForward
 from pyeit.mesh import create, set_perm
 from pyeit.mesh.wrapper import PyEITAnomaly_Circle
-from datetime import datetime
+
+# Mesh shape is specified with fd parameter in the instantiation, e.g:
+# from pyeit.mesh.shape import thorax
+# mesh_obj, el_pos = create(n_el, h0=0.05, fd=thorax)  # Default : fd=circle
+n_el = 64  # test fem_vectorize
+mesh_obj = create(n_el, h0=0.05)
+# set anomaly (altering the permittivity in the mesh)
+anomaly = [
+    PyEITAnomaly_Circle(center=[0.4, 0.4], r=0.2, perm=10.0),
+    PyEITAnomaly_Circle(center=[-0.4, -0.4], r=0.2, perm=0.1),
+]
+# background changed to values other than 1.0 requires more iterations
+mesh_new = set_perm(mesh_obj, anomaly=anomaly, background=2.0)
+# extract node, element, perm
+xx, yy = mesh_obj.node[:, 0], mesh_obj.node[:, 1]
+tri = mesh_obj.element
+perm = mesh_new.perm
 
 
 # Calculate then show the results
@@ -42,29 +59,10 @@ def real_time():
 # Very important when using the generator version, otherwise the program exits automatically
 
 if __name__ == "__main__":
-    # Mesh shape is specified with fd parameter in the instantiation, e.g:
-    # from pyeit.mesh.shape import thorax
-    # mesh_obj, el_pos = create(n_el, h0=0.05, fd=thorax)  # Default : fd=circle
-    n_el = 16  # test fem_vectorize
-    mesh_obj = create(n_el, h0=0.05)
-    # set anomaly (altering the permittivity in the mesh)
-    anomaly = [
-        PyEITAnomaly_Circle(center=[0.4, 0.4], r=0.2, perm=10.0),
-        PyEITAnomaly_Circle(center=[-0.4, -0.4], r=0.2, perm=0.1),
-    ]
-    # background changed to values other than 1.0 requires more iterations
-    mesh_new = set_perm(mesh_obj, anomaly=anomaly, background=2.0)
-    # extract node, element, perm
-    xx, yy = mesh_obj.node[:, 0], mesh_obj.node[:, 1]
-    tri = mesh_obj.element
-    perm = mesh_new.perm
-
-    start_time = datetime.now()
     # %% calculate simulated data
     protocol_obj = protocol.create(n_el, dist_exc=1, step_meas=1, parser_meas="std")
     fwd = EITForward(mesh_obj, protocol_obj)
     v1 = fwd.solve_eit(perm=mesh_new.perm)
-    print(f"EIT solve time: {datetime.now() - start_time}s")
 
     # plot
     fig, ax = plt.subplots(figsize=(9, 6))
@@ -85,8 +83,6 @@ if __name__ == "__main__":
     ax.axis("equal")
     ax.set_title("Conductivities Reconstructed")
 
-    start_time = datetime.now()
     compute_first()
     # real_time()
-    print(f"Image reconstruction time: {datetime.now() - start_time}s")
     plt.show(block=True)
