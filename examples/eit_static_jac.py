@@ -39,8 +39,6 @@ def compute_first():
 
 
 # Real time update version
-
-
 def real_time():
     colorbar = None
     for ds in eit.gn(
