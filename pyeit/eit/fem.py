@@ -92,7 +92,7 @@ class Forward:
         # solve
         return scipy.sparse.linalg.spsolve(self.kg, b)
 
-    def solve_vectorized(self, ex_mat: np.ndarray = None) -> np.ndarray:
+    def solve_vectorized(self, ex_mat: np.ndarray) -> np.ndarray:
         """
         Calculate and compute the potential distribution (complex-valued)
         corresponding to the permittivity distribution `perm ` for a
@@ -192,7 +192,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
     def solve_eit(
         self,
         perm: Optional[Union[int, float, complex, np.ndarray]] = None,
-    ) -> np.ndarray:
+    ):
         """
         EIT simulation, generate forward v measurements
 
@@ -208,6 +208,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
             simulated boundary voltage measurements; shape(n_exe*n_el,)
         """
         self.assemble_pde(perm)
+        # v = np.zeros((self.protocol.n_exc, self.protocol.n_meas), dtype=self.mesh.dtype)
         # for i, ex_line in enumerate(self.protocol.ex_mat):
         #     f = self.solve(ex_line)
         #     v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
