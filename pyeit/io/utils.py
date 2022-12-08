@@ -30,7 +30,8 @@ def get_date_from_folder(file_str):
     'DATA2015-01-29-16-57-30/', '2020-10-11-03-48-52/'
     """
     f = file_str.strip()
-    f = f[:-1]  # remove trailing '/'
+    if f[:-1] == "/":
+        f = f[:-1]  # remove trailing '/'
     f = f.replace("DATA", "")
     # replace the 3rd occurrence of '-'
     w = [m.start() for m in re.finditer(r"-", f)][2]
