@@ -125,7 +125,7 @@ class ET3:
         # other formats
         if data_type == "et0":  # et0: convert voltage to Ohm
             scale = gain_table(p["gain"], p["current"])
-        if p["version"] == 4 and self.ext == "erd":
+        if p["version"] == 4 or self.ext == "erd":
             data_format = "erd"
             date0 = "1970/01/01"  # erd: posix format
             ts_scale = 0.001
