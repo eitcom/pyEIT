@@ -4,7 +4,8 @@ import numpy as np
 import struct
 import trimesh
 import shapely
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, Point, MultiLineString, LineString
+import shapely.affinity
 from . import PyEITMesh
 
 
@@ -190,7 +191,7 @@ def place_electrodes_equal_spacing(
 
 def create_exterior_polygon(
     trimesh_obj: trimesh.Trimesh,
-) -> shapely.geometry.Polygon:
+) -> Polygon:
     """
     Create a polygon representing the exterior edge of the input mesh. The polygon is created by identifying the edges
     of the input mesh which are only referenced by one triangle. These are the edges of the polygon.
@@ -227,11 +228,8 @@ def create_exterior_polygon(
         [np.frombuffer(k, dtype=np.int64) for k, v in edge_dict.items() if v == 1]
     )
 
-    lines = shapely.geometry.MultiLineString(
-        [
-            shapely.geometry.LineString(line)
-            for line in trimesh_obj.vertices[outer_edges]
-        ]
+    lines = MultiLineString(
+        [LineString(line) for line in trimesh_obj.vertices[outer_edges]]
     )
     merged_line = shapely.ops.linemerge(lines)
 
@@ -276,7 +274,7 @@ def perimeter_point_from_centroid(
         polygon.centroid.x + max_distance * np.sin(angle),
         polygon.centroid.y + max_distance * np.cos(angle),
     ]
-    line = shapely.geometry.LineString((polygon.centroid, endpoint))
+    line = LineString((polygon.centroid, endpoint))
     perimeter_point = line.intersection(polygon.exterior)
 
     output_obj["intersecting_line"] = line
@@ -409,13 +407,13 @@ def map_points_to_perimeter(
     exterior_polygon = create_exterior_polygon(trimesh_obj)
 
     # move points centroid to mesh centroid
-    points_polygon_uncentered = shapely.geometry.Polygon(points)
+    points_polygon_uncentered = Polygon(points)
     offset = (
         points_polygon_uncentered.centroid.x - exterior_polygon.centroid.x,
         points_polygon_uncentered.centroid.y - exterior_polygon.centroid.y,
     )
     points = [(point[0] - offset[0], point[1] - offset[1]) for point in points]
-    points_polygon = shapely.geometry.Polygon(points)
+    points_polygon = Polygon(points)
 
     b1 = exterior_polygon.bounds
     b2 = points_polygon.bounds
@@ -433,7 +431,7 @@ def map_points_to_perimeter(
     intersections = []
     intersecting_lines = []
     for point in points:
-        line = shapely.geometry.LineString((exterior_polygon.centroid, point))
+        line = LineString((exterior_polygon.centroid, point))
         scale = max_distance / line.length
         line = shapely.affinity.scale(line, scale, scale, 1, exterior_polygon.centroid)
         intersecting_lines.append(line)
