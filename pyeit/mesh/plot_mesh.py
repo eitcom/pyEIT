@@ -23,7 +23,7 @@ def plot_mesh(mesh_obj: PyEITMesh) -> None:
         x,
         y,
         tri,
-        np.real(mesh_obj.perm),
+        np.real(mesh_obj.perm_array),
         edgecolors="k",
         shading="flat",
         alpha=0.5,
