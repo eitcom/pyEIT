@@ -53,8 +53,8 @@ def fmmu_index(n_el=16, dist=8, step=1):
 
     m_array = np.array(m_array)
     N = m_array.shape[0]
-    left_sel = np.zeros(N, dtype=np.bool)  # 192
-    right_sel = np.zeros(N, dtype=np.bool)
+    left_sel = np.zeros(N, dtype=bool)  # 192
+    right_sel = np.zeros(N, dtype=bool)
     for i, nm in enumerate(m_array):
         n = nm[0]
         if n in left_el:
