@@ -34,6 +34,8 @@ def circle(pts, pc: Union[np.ndarray, List] = [0, 0], r: float = 1.0) -> Any:
     ----
     copied and modified from https://github.com/ckhroulev/py_distmesh2d
     """
+    if len(pc) != pts.shape[1]:
+        pc = [0] * pts.shape[1]
     return dist(pts - pc) - r
 
 
