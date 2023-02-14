@@ -33,7 +33,6 @@ def load(fstr, mirror=False) -> PyEITMesh:
     # note: seek is global position,
     # fh can be advanced using read in sub-function
     with open(fstr, "rb") as fh:
-
         # 0. extract BMP
         # (offset=bmp_size)
         bmp_size = get_bmp_size(fh)

@@ -126,7 +126,7 @@ def multi_circle(
 
     # 2. append fix points on layers
     for layer in r_layer:
-        for (i, ri) in enumerate(layer):
+        for i, ri in enumerate(layer):
             p_fix_layer = ri * r * fix_points_circle(offset=i / 2.0, ppl=ppl)
             p_fix = np.vstack([p_fix, p_fix_layer])
 
@@ -142,7 +142,7 @@ def multi_circle(
     r_center = np.sqrt(np.sum(t_center**2, axis=1))
 
     # update permittivity
-    for (layer, a) in zip(r_layer, perm_per_layer):
+    for layer, a in zip(r_layer, perm_per_layer):
         r0, r1 = np.min(layer), np.max(layer)
         idx = (r0 < r_center) & (r_center < r1)
         perm[idx] = a

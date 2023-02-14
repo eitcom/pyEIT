@@ -250,7 +250,6 @@ class JAC(EitBase):
         def generator_gn():
             nonlocal x0, lamb
             for i in range(maxiter):
-
                 # forward solver,
                 jac, v0 = self.fwd.compute_jac(x0)
                 # Residual

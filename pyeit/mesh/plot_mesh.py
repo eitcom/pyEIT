@@ -4,7 +4,7 @@ import numpy as np
 from . import PyEITMesh
 
 
-def plot_mesh(mesh_obj: PyEITMesh) -> None:
+def plot_mesh(mesh_obj: PyEITMesh):
     """
     Plot a PyEITMesh
 
@@ -38,3 +38,36 @@ def plot_mesh(mesh_obj: PyEITMesh) -> None:
     ax.set_ylim([-1.2, 1.2])
     ax.set_xlim([-1.2, 1.2])
     fig.set_size_inches(6, 6)
+    plt.show()
+
+    return fig
+
+
+def plot_distmesh(p, t, el_pos=[]):
+    """helper function to plot distmesh (in examples)"""
+    fig, ax = plt.subplots()
+    ax.triplot(p[:, 0], p[:, 1], t)
+    mesh_center = np.array([np.median(p[:, 0]), np.median(p[:, 1])])
+    if len(el_pos) > 0:
+        ax.plot(p[el_pos, 0], p[el_pos, 1], "ro")  # ro : red circle
+    for i, el in enumerate(el_pos):
+        xy = np.array([p[el, 0], p[el, 1]])
+        text_offset = (xy - mesh_center) * [1, -1] * 0.05
+        ax.annotate(
+            str(i + 1),
+            xy=xy,
+            xytext=text_offset,
+            textcoords="offset points",
+            color="k",
+            fontsize=15,
+            ha="center",
+            va="center",
+        )
+    xmax, ymax = np.max(p, axis=0)
+    xmin, ymin = np.min(p, axis=0)
+    ax.set_xlim([1.2 * xmin, 1.2 * xmax])
+    ax.set_ylim([1.2 * ymin, 1.2 * ymax])
+    ax.set_aspect("equal")
+    plt.show()
+
+    return fig

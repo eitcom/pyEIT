@@ -184,7 +184,6 @@ def zero_rearrange_index(ex_mtx):
 
 
 if __name__ == "__main__":
-
     # .et4 file
     et_file = r"C:\xeit\eit_20190929-103342.et4"
     # et_file = "../../datasets/s00-02.et4"

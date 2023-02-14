@@ -145,7 +145,6 @@ def test_create_exterior_polygons_double_circle():
 
 
 def test_perimeter_point_from_centroid():
-
     mesh_obj = load_mesh(parent_dir + "/data/Rectangle.STL")
     trimesh_obj = trimesh.Trimesh(mesh_obj.node, mesh_obj.element)
     rectangle = create_exterior_polygon(trimesh_obj)

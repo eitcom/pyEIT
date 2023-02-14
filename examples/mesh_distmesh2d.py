@@ -8,39 +8,8 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pyeit.mesh import shape
-from pyeit.mesh import distmesh
+from pyeit.mesh import shape, distmesh, plot_distmesh
 from pyeit.mesh.plot import voronoi_plot
-
-
-def mesh_plot(p, t, el_pos=[]):
-    """helper function to plot mesh"""
-    fig, ax = plt.subplots()
-    ax.triplot(p[:, 0], p[:, 1], t)
-    mesh_center = np.array([np.median(p[:, 0]), np.median(p[:, 1])])
-    if len(el_pos) > 0:
-        ax.plot(p[el_pos, 0], p[el_pos, 1], "ro")  # ro : red circle
-    for i, el in enumerate(el_pos):
-        xy = np.array([p[el, 0], p[el, 1]])
-        text_offset = (xy - mesh_center) * [1, -1] * 0.05
-        ax.annotate(
-            str(i + 1),
-            xy=xy,
-            xytext=text_offset,
-            textcoords="offset points",
-            color="k",
-            fontsize=15,
-            ha="center",
-            va="center",
-        )
-    xmax, ymax = np.max(p, axis=0)
-    xmin, ymin = np.min(p, axis=0)
-    ax.set_xlim([1.2 * xmin, 1.2 * xmax])
-    ax.set_ylim([1.2 * ymin, 1.2 * ymax])
-    ax.set_aspect("equal")
-    plt.show()
-
-    return fig
 
 
 def example1():
@@ -63,7 +32,7 @@ def example1():
 
     # build triangle
     p, t = distmesh.build(_fd, _fh, pfix=p_fix, h0=0.05)
-    mesh_plot(p, t, el_pos)
+    plot_distmesh(p, t, el_pos)
 
 
 def example2():
@@ -74,7 +43,7 @@ def example2():
 
     # build triangle
     p, t = distmesh.build(_fd, shape.area_uniform, h0=0.1)
-    mesh_plot(p, t)
+    plot_distmesh(p, t)
 
 
 def example3():
@@ -92,7 +61,7 @@ def example3():
 
     # build triangle
     p, t = distmesh.build(_fd, _fh, h0=0.025)
-    mesh_plot(p, t)
+    plot_distmesh(p, t)
 
 
 def example4():
@@ -106,7 +75,7 @@ def example4():
 
     # build triangle
     p, t = distmesh.build(_fd, shape.area_uniform, bbox=[[-2, -1], [2, 1]], h0=0.15)
-    mesh_plot(p, t)
+    plot_distmesh(p, t)
 
 
 def example5():
@@ -130,7 +99,7 @@ def example5():
 
     # build
     p, t = distmesh.build(_fd, shape.area_uniform, pfix=p_fix, h0=0.15)
-    mesh_plot(p, t)
+    plot_distmesh(p, t)
 
 
 def example_thorax():
@@ -141,7 +110,7 @@ def example_thorax():
     p, t = distmesh.build(
         fd=shape.thorax, fh=shape.area_uniform, pfix=shape.thorax_pfix, h0=0.1
     )
-    mesh_plot(p, t, el_pos)
+    plot_distmesh(p, t, el_pos)
 
 
 def example_head_symm():
@@ -151,7 +120,7 @@ def example_head_symm():
     p, t = distmesh.build(
         fd=shape.head_symm, fh=shape.area_uniform, pfix=shape.head_symm_pfix, h0=0.1
     )
-    mesh_plot(p, t, el_pos)
+    plot_distmesh(p, t, el_pos)
 
 
 def example_voronoi_plot():
@@ -187,7 +156,7 @@ def example_intersect():
     # generate mesh
     bbox = [[-2, -2], [2, 2]]
     p, t = distmesh.build(_fd, shape.area_uniform, pfix=p_fix, bbox=bbox, h0=0.1)
-    mesh_plot(p, t, el_pos)
+    plot_distmesh(p, t, el_pos)
 
 
 if __name__ == "__main__":

@@ -138,7 +138,6 @@ class MeshCircle:
         # thus k is not increasing and inner_now is reused.
         k = 0
         for j in range(ppl_now):
-
             # circular numbering in current layer
             outer_now = index_now + j
             outer_next = index_now + (j + 1) % ppl_now

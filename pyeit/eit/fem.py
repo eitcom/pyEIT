@@ -257,7 +257,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
         # Build Jacobian matrix column wise (element wise)
         #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
         for i in range(self.protocol.ex_mat.shape[0]):
-            for (e, ijk) in enumerate(self.mesh.element):
+            for e, ijk in enumerate(self.mesh.element):
                 _jac[i, :, e] = np.dot(np.dot(ri[i][:, ijk], self.se[e]), f[i][ijk])
 
         # for i, ex_line in enumerate(self.protocol.ex_mat):
