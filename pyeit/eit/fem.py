@@ -180,12 +180,6 @@ class EITForward(Forward):
                 stacklevel=2,
             )
 
-        if m_n_el < p_n_el:
-            raise ValueError(
-                f"Protocol is not compatible with mesh :\
-The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes "
-            )
-
     def solve_eit(
         self,
         perm: Optional[Union[int, float, complex, np.ndarray]] = None,
@@ -239,37 +233,39 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
             Jacobian matrix, initial boundary voltage meas. extimation v0
 
         """
-        # update k if necessary and calculate r=inv(k)
+        # update k if necessary and calculate r=inv(k), dense matrix, slow
         self.assemble_pde(perm)
-        r_el = la.inv(self.kg.toarray())[self.mesh.el_pos]
-
-        # calculate v, jac per excitation pattern (ex_line)
-        _jac = np.zeros(
-            (self.protocol.n_exc, self.protocol.n_meas, self.mesh.n_elems),
-            dtype=self.mesh.dtype,
-        )
-        # v = np.zeros((self.protocol.n_exc, self.protocol.n_meas), dtype=self.mesh.dtype)
-
+        r_mat = la.inv(self.kg.toarray())[self.mesh.el_pos]
+        r_el = np.full((self.protocol.ex_mat.shape[0],) + r_mat.shape, r_mat)
+        # nodes potential
         f = self.solve_vectorized(self.protocol.ex_mat)
-        r_el = np.full((self.protocol.ex_mat.shape[0],) + r_el.shape, r_el)
-        v = subtract_row_vectorized(f[:, self.mesh.el_pos], self.protocol.meas_mat)
+        f_el = f[:, self.mesh.el_pos]
+        # build measurements and node resistance
+        v = subtract_row_vectorized(f_el, self.protocol.meas_mat)
         ri = subtract_row_vectorized(r_el, self.protocol.meas_mat)
-        # Build Jacobian matrix column wise (element wise)
-        #    Je = Re*Ke*Ve = (nex3) * (3x3) * (3x1)
-        for i in range(self.protocol.ex_mat.shape[0]):
-            for e, ijk in enumerate(self.mesh.element):
-                _jac[i, :, e] = np.dot(np.dot(ri[i][:, ijk], self.se[e]), f[i][ijk])
+        v0 = v.reshape(-1)
 
+        ## calculate v, jac per excitation pattern (ex_line)
+        # _jac = np.zeros((self.protocol.n_meas, self.mesh.n_elems), dtype=self.mesh.dtype)
         # for i, ex_line in enumerate(self.protocol.ex_mat):
         #     f = self.solve(ex_line)
         #     v[i] = subtract_row(f[self.mesh.el_pos], self.protocol.meas_mat[i])
         #     ri = subtract_row(r_el, self.protocol.meas_mat[i])
         #     for (e, ijk) in enumerate(self.mesh.element):
         #         _jac[i, :, e] = np.dot(np.dot(ri[:, ijk], self.se[e]), f[ijk])
+        ## measurement protocol
+        # jac = np.concatenate(_jac)
 
-        # measurement protocol
-        jac = np.concatenate(_jac)
-        v0 = v.reshape(-1)
+        # Build Jacobian matrix element wise (column wise)
+        #    Je = Re*Ke*Ve = (n_measx3) * (3x3) * (3x1)
+        jac = np.zeros((self.protocol.n_meas, self.mesh.n_elems), dtype=self.mesh.dtype)
+        # for i in range(self.protocol.ex_mat.shape[0]):
+        indices = self.protocol.meas_mat[:, 2]
+        for e, ijk in enumerate(self.mesh.element):
+            # todo: multiple replica of f[ijk], not efficient
+            jac[:, e] = np.sum(
+                np.dot(ri[:, ijk], self.se[e]) * f[indices][:, ijk], axis=1
+            )
 
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])
         if normalize:
@@ -296,6 +292,16 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
             back-projection mappings (smear matrix); shape(n_exc, n_pts, 1), dtype= bool
         """
         self.assemble_pde(perm)
+        f = self.solve_vectorized(self.protocol.ex_mat)
+        f_el = f[:, self.mesh.el_pos]
+        return _smear_nd(f, f_el, self.protocol.meas_mat)
+
+    def compute_b_matrix_iter(
+        self,
+        perm: Optional[Union[int, float, complex, np.ndarray]] = None,
+    ):
+        """Compute back-projection mappings (smear matrix) [obsolete]"""
+        self.assemble_pde(perm)
         b_mat = np.zeros((self.protocol.n_exc, self.protocol.n_meas, self.mesh.n_nodes))
 
         for i in range(self.protocol.n_exc):
@@ -313,7 +319,7 @@ The mesh use {m_n_el} electrodes, and the protocol use only {p_n_el} electrodes 
 
 def _smear(f: np.ndarray, fb: np.ndarray, pairs: np.ndarray):
     """
-    Build smear matrix B for bp for one exitation
+    Build smear matrix B for bp for one exitation [obsolete]
 
     used for the smear matrix computation by @ChabaneAmaury
 
@@ -337,11 +343,9 @@ def _smear(f: np.ndarray, fb: np.ndarray, pairs: np.ndarray):
     return (f_min < f) & (f <= f_max)
 
 
-def smear_nd(
-    f: np.ndarray, fb: np.ndarray, meas_pattern: np.ndarray, new: bool = False
-) -> np.ndarray:
+def _smear_nd(f: np.ndarray, fb: np.ndarray, meas_pattern: np.ndarray) -> np.ndarray:
     """
-    Build smear matrix B for bp
+    Build smear matrix B for bp (vectorized version using exc_idx from meas_pattern)
 
     Parameters
     ----------
@@ -350,40 +354,26 @@ def smear_nd(
     fb: np.ndarray
         potential on adjacent electrodes; shape (n_exc, n_el)
     meas_pattern: np.ndarray
-        electrodes numbering pairs; shape (n_exc, n_meas, 2)
-    new : bool, optional
-        flag to use new matrices based computation, by default False.
-        If `False` to smear-computation from ChabaneAmaury is used
+        electrodes numbering pairs; shape (n_meas_tot, 3)
 
     Returns
     -------
     np.ndarray
-        back-projection (smear) matrix; shape (n_exc, n_meas, n_pts), dtype= bool
+        back-projection (smear) matrix; shape (n_meas_tot, n_pts), dtype= bool
     """
-    if new:
-        # new implementation not much faster! :(
-        idx_meas_0 = meas_pattern[:, :, 0]
-        idx_meas_1 = meas_pattern[:, :, 1]
-        n_exc = meas_pattern.shape[0]  # number of excitations
-        n_meas = meas_pattern.shape[1]  # number of measurements per excitations
-        n_pts = f.shape[1]  # number of nodes
-        idx_exc = np.ones_like(idx_meas_0, dtype=int) * np.arange(n_exc).reshape(
-            n_exc, 1
-        )
-        f_min = np.minimum(fb[idx_exc, idx_meas_0], fb[idx_exc, idx_meas_1])
-        f_max = np.maximum(fb[idx_exc, idx_meas_0], fb[idx_exc, idx_meas_1])
-        # contruct matrices of shapes (n_exc, n_meas, n_pts) for comparison
-        f_min = np.repeat(f_min[:, :, np.newaxis], n_pts, axis=2)
-        f_max = np.repeat(f_max[:, :, np.newaxis], n_pts, axis=2)
-        f0 = np.repeat(f[:, :, np.newaxis], n_meas, axis=2)
-        f0 = f0.swapaxes(1, 2)
-        return np.array((f_min < f0) & (f0 <= f_max))
-    else:
-        # Replacing the below code by a faster implementation in Numpy
-        def b_matrix_init(k):
-            return _smear(f[k], fb[k], meas_pattern[k])
+    n = meas_pattern[:, 0]
+    m = meas_pattern[:, 1]
+    exc_id = meas_pattern[:, 2]
+    # (n_meas_tot,) voltages on electrodes
+    f_min = np.minimum(fb[exc_id, n], fb[exc_id, m])
+    f_max = np.maximum(fb[exc_id, n], fb[exc_id, m])
+    # contruct matrix of shapes (n_meas_tot, n_pts) for comparison
+    n_pts = f.shape[1]
+    f_min = np.repeat(f_min[:, np.newaxis], n_pts, axis=1)
+    f_max = np.repeat(f_max[:, np.newaxis], n_pts, axis=1)
+    f_pts = f[exc_id]  # voltages on nodes of all excitations
 
-        return np.array(list(map(b_matrix_init, np.arange(f.shape[0]))))
+    return np.array((f_min < f_pts) & (f_pts <= f_max))
 
 
 def subtract_row(v: np.ndarray, meas_pattern: np.ndarray):
@@ -411,24 +401,24 @@ def subtract_row(v: np.ndarray, meas_pattern: np.ndarray):
 def subtract_row_vectorized(v: np.ndarray, meas_pattern: np.ndarray):
     """
     Build the voltage differences on axis=1 using the meas_pattern.
-    v_diff[k] = v[i, :] - v[j, :]
+    v_diff[k] = v[exc_id, i] - v[exc_id, j]
 
     New implementation 33% less computation time
 
     Parameters
     ----------
     v: np.ndarray
-        Nx1 boundary measurements vector or NxM matrix; shape (n_exc,n_el,1)
+        (n_exc, n_el) boundary measurements or (n_exc, (n_el, n_element)) nodes resistance
     meas_pattern: np.ndarray
-        Nx2 subtract_row pairs; shape (n_exc, n_meas, 2)
+        Nx2 subtract_row pairs; shape (n_meas_tot, 3)
 
     Returns
     -------
     np.ndarray
         difference measurements v_diff
     """
-    idx = np.indices(meas_pattern.shape[:-1])[0]
-    return v[idx, meas_pattern[:, :, 0]] - v[idx, meas_pattern[:, :, 1]]
+    idx = meas_pattern[:, 2]
+    return v[idx, meas_pattern[:, 0]] - v[idx, meas_pattern[:, 1]]
 
 
 def assemble(
