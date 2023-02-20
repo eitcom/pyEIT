@@ -245,7 +245,7 @@ class EITForward(Forward):
         ri = subtract_row_vectorized(r_el, self.protocol.meas_mat)
         v0 = v.reshape(-1)
 
-        ## calculate v, jac per excitation pattern (ex_line)
+        ## calculate v, jac per excitation (ex_line)
         # _jac = np.zeros((self.protocol.n_meas, self.mesh.n_elems), dtype=self.mesh.dtype)
         # for i, ex_line in enumerate(self.protocol.ex_mat):
         #     f = self.solve(ex_line)
@@ -253,19 +253,15 @@ class EITForward(Forward):
         #     ri = subtract_row(r_el, self.protocol.meas_mat[i])
         #     for (e, ijk) in enumerate(self.mesh.element):
         #         _jac[i, :, e] = np.dot(np.dot(ri[:, ijk], self.se[e]), f[ijk])
-        ## measurement protocol
         # jac = np.concatenate(_jac)
 
         # Build Jacobian matrix element wise (column wise)
-        #    Je = Re*Ke*Ve = (n_measx3) * (3x3) * (3x1)
+        # Je = Re*Ke*Ve = (n_measx3) * (3x3) * (3x1)
         jac = np.zeros((self.protocol.n_meas, self.mesh.n_elems), dtype=self.mesh.dtype)
-        # for i in range(self.protocol.ex_mat.shape[0]):
         indices = self.protocol.meas_mat[:, 2]
+        f_n = f[indices]  # replica of potential on nodes of difference excitations
         for e, ijk in enumerate(self.mesh.element):
-            # todo: multiple replica of f[ijk], not efficient
-            jac[:, e] = np.sum(
-                np.dot(ri[:, ijk], self.se[e]) * f[indices][:, ijk], axis=1
-            )
+            jac[:, e] = np.sum(np.dot(ri[:, ijk], self.se[e]) * f_n[:, ijk], axis=1)
 
         # Jacobian normalization: divide each row of J (J[i]) by abs(v0[i])
         if normalize:

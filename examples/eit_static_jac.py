@@ -16,7 +16,7 @@ from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 # Mesh shape is specified with fd parameter in the instantiation, e.g:
 # from pyeit.mesh.shape import thorax
 # mesh_obj, el_pos = create(n_el, h0=0.05, fd=thorax)  # Default : fd=circle
-n_el = 32  # test fem_vectorize
+n_el = 64  # test fem_vectorize
 mesh_obj = create(n_el, h0=0.05)
 # set anomaly (altering the permittivity in the mesh)
 anomaly = [
