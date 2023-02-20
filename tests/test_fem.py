@@ -115,7 +115,7 @@ class TestFem(unittest.TestCase):
                 protocol = _protocol_obj(ex_mat, n_el, 1, parser)
                 fwd = pyeit.eit.fem.EITForward(mesh, protocol)
                 diff_truth = _meas_pattern(ex_line, n_el, 1, parser)
-                diff = fwd.protocol.meas_mat[0]
+                diff = fwd.protocol.meas_mat[:, :-1]
 
                 assert np.allclose(diff, diff_truth)
 
@@ -132,18 +132,25 @@ class TestFem(unittest.TestCase):
         self.assertTrue(np.allclose(vd.ravel(), vd_truth.ravel()))
 
     def test_subtract_row_vectorized(self):
-        """calculate f[diff_op[0]] - f[diff_op[1]]"""
-        n_exe = 10
+        """calculate f[exc_id, diff_op[0]] - f[exc_id, diff_op[1]]"""
         n_el = 16
-        n_rows = 3
-        v = np.full((n_rows, n_el), np.random.randn(n_el))
-        diff_pairs = np.array(
-            [[np.random.permutation(n_el)[:2] for _ in range(n_exe)]] * n_rows
-        )
-        vd_truth = np.zeros((n_rows, 10))
-        for i in range(vd_truth.shape[0]):
-            vd_truth[i] = np.array([v[i, d[0]] - v[i, d[1]] for d in diff_pairs[i]])
-        vd = pyeit.eit.fem.subtract_row_vectorized(v, diff_pairs)
+        n_meas = 16
+        n_exc = 3
+        n_meas_tot = n_exc * n_meas
+        v = np.full((n_exc, n_el), np.random.randn(n_el))
+        # build measurement pattern, [m, n, exc_id] per row
+        diff_pairs = []
+        for i in range(n_exc):
+            for _ in range(n_meas):
+                diff_pairs.append(np.hstack([np.random.permutation(n_el)[:2], i]))
+        meas_pattern = np.vstack(diff_pairs)
+        print(meas_pattern)
+        # calculate ground truth
+        vd_truth = np.zeros((n_meas_tot,))
+        for i in range(n_meas_tot):
+            v_exc = v[meas_pattern[i, 2]]
+            vd_truth[i] = v_exc[meas_pattern[i, 0]] - v_exc[meas_pattern[i, 1]]
+        vd = pyeit.eit.fem.subtract_row_vectorized(v, meas_pattern)
 
         self.assertTrue(vd_truth.size == vd.size)
         self.assertTrue(np.allclose(vd.ravel(), vd_truth.ravel()))

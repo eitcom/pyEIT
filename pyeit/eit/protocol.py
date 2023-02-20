@@ -21,7 +21,7 @@ class PyEITProtocol:
     ex_mat: np.ndarray
         excitation matrix (pairwise)
     meas_mat: np.ndarray
-        measurement matrix (differential pairs)
+        measurement matrix (differential pairs), support inhomogeneous number of measurements per excitation pair.
     keep_ba: np.ndarray
         boolean array index for keeping measurements
     """
@@ -81,25 +81,22 @@ class PyEITProtocol:
         n_exc : int
             number of excitations/stimulations
         meas_pattern : np.ndarray, optional
-           measurements pattern / subtract_row pairs [N, M] to check; shape (n_exc, n_meas_per_exc, 2)
+           measurements pattern / subtract_row pairs [N, M]; shape (n_meas_tot, 3)
 
         Returns
         -------
         np.ndarray
-            measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+            measurements pattern / subtract_row pairs [N, M]; shape (n_meas_tot, 3)
 
         Raises
         ------
         TypeError
-            raised if meas_pattern is not a np.ndarray of shape (n_exc, : , 2)
+            raised if meas_pattern is not a np.ndarray of shape (n_meas_tot, 3)
         """
         if not isinstance(meas_mat, np.ndarray):
             raise TypeError(f"Wrong type of {type(meas_mat)=}, expected an ndarray;")
-        # test shape is something like (n_exc, :, 2)
-        if meas_mat.ndim != 3 or meas_mat.shape[::2] != (self.n_exc, 2):
-            raise TypeError(
-                f"Wrong shape of {meas_mat.shape=}, should be ({self.n_exc}, n_meas_per_exc, 2);"
-            )
+        if meas_mat.ndim != 2 or meas_mat.shape[-1] != 3:
+            raise TypeError(f"{meas_mat.shape=} must be (n_meas_tot, 3);")
 
         return meas_mat
 
@@ -126,19 +123,9 @@ class PyEITProtocol:
         Returns
         -------
         int
-            number of measurements per excitations
+            total amount of measurements (n_meas_tot)
         """
-        return self.meas_mat.shape[1]
-
-    @property
-    def n_meas_tot(self) -> int:
-        """
-        Returns
-        -------
-        int
-            total amount of measurements
-        """
-        return self.n_meas * self.n_exc
+        return self.meas_mat.shape[0]
 
     @property
     def n_el(self) -> int:
@@ -146,9 +133,13 @@ class PyEITProtocol:
         Returns
         -------
         int
-            number of electrodes used in the excitation and
+            infer the number of electrodes used in the excitation and measurements patterns,
+            where the electrodes are numbered [0, n_el-1].
         """
-        return int(max(max(self.ex_mat.flatten()), max(self.meas_mat.flatten()))) + 1
+        return (
+            int(max(max(self.ex_mat.flatten()), max(self.meas_mat[:, :-1].flatten())))
+            + 1
+        )
 
 
 def create(
@@ -206,8 +197,8 @@ def build_meas_pattern_std(
     parser: Union[str, List[str]] = "std",
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Build the measurement pattern (subtract_row-voltage pairs [N, M])
-    for all excitations on boundary electrodes.
+    Build the measurement pattern (subtract_row-voltage pairs [N, M]) for all excitations on boundary electrodes.
+    The excitation index (exc_id) are also recorded for computing subtract_row_vectorized and smear_nd.
 
     we direct operate on measurements or Jacobian on electrodes,
     so, we can use LOCAL index in this module, do not require el_pos.
@@ -241,9 +232,10 @@ def build_meas_pattern_std(
     Returns
     -------
     diff_op: np.ndarray
-        measurements pattern / subtract_row pairs [N, M]; shape (n_exc, n_meas_per_exc, 2)
+        measurements pattern / subtract_row pairs, and the excitation indice;
+        shape (n_meas_tot, 3), for each row, it represents [Ni, Mi, exc_id]
     keep_ba: np.ndarray
-        (n_exc*n_meas_per_exc,) boolean array
+        (n_meas_tot,) boolean array
     """
     if not isinstance(parser, list):  # transform parser into list
         parser = [parser]
@@ -251,20 +243,22 @@ def build_meas_pattern_std(
     fmmu_rotate = any(p in ("fmmu", "rotate_meas") for p in parser)
 
     diff_op, keep_ba = [], []
-    for ex_line in ex_mat:
-        a, b = ex_line[0], ex_line[1]
+    for exc_id, exc_line in enumerate(ex_mat):
+        a, b = exc_line[0], exc_line[1]
         i0 = a if fmmu_rotate else 0
+        # build [[m, n, idx]_i] array
         m = (i0 + np.arange(n_el)) % n_el
         n = (m + step) % n_el
-        meas_pattern = np.vstack([n, m]).T
+        idx = exc_id * np.ones(n_el)
+        meas_pattern = np.vstack([n, m, idx]).T
 
         diff_keep = np.logical_and.reduce((m != a, m != b, n != a, n != b))
         keep_ba.append(diff_keep)
         if not meas_current:
             meas_pattern = meas_pattern[diff_keep]
-        diff_op.append(meas_pattern)
+        diff_op.append(meas_pattern.astype(int))
 
-    return np.array(diff_op), np.array(keep_ba).ravel()
+    return np.vstack(diff_op), np.array(keep_ba).ravel()
 
 
 def build_exc_pattern_std(n_el: int = 16, dist: int = 1) -> np.ndarray:
