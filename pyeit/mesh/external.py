@@ -7,6 +7,7 @@ import shapely
 from shapely.geometry import Polygon, Point, MultiLineString, LineString
 import shapely.affinity
 from . import PyEITMesh
+from pathlib import Path
 
 
 def load_mesh(filename: str, dims: int = 2) -> PyEITMesh:
@@ -33,11 +34,17 @@ def load_mesh(filename: str, dims: int = 2) -> PyEITMesh:
     """
     t_mesh = trimesh.load(filename, force="mesh")
 
-    if "ply_raw" in t_mesh.metadata:
-        red = t_mesh.metadata["ply_raw"]["face"]["data"]["red"]
-        green = t_mesh.metadata["ply_raw"]["face"]["data"]["green"]
-        blue = t_mesh.metadata["ply_raw"]["face"]["data"]["blue"]
-        alpha = t_mesh.metadata["ply_raw"]["face"]["data"]["alpha"]
+    if Path(filename).suffix.casefold() == ".ply":
+        ply_key = "_ply_raw"
+        if ply_key not in t_mesh.metadata:
+            ply_key = "ply_raw"
+            if ply_key not in t_mesh.metadata:
+                raise ValueError("Could not interpret mesh file as .ply")
+
+        red = t_mesh.metadata[ply_key]["face"]["data"]["red"]
+        green = t_mesh.metadata[ply_key]["face"]["data"]["green"]
+        blue = t_mesh.metadata[ply_key]["face"]["data"]["blue"]
+        alpha = t_mesh.metadata[ply_key]["face"]["data"]["alpha"]
         perm = np.array(
             [
                 struct.unpack(
