@@ -40,7 +40,7 @@ def create_mesh_plot(
     mesh: PyEITMesh,
     ax_kwargs: Optional[dict] = {},
     electrodes: Optional[np.ndarray] = None,
-    coordinate_labels: Optional[str] = "",
+    coordinate_labels: Optional[str] = None,
     marker_kwargs: Optional[dict] = {},
     marker_text_kwargs: Optional[dict] = {},
     coord_label_text_kwargs: Optional[dict] = {},
@@ -96,6 +96,7 @@ def create_mesh_plot(
 
     # Add mesh to ax
     ax.add_collection(pc)
+    ax.autoscale()
     ax.figure.colorbar(pc, ax=ax, label="Element Value")
     ax.set_xticks([], labels=None)
     ax.set_yticks([], labels=None)
@@ -233,7 +234,8 @@ def add_coordinate_labels(
         )  # axis autoscaling doesn't work with text, so we increase the margins to make room.
         coord_labels = (l1, l2, l3, l4)
 
-    return coord_labels
+        return coord_labels
+
 
 
 def alignment_opposing_center(ax: mpl_axes.Axes, x: float, y: float) -> dict:

@@ -6,7 +6,7 @@ import trimesh
 import shapely
 from shapely.geometry import Polygon, Point, MultiLineString, LineString
 import shapely.affinity
-from . import PyEITMesh
+from pyeit.mesh import PyEITMesh
 from pathlib import Path
 
 

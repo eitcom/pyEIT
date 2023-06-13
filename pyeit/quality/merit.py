@@ -15,7 +15,7 @@ def calc_greit_figures_of_merit(
 ):
     """
     Calculate 5 GRIET figures of merit. Units are pixels of the input images. Target image and reconstruction image are
-    assumed to have the same pixel resolution
+    rendered rectangular pixel arrays, and are assumed to have the same pixel resolution
 
     With circular=True (default), calculations are as defined in "GREIT: a unified approach to 2D linear EIT
     reconstruction of lung images" by Andy Adler et al.
@@ -26,7 +26,8 @@ def calc_greit_figures_of_merit(
     Parameters
     ----------
     target_image: np.Array(width, height)
-        Render of target mesh with conductivities as pixel values
+        Render of target mesh with conductivities as pixel values. If target_value is not supplied, the target is
+        classified as the pixels of value encountered least in the image (i.e., the region of lowest area).
     reconstruction_image: np.Array(width, height)
         Render of reconstructed mesh with conductivities as pixel values
     circular: Bool
@@ -58,7 +59,7 @@ def calc_greit_figures_of_merit(
     amplitude = calc_amplitude(reconstruction_image)
 
     # Position error
-    position_error = calc_position_error(target_image, reconstruction_image)
+    position_error = calc_position_error(target_image, reconstruction_image, target_value)
 
     # Resolution
     resolution = calc_resolution(reconstruction_image)
@@ -145,7 +146,7 @@ def calc_amplitude(recon_image):
     return amplitude
 
 
-def calc_position_error(target_image, reconstruction_image):
+def calc_position_error(target_image, reconstruction_image, target_value=None):
     """
     Calculate the Euclidean distance between the center of gravity of the target image and the center of gravity of the
     reconstruction image
@@ -168,8 +169,8 @@ def calc_position_error(target_image, reconstruction_image):
     fractional_image_nonan = np.nan_to_num(fractional_image, nan=0)
     recon_center = ndi.center_of_mass(fractional_image_nonan)
 
-    target_nonan = np.nan_to_num(target_image, nan=0)
-    target_center = ndi.center_of_mass(target_nonan)
+    target_classified, _ = classify_target_and_background(target_image, target_value)
+    target_center = ndi.center_of_mass(target_classified)
 
     # This definition allows + and - PE, but can also give zero in unexpected places
     position_error = math.sqrt(
