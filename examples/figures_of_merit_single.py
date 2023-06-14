@@ -15,7 +15,7 @@ from pyeit.visual.plot import (
     create_layered_image_plot,
     create_mesh_plot
 )
-from pyeit.quality.merit import calc_greit_figures_of_merit
+from pyeit.quality.merit import calc_greit_figures_of_merit, calc_fractional_amplitude_set
 
 """
 Example demonstrating the calculation of the GREIT figures of merit for a single reconstruction
@@ -27,18 +27,21 @@ def main():
     reconstruction_mesh_filename = r".\example_data\imdl.stl"
     n_el = 16
     render_resolution = (64, 64)
+    background = 2
+    anomaly = 1
+    conductive_target = True if anomaly-background > 0 else False
 
     # Problem setup
     sim_mesh = load_mesh(simulation_mesh_filename)
     electrode_nodes = place_electrodes_equal_spacing(sim_mesh, n_electrodes=16)
     sim_mesh.el_pos = np.array(electrode_nodes)
-    anomaly = PyEITAnomaly_Circle(center=[0.5, 0], r=0.05, perm=2)
-    sim_mesh_new = mesh.set_perm(sim_mesh, anomaly=anomaly)
+    anomaly = PyEITAnomaly_Circle(center=[0.5, 0], r=0.05, perm=anomaly)
+    sim_mesh_new = mesh.set_perm(sim_mesh, anomaly=anomaly, background=background)
 
     # Simulation
     protocol_obj = protocol.create(n_el, dist_exc=1, step_meas=1, parser_meas="std")
     fwd = EITForward(sim_mesh, protocol_obj)
-    v0 = fwd.solve_eit()
+    v0 = fwd.solve_eit(perm=background)
     v1 = fwd.solve_eit(perm=sim_mesh_new.perm)
 
     # Reconstruction
@@ -55,8 +58,7 @@ def main():
     sim_render = render_2d_mesh(sim_mesh, sim_mesh_new.perm, resolution=render_resolution)
     recon_render = render_2d_mesh(recon_mesh, solution, resolution=render_resolution)
 
-    out = {}
-    figs = calc_greit_figures_of_merit(sim_render, recon_render, out=out)
+    figs, out = calc_greit_figures_of_merit(sim_render, recon_render, conductive_target=conductive_target, return_extras=True)
 
     #
     # Output
