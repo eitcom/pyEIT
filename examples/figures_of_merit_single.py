@@ -8,7 +8,7 @@ import pyeit.mesh as mesh
 from pyeit.eit.fem import EITForward
 import pyeit.eit.protocol as protocol
 from pyeit.mesh.wrapper import PyEITAnomaly_Circle
-from pyeit.mesh.external import load_mesh, place_electrodes_equal_spacing
+from pyeit.mesh.external import place_electrodes_equal_spacing
 from pyeit.eit.render import render_2d_mesh
 from pyeit.visual.plot import (
     create_image_plot,
@@ -30,7 +30,6 @@ def main():
     conductive_target = True if anomaly - background > 0 else False
 
     # Problem setup
-    # sim_mesh = load_mesh(simulation_mesh_filename)
     sim_mesh = mesh.create(n_el, h0=0.05)
     electrode_nodes = place_electrodes_equal_spacing(sim_mesh, n_electrodes=16)
     sim_mesh.el_pos = np.array(electrode_nodes)
@@ -44,7 +43,6 @@ def main():
     v1 = fwd.solve_eit(perm=sim_mesh_new.perm)
 
     # Reconstruction
-    # recon_mesh = load_mesh(reconstruction_mesh_filename)
     recon_mesh = mesh.create(n_el, h0=0.1)
     electrode_nodes = place_electrodes_equal_spacing(recon_mesh, n_electrodes=16)
     recon_mesh.el_pos = np.array(electrode_nodes)

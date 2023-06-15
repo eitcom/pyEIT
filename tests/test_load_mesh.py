@@ -17,3 +17,11 @@ def test_load_triangle():
     np.testing.assert_almost_equal(correct_mesh["element"], triangle_mesh.element)
     np.testing.assert_almost_equal(correct_mesh["node"], triangle_mesh.node)
     np.testing.assert_almost_equal(correct_mesh["perm"], triangle_mesh.perm)
+
+
+def test_load_triangle_ply():
+    mesh = load_mesh(parent_dir + "/data/triangle.ply")
+
+    correct_value = 10
+
+    assert mesh.perm[0] == correct_value
