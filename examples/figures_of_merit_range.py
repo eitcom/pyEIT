@@ -10,11 +10,7 @@ import pyeit.eit.protocol as protocol
 from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 from pyeit.mesh.external import place_electrodes_equal_spacing
 from pyeit.eit.render import render_2d_mesh
-from pyeit.visual.plot import (
-    create_image_plot,
-    create_layered_image_plot,
-    create_mesh_plot,
-)
+from pyeit.visual.plot import create_plot
 from pyeit.quality.merit import calc_greit_figures_of_merit
 
 """
@@ -49,6 +45,7 @@ def main():
     eit.setup(p=0.5, lamb=0.03, method="kotre", perm=1, jac_normalized=True)
 
     figs_list = []
+    solution_list = []
     for c in c_range:
         anomaly = PyEITAnomaly_Circle(center=[c, 0], r=0.05, perm=anomaly_value)
         sim_mesh_new = mesh.set_perm(sim_mesh, anomaly=anomaly, background=background)
@@ -72,20 +69,43 @@ def main():
             conductive_target=conductive_target,
             return_extras=True,
         )
+
+        solution_list.append(solution)
         figs_list.append(figs)
 
+    fig, axs = plt.subplots(1, 5)
+    plot_solutions = [
+        solution_list[0],
+        solution_list[4],
+        solution_list[9],
+        solution_list[14],
+        solution_list[19],
+    ]
+    plot_c = [c_range[0], c_range[4], c_range[9], c_range[14], c_range[19]]
+    for i, solution in enumerate(plot_solutions):
+        create_plot(
+            axs[i],
+            solution,
+            recon_mesh,
+            ax_kwargs={"title": f"Target pos: {plot_c[i]:.2f}/r"},
+        )
+
+    fig.set_size_inches(15, 2)
+    fig.tight_layout()
+
     figs_list = np.array(figs_list)
-    fig, axs = plt.subplots(5, 1)
+    fig, axs = plt.subplots(5, 1, sharex=True)
+    axs[4].set_xlabel("Target pos/r")
     titles = [
-        "Amplitude",
+        "Average Amplitude",
         "Position Error",
-        "Resolution",
+        "Resolution Size",
         "Shape Deformation",
         "Ringing",
     ]
     for i in range(5):
         axs[i].plot(c_range, figs_list[:, i])
-        axs[i].set_title(titles[i])
+        axs[i].set_title(titles[i], size="small")
 
     plt.tight_layout()
     plt.show()
