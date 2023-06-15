@@ -13,7 +13,7 @@ Also cf implementation in EIDORS
 
 
 def calc_greit_figures_of_merit(
-        target_image, reconstruction_image, conductive_target=True, return_extras=False
+    target_image, reconstruction_image, conductive_target=True, return_extras=False
 ) -> Tuple | Tuple[Tuple, Dict]:
     """
     Calculate 5 GRIET figures of merit using the default options. Target image and reconstruction image are
@@ -58,11 +58,17 @@ def calc_greit_figures_of_merit(
     amplitude = calc_amplitude(reconstruction_image)
 
     # Position error
-    position_error = calc_position_error(target_image, reconstruction_image, method="GREIT",
-                                         conductive_target=conductive_target)
+    position_error = calc_position_error(
+        target_image,
+        reconstruction_image,
+        method="GREIT",
+        conductive_target=conductive_target,
+    )
 
     # Resolution
-    resolution = calc_resolution(reconstruction_image, conductive_target=conductive_target)
+    resolution = calc_resolution(
+        reconstruction_image, conductive_target=conductive_target
+    )
 
     # Shape Deformation
     shape_deformation, shape_out = calc_shape_deformation(
@@ -70,7 +76,7 @@ def calc_greit_figures_of_merit(
         target_image=None,
         circular=True,
         conductive_target=conductive_target,
-        return_extras=True
+        return_extras=True,
     )
     extras["shape_deformation"] = shape_out
 
@@ -80,17 +86,25 @@ def calc_greit_figures_of_merit(
         target_image=target_image,
         circular=False,
         conductive_target=conductive_target,
-        return_extras=True
+        return_extras=True,
     )
     extras["ringing"] = ringing_out
 
     if return_extras:
-        return (amplitude, position_error, resolution, shape_deformation, ringing), extras
+        return (
+            amplitude,
+            position_error,
+            resolution,
+            shape_deformation,
+            ringing,
+        ), extras
 
     return amplitude, position_error, resolution, shape_deformation, ringing
 
 
-def calc_fractional_amplitude_set(image, fraction=0.25, conductive_target: bool = True, method: str = "GREIT"):
+def calc_fractional_amplitude_set(
+    image, fraction=0.25, conductive_target: bool = True, method: str = "GREIT"
+):
     """
     A function to calculate a thresholded version of the reconstruction image. The fractional amplitude set is equal to
     one where the image amplitude is greater than or equal to the given fraction times the maximum amplitude, and zero
@@ -176,8 +190,14 @@ def calc_amplitude(recon_image):
     return amplitude / pixel_count
 
 
-def calc_position_error(target_image, reconstruction_image, conductive_target=True, method="GREIT", fraction=0.25,
-                        fraction_method="GREIT"):
+def calc_position_error(
+    target_image,
+    reconstruction_image,
+    conductive_target=True,
+    method="GREIT",
+    fraction=0.25,
+    fraction_method="GREIT",
+):
     """
     Calculate position error using one of two methods:
 
@@ -221,13 +241,19 @@ def calc_position_error(target_image, reconstruction_image, conductive_target=Tr
     colrange = colmax - colmin
     major_range = rowrange if rowrange > colrange else colrange
 
-    fractional_image = calc_fractional_amplitude_set(reconstruction_image, conductive_target=conductive_target,
-                                                     fraction=fraction, method=fraction_method)
+    fractional_image = calc_fractional_amplitude_set(
+        reconstruction_image,
+        conductive_target=conductive_target,
+        fraction=fraction,
+        method=fraction_method,
+    )
 
     fractional_image_nonan = np.nan_to_num(fractional_image, nan=0)
     recon_center = ndi.center_of_mass(fractional_image_nonan)
 
-    target_classified, _ = classify_target_and_background(target_image, conductive_target)
+    target_classified, _ = classify_target_and_background(
+        target_image, conductive_target
+    )
     target_center = ndi.center_of_mass(target_classified)
 
     if method == "GREIT":
@@ -251,15 +277,21 @@ def calc_position_error(target_image, reconstruction_image, conductive_target=Tr
     elif method == "Euclidean":
         # This definition gives the absolute PE, but can't be negative
         position_error = math.sqrt(
-            (target_center[0] - recon_center[0]) ** 2 + (target_center[1] - recon_center[1]) ** 2)
+            (target_center[0] - recon_center[0]) ** 2
+            + (target_center[1] - recon_center[1]) ** 2
+        )
     else:
         raise ValueError("Invalid method specified for position error")
 
     return position_error / major_range
 
 
-def calc_resolution(reconstruction_image, conductive_target: bool = True, fraction=0.25,
-                        fraction_method="GREIT"):
+def calc_resolution(
+    reconstruction_image,
+    conductive_target: bool = True,
+    fraction=0.25,
+    fraction_method="GREIT",
+):
     """
     Resolution measures the size of reconstructed targets as a fraction of the medium. Per Adler: the square root is used
     so that RES measures radius ratios rather than area ratios.
@@ -283,8 +315,12 @@ def calc_resolution(reconstruction_image, conductive_target: bool = True, fracti
     resolution: float
 
     """
-    fractional_image = calc_fractional_amplitude_set(reconstruction_image, conductive_target=conductive_target,
-                                                     fraction=fraction, method=fraction_method)
+    fractional_image = calc_fractional_amplitude_set(
+        reconstruction_image,
+        conductive_target=conductive_target,
+        fraction=fraction,
+        method=fraction_method,
+    )
 
     target_area = np.count_nonzero(fractional_image == 1)
 
@@ -324,8 +360,13 @@ def calc_circle(fractional_image):
 
 
 def calc_shape_deformation(
-        reconstruction_image, target_image=None, circular=True, conductive_target=True,  fraction=0.25,
-                        fraction_method="GREIT", return_extras=False
+    reconstruction_image,
+    target_image=None,
+    circular=True,
+    conductive_target=True,
+    fraction=0.25,
+    fraction_method="GREIT",
+    return_extras=False,
 ):
     """
     Calculate shape deformation: Proportion of pixels in thresholded reconstruction that are outside the target to total
@@ -366,8 +407,12 @@ def calc_shape_deformation(
     if not circular and target_image is None:
         raise ValueError("target_image must not be None if circular is False")
 
-    fractional_image = calc_fractional_amplitude_set(reconstruction_image, conductive_target=conductive_target,
-                                                     fraction=fraction, method=fraction_method)
+    fractional_image = calc_fractional_amplitude_set(
+        reconstruction_image,
+        conductive_target=conductive_target,
+        fraction=fraction,
+        method=fraction_method,
+    )
     reconstructed_area = np.count_nonzero(fractional_image == 1)
 
     if circular:
@@ -384,8 +429,10 @@ def calc_shape_deformation(
     shape_deformation = area_outside / reconstructed_area
 
     if return_extras:
-        out = {"shape_deformation_target": shape_deformation_target,
-               "outside_positions": outside}
+        out = {
+            "shape_deformation_target": shape_deformation_target,
+            "outside_positions": outside,
+        }
 
         return shape_deformation, out
 
@@ -393,8 +440,13 @@ def calc_shape_deformation(
 
 
 def calc_ringing(
-        reconstruction_image, target_image=None, circular=False, conductive_target=True,  fraction=0.25,
-                        fraction_method="GREIT",  return_extras=False
+    reconstruction_image,
+    target_image=None,
+    circular=False,
+    conductive_target=True,
+    fraction=0.25,
+    fraction_method="GREIT",
+    return_extras=False,
 ):
     """
     Calculate ringing: Sum of pixels of opposite value to reconstructed target in the reconstruction image
@@ -431,8 +483,12 @@ def calc_ringing(
     if not circular and target_image is None:
         raise ValueError("target_image must not be None if circular is False")
 
-    fractional_image = calc_fractional_amplitude_set(reconstruction_image, conductive_target=conductive_target,
-                                                     fraction=fraction, method=fraction_method)
+    fractional_image = calc_fractional_amplitude_set(
+        reconstruction_image,
+        conductive_target=conductive_target,
+        fraction=fraction,
+        method=fraction_method,
+    )
     if circular:
         circle = calc_circle(fractional_image)
         ringing_target = circle
@@ -451,7 +507,10 @@ def calc_ringing(
     ringing = -1 * np.sum(reconstruction_image[opposite_outside_positions]) / sum_inside
 
     if return_extras:
-        out = {"ringing_target": ringing_target, "opposite_outside_positions": opposite_outside_positions}
+        out = {
+            "ringing_target": ringing_target,
+            "opposite_outside_positions": opposite_outside_positions,
+        }
         return ringing, out
 
     return ringing
@@ -499,8 +558,9 @@ def classify_target_and_background(target_image, conductive_target: bool = True)
     return target, background
 
 
-def lambda_max(arr: ArrayLike, axis: int = None, key: Callable = None, keepdims: bool = False) -> Union[
-    float, ArrayLike]:
+def lambda_max(
+    arr: ArrayLike, axis: int = None, key: Callable = None, keepdims: bool = False
+) -> Union[float, ArrayLike]:
     """
     Applies the callable "key" to the input array "arr", then finds the index of the maximum value of this transformed
     array. Finally, returns the value in the *original* input array at that index. This is equivalent to the "key"

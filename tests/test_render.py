@@ -67,7 +67,9 @@ def test_model_inverse_uv():
         (100, 100),
         preserve_aspect_ratio=False,
     )
-    image = image.T[:, ::-1]  # Flip back because this test was created before we corrected the orientation
+    image = image.T[
+        :, ::-1
+    ]  # Flip back because this test was created before we corrected the orientation
 
     circle_image = np.load(parent_dir + "/data/circle_image.npy")
 
@@ -82,7 +84,9 @@ def test_model_inverse_uv_neg():
         (100, 100),
         preserve_aspect_ratio=False,
     )
-    image = image.T[:, ::-1]  # Flip back because this test was created before we corrected the orientation
+    image = image.T[
+        :, ::-1
+    ]  # Flip back because this test was created before we corrected the orientation
 
     circle_image = np.load(parent_dir + "/data/circle_image.npy")
 
@@ -91,7 +95,9 @@ def test_model_inverse_uv_neg():
 
 def test_render():
     mesh = load_mesh(parent_dir + "/data/L_shape.STL")
-    image = model_inverse_uv({"node": mesh.node[:, :2], "element": mesh.element}, (100, 100))
+    image = model_inverse_uv(
+        {"node": mesh.node[:, :2], "element": mesh.element}, (100, 100)
+    )
     mapped = map_image(image, mesh.perm)
 
     correct_image = np.load(parent_dir + "/data/L_image.npy")

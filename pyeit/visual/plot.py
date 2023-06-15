@@ -16,6 +16,7 @@ from matplotlib import (
     axes as mpl_axes,
 )
 
+
 def ts_plot(ts, figsize=(6, 4), ylabel="ATI (Ohm)", ylim=None, xdate_format=True):
     """plot time series data"""
     fig, ax = plt.subplots(figsize=figsize)
@@ -86,7 +87,11 @@ def create_mesh_plot(
 
     nodes = np.delete(mesh.node, flat_ind, axis=1)
     elements = mesh.element
-    values = mesh.perm if not isinstance(mesh.perm, float) else np.ones(len(elements))*mesh.perm
+    values = (
+        mesh.perm
+        if not isinstance(mesh.perm, float)
+        else np.ones(len(elements)) * mesh.perm
+    )
 
     # Create PolyCollection representing mesh
     verts = nodes[elements]
@@ -234,7 +239,6 @@ def add_coordinate_labels(
         coord_labels = (l1, l2, l3, l4)
 
         return coord_labels
-
 
 
 def alignment_opposing_center(ax: mpl_axes.Axes, x: float, y: float) -> dict:

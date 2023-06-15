@@ -243,8 +243,14 @@ def calc_absolute_threshold_set(image, threshold):
     return image_set
 
 
-def render_2d(elements: ArrayLike, nodes: ArrayLike, values: ArrayLike, resolution: ArrayLike = (1000, 1000),
-                 bounds=None, preserve_aspect_ratio=True) -> NDArray:
+def render_2d(
+    elements: ArrayLike,
+    nodes: ArrayLike,
+    values: ArrayLike,
+    resolution: ArrayLike = (1000, 1000),
+    bounds=None,
+    preserve_aspect_ratio=True,
+) -> NDArray:
     """
     Render a 2D unstructured triangular mesh into a rectangular array of pixels
 
@@ -270,14 +276,23 @@ def render_2d(elements: ArrayLike, nodes: ArrayLike, values: ArrayLike, resoluti
         array representing an image with values mapped to it
 
     """
-    image = model_inverse_uv({"node": nodes, "element": elements}, resolution=resolution,
-                             bounds=bounds, preserve_aspect_ratio=preserve_aspect_ratio)
+    image = model_inverse_uv(
+        {"node": nodes, "element": elements},
+        resolution=resolution,
+        bounds=bounds,
+        preserve_aspect_ratio=preserve_aspect_ratio,
+    )
     render = map_image(image, values)
     return render
 
 
-def render_2d_mesh(mesh: PyEITMesh, values: ArrayLike = None, resolution: ArrayLike = (1000, 1000),
-                   bounds=None, preserve_aspect_ratio=True) -> ArrayLike:
+def render_2d_mesh(
+    mesh: PyEITMesh,
+    values: ArrayLike = None,
+    resolution: ArrayLike = (1000, 1000),
+    bounds=None,
+    preserve_aspect_ratio=True,
+) -> ArrayLike:
     """
     Render a 2D PyEIT mesh into a rectangular array of pixels
 
@@ -304,7 +319,13 @@ def render_2d_mesh(mesh: PyEITMesh, values: ArrayLike = None, resolution: ArrayL
     if values is None:
         values = mesh.perm
 
-    render = render_2d(mesh.element, mesh.node[:, :2], values, resolution=resolution,
-                       bounds=bounds, preserve_aspect_ratio=preserve_aspect_ratio)
+    render = render_2d(
+        mesh.element,
+        mesh.node[:, :2],
+        values,
+        resolution=resolution,
+        bounds=bounds,
+        preserve_aspect_ratio=preserve_aspect_ratio,
+    )
 
     return render

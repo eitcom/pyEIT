@@ -13,7 +13,7 @@ from pyeit.eit.render import render_2d_mesh
 from pyeit.visual.plot import (
     create_image_plot,
     create_layered_image_plot,
-    create_mesh_plot
+    create_mesh_plot,
 )
 from pyeit.quality.merit import calc_greit_figures_of_merit
 
@@ -55,20 +55,32 @@ def main():
     solution = np.real(ds)
 
     # Render results
-    sim_render = render_2d_mesh(sim_mesh, sim_mesh_new.perm, resolution=render_resolution)
+    sim_render = render_2d_mesh(
+        sim_mesh, sim_mesh_new.perm, resolution=render_resolution
+    )
     recon_render = render_2d_mesh(recon_mesh, solution, resolution=render_resolution)
 
-    figs, out = calc_greit_figures_of_merit(sim_render, recon_render, conductive_target=conductive_target,
-                                            return_extras=True)
+    figs, out = calc_greit_figures_of_merit(
+        sim_render,
+        recon_render,
+        conductive_target=conductive_target,
+        return_extras=True,
+    )
 
     # Output
     # Print figures of merit
     print("")
     print(f"Amplitude: Average pixel value in reconstruction image is {figs[0]:.4f}")
     print(f"Position Error: {100*figs[1]:.2f}% of widest axis")
-    print(f"Resolution: Reconstructed point radius {100*figs[2]:.2f}% of image equivalent radius")
-    print(f"Shape Deformation: {100*figs[3]:.2f}% of pixels in the thresholded image are outside the equivalent circle")
-    print(f"Ringing: Ringing pixel amplitude is  {100*figs[4]:.2f}% of image amplitude in thresholded region")
+    print(
+        f"Resolution: Reconstructed point radius {100*figs[2]:.2f}% of image equivalent radius"
+    )
+    print(
+        f"Shape Deformation: {100*figs[3]:.2f}% of pixels in the thresholded image are outside the equivalent circle"
+    )
+    print(
+        f"Ringing: Ringing pixel amplitude is  {100*figs[4]:.2f}% of image amplitude in thresholded region"
+    )
 
     # Create mesh plots
     fig, axs = plt.subplots(1, 2)
