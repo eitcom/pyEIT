@@ -14,7 +14,8 @@ from pyeit.visual.plot import create_plot
 from pyeit.quality.merit import calc_greit_figures_of_merit
 
 """
-Example demonstrating the calculation of the GREIT figures of merit for a single reconstruction
+Example demonstrating the calculation of the GREIT figures of merit for a small target across a range of points of
+increasing distance from the medium center
 """
 
 
@@ -99,7 +100,7 @@ def main():
     titles = [
         "Average Amplitude",
         "Position Error",
-        "Resolution Size",
+        "Resolution",
         "Shape Deformation",
         "Ringing",
     ]
