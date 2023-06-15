@@ -9,6 +9,8 @@ from pyeit.mesh.external import load_mesh
 import numpy as np
 from pathlib import Path
 from numpy.testing import assert_almost_equal
+import matplotlib.pyplot as plt
+from pyeit.visual.plot import create_mesh_plot
 
 parent_dir = str(Path(__file__).parent)
 
@@ -65,6 +67,7 @@ def test_model_inverse_uv():
         (100, 100),
         preserve_aspect_ratio=False,
     )
+    image = image.T[:, ::-1]  # Flip back because this test was created before we corrected the orientation
 
     circle_image = np.load(parent_dir + "/data/circle_image.npy")
 
@@ -79,10 +82,30 @@ def test_model_inverse_uv_neg():
         (100, 100),
         preserve_aspect_ratio=False,
     )
+    image = image.T[:, ::-1]  # Flip back because this test was created before we corrected the orientation
 
     circle_image = np.load(parent_dir + "/data/circle_image.npy")
 
     assert np.all(image == circle_image)
+
+
+def test_render():
+    mesh = load_mesh(parent_dir + "/data/L_shape.STL")
+    image = model_inverse_uv({"node": mesh.node[:, :2], "element": mesh.element}, (100, 100))
+    mapped = map_image(image, mesh.perm)
+
+    correct_image = np.load(parent_dir + "/data/L_image.npy")
+    correct_mapped = np.load(parent_dir + "/data/L_mapped.npy")
+
+    # fig, axs = plt.subplots(1, 3)
+    # create_mesh_plot(axs[0], mesh)
+    # axs[1].imshow(image)
+    # axs[2].imshow(mapped)
+    # fig.tight_layout()
+    # plt.show()
+
+    np.testing.assert_array_equal(image, correct_image)
+    np.testing.assert_array_equal(mapped, correct_mapped)
 
 
 def test_map_image():

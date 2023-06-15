@@ -1,7 +1,7 @@
 import numpy as np
 from pyeit.quality.merit import calc_circle, calc_amplitude, calc_position_error, \
     calc_fractional_amplitude_set, calc_resolution, calc_ringing, calc_shape_deformation, \
-    classify_target_and_background
+    classify_target_and_background, get_image_bounds, lambda_max
 from imageio.v2 import imread
 import scipy.ndimage as ndi
 from pathlib import Path
@@ -106,7 +106,7 @@ def test_calc_circle():
 
 
 def test_calc_amplitude():
-    correct_amplitude = 18
+    correct_amplitude = 18 / 35
 
     # fig, ax = plt.subplots()
     # ax.imshow(test_image)
@@ -159,10 +159,10 @@ def test_calc_position_error():
     position_error_greit_p2_flipped = calc_position_error(test_image_p2, test_image_p2_flipped, method="GREIT")
     position_error_euclidean_p2_flipped = calc_position_error(test_image_p2, test_image_p2_flipped, method="Euclidean")
 
-    correct_position_error = 1
-    correct_position_error_reversed = -1
-    correct_position_error_greit_p2_flipped = 0
-    correct_position_error_euclidean_p2_flipped = 2
+    correct_position_error = 1 / 7
+    correct_position_error_reversed = -1 / 7
+    correct_position_error_greit_p2_flipped = 0 / 7
+    correct_position_error_euclidean_p2_flipped = 2 / 7
 
     # fig, axs = plt.subplots(1, 2)
     # axs[0].imshow(test_image_p1)
@@ -180,12 +180,14 @@ def test_calc_position_error():
 def test_calc_fractional_amplitude_set():
     fractional_amplitude_set = calc_fractional_amplitude_set(test_image_3, fraction=0.25, conductive_target=True,
                                                              method="GREIT")
-    fractional_amplitude_set_non_conductive = calc_fractional_amplitude_set(test_image_3, fraction=0.25, conductive_target=False,
-                                                             method="GREIT")
+    fractional_amplitude_set_non_conductive = calc_fractional_amplitude_set(test_image_3, fraction=0.25,
+                                                                            conductive_target=False,
+                                                                            method="GREIT")
     fractional_amplitude_set_range = calc_fractional_amplitude_set(test_image_3, fraction=0.75, conductive_target=True,
-                                                             method="Range")
-    fractional_amplitude_set_range_non_conductive = calc_fractional_amplitude_set(test_image_3, fraction=0.75, conductive_target=False,
-                                                             method="Range")
+                                                                   method="Range")
+    fractional_amplitude_set_range_non_conductive = calc_fractional_amplitude_set(test_image_3, fraction=0.75,
+                                                                                  conductive_target=False,
+                                                                                  method="Range")
 
     correct_fractional_amplitude_set = np.array([
         [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
@@ -224,9 +226,11 @@ def test_calc_fractional_amplitude_set():
     ])
 
     np.testing.assert_array_equal(fractional_amplitude_set, correct_fractional_amplitude_set)
-    np.testing.assert_array_equal(fractional_amplitude_set_non_conductive, correct_fractional_amplitude_set_negative_target)
+    np.testing.assert_array_equal(fractional_amplitude_set_non_conductive,
+                                  correct_fractional_amplitude_set_negative_target)
     np.testing.assert_array_equal(fractional_amplitude_set_range, correct_fractional_amplitude_set_range)
-    np.testing.assert_array_equal(fractional_amplitude_set_range_non_conductive, correct_fractional_amplitude_set_negative_target)
+    np.testing.assert_array_equal(fractional_amplitude_set_range_non_conductive,
+                                  correct_fractional_amplitude_set_negative_target)
 
 
 def test_calc_resolution():
@@ -238,9 +242,10 @@ def test_calc_resolution():
 
 def test_calc_shape_deformation():
     shape_deformation, extras = calc_shape_deformation(reconstruction_image=test_image, target_image=test_image_2,
-                                               circular=False, conductive_target=True, return_extras=True)
+                                                       circular=False, conductive_target=True, return_extras=True)
     shape_deformation_circular, extras2 = calc_shape_deformation(reconstruction_image=test_image,
-                                               circular=True, conductive_target=True, return_extras=True)
+                                                                 circular=True, conductive_target=True,
+                                                                 return_extras=True)
 
     correct_shape_deformation = 0.2
     correct_shape_deformation_circular = 0.26666666666666666
@@ -263,15 +268,14 @@ def test_classify_target_and_background():
                                [False, False, False, False, False, False, False]])
 
     correct_target_non_conductive = np.array([[False, False, False, False, False, False, False],
-                               [False, False, False, False, False, False, False],
-                               [False, False, True, True, True, False, False],
-                               [False, False, False, False, False, False, False],
-                               [False, False, False, False, False, False, False],
-                               [False, False, False, False, False, False, False],
-                               [False, False, False, False, False, False, False],
-                               [False, False, False, False, False, False, False],
-                               [False, False, False, False, False, False, False]])
-
+                                              [False, False, False, False, False, False, False],
+                                              [False, False, True, True, True, False, False],
+                                              [False, False, False, False, False, False, False],
+                                              [False, False, False, False, False, False, False],
+                                              [False, False, False, False, False, False, False],
+                                              [False, False, False, False, False, False, False],
+                                              [False, False, False, False, False, False, False],
+                                              [False, False, False, False, False, False, False]])
 
     np.testing.assert_array_equal(target, correct_target)
     np.testing.assert_array_equal(target_negative, correct_target_non_conductive)
@@ -304,20 +308,21 @@ def test_calc_ringing():
 
     test_image_recon_non_conductive = np.array([
         [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-        [NaN, -1, -1, -1, -1, -1, NaN],
-        [NaN, -1, -1, -1, -1, -1, NaN],
-        [NaN, -1, -1, -1, -1, -1, NaN],
-        [NaN, -1, -1, -1, -1, -1, NaN],
-        [NaN, -1, 1, 1, 1, -1, NaN],
-        [NaN, -1, -2, -2, -2, -1, NaN],
-        [NaN, -1, -1, -1, -1, -1, NaN],
+        [NaN, -0.4, -0.4, -0.4, -0.4, -0.4, NaN],
+        [NaN, -0.4, -0.4, -0.4, -0.4, -0.4, NaN],
+        [NaN, -0.4, -0.4, -0.4, -0.4, -0.4, NaN],
+        [NaN, -0.4, -0.4, -0.4, -0.4, -0.4, NaN],
+        [NaN, -0.4, 1, 1, 1, -0.4, NaN],
+        [NaN, -0.4, -2, -2, -2, -0.4, NaN],
+        [NaN, -0.4, -0.4, -0.4, -0.4, -0.4, NaN],
         [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
     ])
 
     ringing1 = calc_ringing(test_image, test_image_2, circular=False)
     ringing2 = calc_ringing(test_image_ringing, test_image_2, circular=False)
 
-    ringing_non_conductive = calc_ringing(test_image_recon_non_conductive, test_image_target_non_conductive, conductive_target=False)
+    ringing_non_conductive = calc_ringing(test_image_recon_non_conductive, test_image_target_non_conductive,
+                                          conductive_target=False, )
 
     correct_ringing1 = 0
     correct_ringing2 = 0.25
@@ -326,3 +331,22 @@ def test_calc_ringing():
     assert ringing1 == correct_ringing1
     assert ringing2 == correct_ringing2
     assert ringing_non_conductive == correct_ringing_non_conductive
+
+
+def test_get_image_bounds():
+    rowmin, rowmax, colmin, colmax = get_image_bounds(test_image)
+
+    image = test_image[rowmin:rowmax, colmin:colmax]
+
+    assert ~np.any(np.isnan(image))
+    assert (rowmin, rowmax, colmin, colmax) == (1, 8, 1, 6)
+
+
+def test_lambda_max():
+    arr = np.array([1, 2, 9, -11, 3])
+
+    lm = lambda_max(arr, key=abs)
+
+    correct_lm = -11
+
+    assert lm == correct_lm

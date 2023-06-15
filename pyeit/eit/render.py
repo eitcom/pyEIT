@@ -76,10 +76,6 @@ def model_inverse_uv(mesh, resolution, bounds=None, preserve_aspect_ratio=True):
     index of the triangle it lies within. An index of -1 refers to a pixel that does not lie within any of the triangles
     in the grid. Use map_image() to map desired values onto the pixels.
 
-    *Note* I am not sure why this rotates the image by 90 degrees. Also I think the aspect ratio of the mesh should be retained
-    when resolution is changed. Still, these issues shouldn't matter as long as the target mesh and reconstruction mesh are
-    both processed by this function with the same resolution setting.
-
     Parameters
     ----------
     mesh: dict {element, node}
@@ -127,6 +123,9 @@ def model_inverse_uv(mesh, resolution, bounds=None, preserve_aspect_ratio=True):
         tri_in = tri_fn(p_xx, p_yy)
 
         image[min_x:max_x, min_y:max_y][tri_in] = (step * tri_in)[tri_in]
+
+    # Flip image back to original orientation
+    image = image[:, ::-1].T
 
     return image
 

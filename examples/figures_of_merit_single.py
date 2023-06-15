@@ -15,7 +15,7 @@ from pyeit.visual.plot import (
     create_layered_image_plot,
     create_mesh_plot
 )
-from pyeit.quality.merit import calc_greit_figures_of_merit, calc_fractional_amplitude_set
+from pyeit.quality.merit import calc_greit_figures_of_merit
 
 """
 Example demonstrating the calculation of the GREIT figures of merit for a single reconstruction
@@ -23,16 +23,15 @@ Example demonstrating the calculation of the GREIT figures of merit for a single
 
 
 def main():
-    simulation_mesh_filename = r".\example_data\imdm.stl"
-    reconstruction_mesh_filename = r".\example_data\imdl.stl"
     n_el = 16
     render_resolution = (64, 64)
-    background = 2
-    anomaly = 1
-    conductive_target = True if anomaly-background > 0 else False
+    background = 1
+    anomaly = 2
+    conductive_target = True if anomaly - background > 0 else False
 
     # Problem setup
-    sim_mesh = load_mesh(simulation_mesh_filename)
+    # sim_mesh = load_mesh(simulation_mesh_filename)
+    sim_mesh = mesh.create(n_el, h0=0.05)
     electrode_nodes = place_electrodes_equal_spacing(sim_mesh, n_electrodes=16)
     sim_mesh.el_pos = np.array(electrode_nodes)
     anomaly = PyEITAnomaly_Circle(center=[0.5, 0], r=0.05, perm=anomaly)
@@ -45,7 +44,8 @@ def main():
     v1 = fwd.solve_eit(perm=sim_mesh_new.perm)
 
     # Reconstruction
-    recon_mesh = load_mesh(reconstruction_mesh_filename)
+    # recon_mesh = load_mesh(reconstruction_mesh_filename)
+    recon_mesh = mesh.create(n_el, h0=0.1)
     electrode_nodes = place_electrodes_equal_spacing(recon_mesh, n_electrodes=16)
     recon_mesh.el_pos = np.array(electrode_nodes)
 
@@ -58,33 +58,36 @@ def main():
     sim_render = render_2d_mesh(sim_mesh, sim_mesh_new.perm, resolution=render_resolution)
     recon_render = render_2d_mesh(recon_mesh, solution, resolution=render_resolution)
 
-    figs, out = calc_greit_figures_of_merit(sim_render, recon_render, conductive_target=conductive_target, return_extras=True)
+    figs, out = calc_greit_figures_of_merit(sim_render, recon_render, conductive_target=conductive_target,
+                                            return_extras=True)
 
-    #
     # Output
-    #
-
     # Print figures of merit
-    print(figs)
+    print("")
+    print(f"Amplitude: Average pixel value in reconstruction image is {figs[0]:.4f}")
+    print(f"Position Error: {100*figs[1]:.2f}% of widest axis")
+    print(f"Resolution: Reconstructed point radius {100*figs[2]:.2f}% of image equivalent radius")
+    print(f"Shape Deformation: {100*figs[3]:.2f}% of pixels in the thresholded image are outside the equivalent circle")
+    print(f"Ringing: Ringing pixel amplitude is  {100*figs[4]:.2f}% of image amplitude in thresholded region")
 
     # Create mesh plots
     fig, axs = plt.subplots(1, 2)
-    create_mesh_plot(axs[0], sim_mesh, ax_kwargs={"title":"Sim mesh"})
-    create_mesh_plot(axs[1], recon_mesh, ax_kwargs={"title":"Recon mesh"})
-    fig.set_size_inches(10,4)
+    create_mesh_plot(axs[0], sim_mesh, ax_kwargs={"title": "Sim mesh"})
+    create_mesh_plot(axs[1], recon_mesh, ax_kwargs={"title": "Recon mesh"})
+    fig.set_size_inches(10, 4)
 
     fig, axs = plt.subplots(1, 2)
-    im_simulation = create_image_plot(axs[0], sim_render.T, title="Target image")
-    im_recon = create_image_plot(axs[1], recon_render.T, title="Reconstruction image")
-    fig.set_size_inches(10,4)
+    im_simulation = create_image_plot(axs[0], sim_render, title="Target image")
+    im_recon = create_image_plot(axs[1], recon_render, title="Reconstruction image")
+    fig.set_size_inches(10, 4)
 
-    fig, axs = plt.subplots(1,2, constrained_layout=True)
+    fig, axs = plt.subplots(1, 2, constrained_layout=True)
     create_layered_image_plot(
         axs[0],
         (
-            recon_render.T,
-            out["shape_deformation"]["shape_deformation_target"].T,
-            out["shape_deformation"]["outside_positions"].T,
+            recon_render,
+            out["shape_deformation"]["shape_deformation_target"],
+            out["shape_deformation"]["outside_positions"],
         ),
         labels=["Background", "Shape deformation\ntarget", "Area outside\ntarget"],
         title="Shape deformation",
@@ -94,9 +97,9 @@ def main():
     create_layered_image_plot(
         axs[1],
         (
-            recon_render.T,
-            out["ringing"]["ringing_target"].T,
-            out["ringing"]["opposite_outside_positions"].T,
+            recon_render,
+            out["ringing"]["ringing_target"],
+            out["ringing"]["opposite_outside_positions"],
         ),
         labels=["Background", "Ringing\ntarget", "Opposite values\n outside target"],
         title="Ringing",

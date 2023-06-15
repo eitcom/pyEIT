@@ -16,7 +16,6 @@ from matplotlib import (
     axes as mpl_axes,
 )
 
-
 def ts_plot(ts, figsize=(6, 4), ylabel="ATI (Ohm)", ylim=None, xdate_format=True):
     """plot time series data"""
     fig, ax = plt.subplots(figsize=figsize)
@@ -87,7 +86,7 @@ def create_mesh_plot(
 
     nodes = np.delete(mesh.node, flat_ind, axis=1)
     elements = mesh.element
-    values = mesh.perm
+    values = mesh.perm if not isinstance(mesh.perm, float) else np.ones(len(elements))*mesh.perm
 
     # Create PolyCollection representing mesh
     verts = nodes[elements]
@@ -96,8 +95,8 @@ def create_mesh_plot(
 
     # Add mesh to ax
     ax.add_collection(pc)
-    ax.autoscale()
     ax.figure.colorbar(pc, ax=ax, label="Element Value")
+    ax.autoscale()
     ax.set_xticks([], labels=None)
     ax.set_yticks([], labels=None)
     ax.set(**ax_kwargs)
