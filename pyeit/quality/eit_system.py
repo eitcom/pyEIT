@@ -3,6 +3,7 @@ import math
 import scipy.ndimage as ndi
 from typing import Tuple, Callable, Union, Dict
 from numpy.typing import ArrayLike, NDArray
+import allantools
 
 """
 eit_system.py contains calculation for the performance of EIT hardware systems based on measured data. These performance
@@ -28,7 +29,7 @@ def calc_signal_to_noise_ratio(measurements: NDArray) -> NDArray:
 
     """
     # Flatten measurements in case they are in a 2d array
-    measurements = measurements.reshape((2, -1))
+    measurements = measurements.reshape((measurements.shape[0], -1))
 
     stdev = np.std(measurements, axis=0)
     average = np.average(measurements, axis=0)
@@ -55,7 +56,7 @@ def calc_accuracy(measurements: NDArray, reference_measurements: NDArray, method
     accuracy
     """
     # Flatten measurements in case they are in a 2d array
-    measurements = measurements.reshape((2, -1))
+    measurements = measurements.reshape((measurements.shape[0], -1))
     reference_measurements = reference_measurements.reshape(-1)
 
     average = np.average(measurements, axis=0)
@@ -66,7 +67,7 @@ def calc_accuracy(measurements: NDArray, reference_measurements: NDArray, method
         # channel. So maybe it would be better as a range?)
         average = (average - np.min(average)) / (np.max(average) - np.min(average))
         reference_measurements = (reference_measurements - np.min(reference_measurements)) / (
-                    np.max(reference_measurements) - np.min(reference_measurements))
+                np.max(reference_measurements) - np.min(reference_measurements))
         accuracy = 1 - np.abs(average - reference_measurements)
 
     elif method == "Ratio":
@@ -78,16 +79,44 @@ def calc_accuracy(measurements: NDArray, reference_measurements: NDArray, method
     return accuracy
 
 
-def calc_drift():
+def calc_drift(measurements: NDArray, sampling_rate: float = 1, sample_period=None, method="Allan"):
     """
-    Drift is a measure of the change in average value of measurements over time. This function uses the Allan
-    variance to calculate drift
+    Drift is a measure of the change in average value of measurements over time. There are two methods for calculating
+    this. The EIDORS method uses the Allan variance, and the Delta method calculates the difference between two
+    samples taken from the start and end of the total list of measurements.
 
     Returns
     -------
+    method: "Allan"
+        t2: the set of sampling periods used
+        adevs: the list of allan deviations calculated for each channel
+
+    method: "Delta"
+        drifts: drifts calculated for each channel
 
     """
-    pass
+    # Flatten measurements in case they are in a 2d array
+    measurements = measurements.reshape((measurements.shape[0], -1))
+
+    if method == "Allan":
+        # Iterate through each channel
+        adevs = []
+        for channel_measurements in measurements.T:
+            (t2, ad, ade, adn) = allantools.oadev(channel_measurements, rate=sampling_rate, data_type="freq",
+                                                  taus="all")
+            adevs.append(ad)
+
+        adevs = np.array(adevs)
+        return t2, adevs
+
+    elif method == "Delta":
+        drifts = []
+        for channel_measurements in measurements.T:
+            start = np.average(channel_measurements[0:sampling_rate * sample_period])
+            end = np.average(np.flip(channel_measurements)[0:sampling_rate * sample_period])
+            drifts.append(end - start)
+        drifts = np.array(drifts)
+        return drifts
 
 
 def calc_reciprocity_accuracy():
