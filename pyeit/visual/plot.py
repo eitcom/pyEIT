@@ -40,7 +40,7 @@ def create_mesh_plot(
     mesh: PyEITMesh,
     ax_kwargs: Optional[dict] = {},
     electrodes: Optional[np.ndarray] = None,
-    coordinate_labels: Optional[str] = "",
+    coordinate_labels: Optional[str] = None,
     marker_kwargs: Optional[dict] = {},
     marker_text_kwargs: Optional[dict] = {},
     coord_label_text_kwargs: Optional[dict] = {},
@@ -87,7 +87,11 @@ def create_mesh_plot(
 
     nodes = np.delete(mesh.node, flat_ind, axis=1)
     elements = mesh.element
-    values = mesh.perm
+    values = (
+        mesh.perm
+        if not isinstance(mesh.perm, float)
+        else np.ones(len(elements)) * mesh.perm
+    )
 
     # Create PolyCollection representing mesh
     verts = nodes[elements]
@@ -97,6 +101,7 @@ def create_mesh_plot(
     # Add mesh to ax
     ax.add_collection(pc)
     ax.figure.colorbar(pc, ax=ax, label="Element Value")
+    ax.autoscale()
     ax.set_xticks([], labels=None)
     ax.set_yticks([], labels=None)
     ax.set(**ax_kwargs)
@@ -233,7 +238,7 @@ def add_coordinate_labels(
         )  # axis autoscaling doesn't work with text, so we increase the margins to make room.
         coord_labels = (l1, l2, l3, l4)
 
-    return coord_labels
+        return coord_labels
 
 
 def alignment_opposing_center(ax: mpl_axes.Axes, x: float, y: float) -> dict:

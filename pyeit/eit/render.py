@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.typing import NDArray, ArrayLike
+from pyeit.mesh import PyEITMesh
 
 """
 render.py contains functions used to render unstructured 2D meshes into rectangular arrays of pixels
@@ -75,10 +76,6 @@ def model_inverse_uv(mesh, resolution, bounds=None, preserve_aspect_ratio=True):
     index of the triangle it lies within. An index of -1 refers to a pixel that does not lie within any of the triangles
     in the grid. Use map_image() to map desired values onto the pixels.
 
-    *Note* I am not sure why this rotates the image by 90 degrees. Also I think the aspect ratio of the mesh should be retained
-    when resolution is changed. Still, these issues shouldn't matter as long as the target mesh and reconstruction mesh are
-    both processed by this function with the same resolution setting.
-
     Parameters
     ----------
     mesh: dict {element, node}
@@ -126,6 +123,9 @@ def model_inverse_uv(mesh, resolution, bounds=None, preserve_aspect_ratio=True):
         tri_in = tri_fn(p_xx, p_yy)
 
         image[min_x:max_x, min_y:max_y][tri_in] = (step * tri_in)[tri_in]
+
+    # Flip image back to original orientation
+    image = image[:, ::-1].T
 
     return image
 
@@ -241,3 +241,91 @@ def calc_absolute_threshold_set(image, threshold):
             image_set[image >= threshold] = 1
 
     return image_set
+
+
+def render_2d(
+    elements: ArrayLike,
+    nodes: ArrayLike,
+    values: ArrayLike,
+    resolution: ArrayLike = (1000, 1000),
+    bounds=None,
+    preserve_aspect_ratio=True,
+) -> NDArray:
+    """
+    Render a 2D unstructured triangular mesh into a rectangular array of pixels
+
+    Parameters
+    ----------
+    elements
+        Nx3 array of indices to the nodes array. each row corresponds to one triangle
+    nodes
+        Nx2 array of cartesian coordinates that make up the points of the triangles
+    values
+        values to map to each triangle
+    resolution
+        resolution of the rendered image, (width, height)
+    bounds:
+        bounds (in input mesh coordinate system) over which to render. Must contain entire mesh.
+        (minx, miny),(maxx, maxy)
+    preserve_aspect_ratio
+        preserve aspect ratio
+
+    Returns
+    -------
+    render np.Array(width, height)
+        array representing an image with values mapped to it
+
+    """
+    image = model_inverse_uv(
+        {"node": nodes, "element": elements},
+        resolution=resolution,
+        bounds=bounds,
+        preserve_aspect_ratio=preserve_aspect_ratio,
+    )
+    render = map_image(image, values)
+    return render
+
+
+def render_2d_mesh(
+    mesh: PyEITMesh,
+    values: ArrayLike = None,
+    resolution: ArrayLike = (1000, 1000),
+    bounds=None,
+    preserve_aspect_ratio=True,
+) -> ArrayLike:
+    """
+    Render a 2D PyEIT mesh into a rectangular array of pixels
+
+    Parameters
+    ----------
+    mesh
+        PyEIT mesh
+    values
+        values to map to each triangle. If None, mesh.perm is used
+    resolution
+        resolution of the rendered image, (width, height)
+    bounds:
+        bounds (in input mesh coordinate system) over which to render. Must contain entire mesh.
+        (minx, miny),(maxx, maxy)
+    preserve_aspect_ratio
+        preserve aspect ratio
+
+    Returns
+    -------
+    render np.Array(width, height)
+        array representing an image with values mapped to it
+
+    """
+    if values is None:
+        values = mesh.perm
+
+    render = render_2d(
+        mesh.element,
+        mesh.node[:, :2],
+        values,
+        resolution=resolution,
+        bounds=bounds,
+        preserve_aspect_ratio=preserve_aspect_ratio,
+    )
+
+    return render
