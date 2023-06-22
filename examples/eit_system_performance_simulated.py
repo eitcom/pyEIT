@@ -13,7 +13,7 @@ from pyeit.visual.plot import (
     create_image_plot,
     create_layered_image_plot,
     create_mesh_plot,
-    create_plot
+    create_plot,
 )
 from pyeit.quality.merit import calc_greit_figures_of_merit
 from numpy.random import default_rng
