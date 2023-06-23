@@ -257,7 +257,7 @@ def calc_detectability(image, conductive_target: bool = True, fraction=0.25, fra
         method=fraction_method,
     )
 
-    mean = np.mean(image[fractional_image == 1])
+    mean = np.abs(np.mean(image[fractional_image == 1]))
     std = np.std(image[fractional_image == 1])
 
     detectability = mean / std
