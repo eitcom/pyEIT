@@ -14,7 +14,7 @@ doi:10.1088/0967-3334/32/7/S09
 """
 
 
-def calc_signal_to_noise_ratio(measurements: NDArray) -> NDArray:
+def calc_signal_to_noise_ratio(measurements: NDArray, method="ratio") -> NDArray:
     """
     Signal to noise ratio calculates the mean measurement divided by the standard deviation of measurements for each
     channel. (For this calculation, a channel is defined as a unique combination of stimulation and measurement
@@ -41,7 +41,12 @@ def calc_signal_to_noise_ratio(measurements: NDArray) -> NDArray:
 
     snr = average / stdev
 
-    return snr
+    if method == "ratio":
+        return snr
+    elif method == "db":
+        return np.log10(np.abs(snr))*20  # Convert to decibels as a root-power quantity
+    else:
+        raise ValueError("Invalid method specified (must be ratio or db)")
 
 
 def calc_accuracy(
@@ -233,7 +238,7 @@ def find_reciprocal(row: NDArray, combined_mat: NDArray) -> int:
     raise ValueError("No reciprocal found")
 
 
-def calc_detectability(image, conductive_target: bool = True, fraction=0.25, fraction_method="GREIT"):
+def calc_detectability(image, conductive_target: bool = True, fraction=0.25, fraction_method="GREIT", method="ratio"):
     """
     See Adler et. al. 2010 "Distinguishability in EIT using a hypothesis-testing model". This creates a z statistic
     so how do we calculate probability of null hypothesis?
@@ -262,9 +267,9 @@ def calc_detectability(image, conductive_target: bool = True, fraction=0.25, fra
 
     detectability = mean / std
 
-    return detectability
-
-
-def calc_distinguishability():
-    # Is this just detectability but with the single object as the background?
-    pass
+    if method == "ratio":
+        return detectability
+    elif method == "db":
+        return np.log10(np.abs(detectability))*20  # Convert to decibels as a root-power quantity
+    else:
+        raise ValueError("Invalid method specified (must be ratio or db)")
