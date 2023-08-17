@@ -44,13 +44,15 @@ def calc_signal_to_noise_ratio(measurements: NDArray, method="ratio") -> NDArray
     if method == "ratio":
         return snr
     elif method == "db":
-        return np.log10(np.abs(snr))*20  # Convert to decibels as a root-power quantity
+        return (
+            np.log10(np.abs(snr)) * 20
+        )  # Convert to decibels as a root-power quantity
     else:
         raise ValueError("Invalid method specified (must be ratio or db)")
 
 
 def calc_accuracy(
-        measurements: NDArray, reference_measurements: NDArray, method="Ratio"
+    measurements: NDArray, reference_measurements: NDArray, method="Ratio"
 ) -> NDArray:
     """
     Accuracy measures the closeness of measured quantities to a "true" reference value. In this case simulated EIT
@@ -81,8 +83,8 @@ def calc_accuracy(
         # channel. So maybe it would be better as a range?)
         average = (average - np.min(average)) / (np.max(average) - np.min(average))
         reference_measurements = (
-                                         reference_measurements - np.min(reference_measurements)
-                                 ) / (np.max(reference_measurements) - np.min(reference_measurements))
+            reference_measurements - np.min(reference_measurements)
+        ) / (np.max(reference_measurements) - np.min(reference_measurements))
         accuracy = 1 - np.abs(average - reference_measurements)
 
     elif method == "Ratio":
@@ -97,7 +99,7 @@ def calc_accuracy(
 
 
 def calc_drift(
-        measurements: NDArray, sampling_rate: float = 1, sample_period=None, method="Allan"
+    measurements: NDArray, sampling_rate: float = 1, sample_period=None, method="Allan"
 ):
     """
     Drift is a measure of the change in average value of measurements over time. There are two methods for calculating
@@ -132,16 +134,18 @@ def calc_drift(
     elif method == "Delta":
         drifts = []
         for channel_measurements in measurements.T:
-            start = np.average(channel_measurements[0: sampling_rate * sample_period])
+            start = np.average(channel_measurements[0 : sampling_rate * sample_period])
             end = np.average(
-                np.flip(channel_measurements)[0: sampling_rate * sample_period]
+                np.flip(channel_measurements)[0 : sampling_rate * sample_period]
             )
             drifts.append(end - start)
         drifts = np.array(drifts)
         return drifts
 
 
-def calc_reciprocity_accuracy(measurements: NDArray, protocol: PyEITProtocol) -> NDArray:
+def calc_reciprocity_accuracy(
+    measurements: NDArray, protocol: PyEITProtocol
+) -> NDArray:
     """
     Tests the closeness of reciprocal measurements to each other. This is in accordance with the principle in
     "Reciprocity Applied to Volume Conductors and the ECG" (Plonsey 1963). The interpretation of this in
@@ -164,7 +168,9 @@ def calc_reciprocity_accuracy(measurements: NDArray, protocol: PyEITProtocol) ->
         Array of accuracy calculations for reciprocal pairs
 
     """
-    combined_mat = np.hstack((protocol.meas_mat[:, :2], protocol.ex_mat[protocol.meas_mat[:, 2]]))
+    combined_mat = np.hstack(
+        (protocol.meas_mat[:, :2], protocol.ex_mat[protocol.meas_mat[:, 2]])
+    )
     reciprocals = find_reciprocals(combined_mat)
 
     # Flatten measurements in case they are in a 2d array
@@ -204,9 +210,13 @@ def find_reciprocals(combined_mat: NDArray) -> NDArray:
     reciprocals = set()
     for i, row in enumerate(combined_mat):
         reciprocal = find_reciprocal(row, combined_mat)
-        reciprocals.add(frozenset((i, reciprocal)))  # Append as inner set to outer set to filter out duplicates
+        reciprocals.add(
+            frozenset((i, reciprocal))
+        )  # Append as inner set to outer set to filter out duplicates
 
-    reciprocals = np.array([list(r) for r in list(reciprocals)])  # Convert back to array
+    reciprocals = np.array(
+        [list(r) for r in list(reciprocals)]
+    )  # Convert back to array
 
     return reciprocals
 
@@ -232,13 +242,21 @@ def find_reciprocal(row: NDArray, combined_mat: NDArray) -> int:
     reciprocal_row = np.array(({*row[2:]}, {*row[0:2]}))
 
     for i, compare_row in enumerate(combined_mat):
-        if np.array_equal(reciprocal_row, np.array(({*compare_row[0:2]}, {*compare_row[2:]}))):
+        if np.array_equal(
+            reciprocal_row, np.array(({*compare_row[0:2]}, {*compare_row[2:]}))
+        ):
             return i
 
     raise ValueError("No reciprocal found")
 
 
-def calc_detectability(image, conductive_target: bool = True, fraction=0.25, fraction_method="GREIT", method="ratio"):
+def calc_detectability(
+    image,
+    conductive_target: bool = True,
+    fraction=0.25,
+    fraction_method="GREIT",
+    method="ratio",
+):
     """
     See Adler et. al. 2010 "Distinguishability in EIT using a hypothesis-testing model". This creates a z statistic
     so how do we calculate probability of null hypothesis?
@@ -270,6 +288,8 @@ def calc_detectability(image, conductive_target: bool = True, fraction=0.25, fra
     if method == "ratio":
         return detectability
     elif method == "db":
-        return np.log10(np.abs(detectability))*20  # Convert to decibels as a root-power quantity
+        return (
+            np.log10(np.abs(detectability)) * 20
+        )  # Convert to decibels as a root-power quantity
     else:
         raise ValueError("Invalid method specified (must be ratio or db)")

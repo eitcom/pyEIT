@@ -69,20 +69,20 @@ def main():
     # Print figures of merit
     print("")
     print(f"Amplitude: Average pixel value in reconstruction image is {figs[0]:.4f}")
-    print(f"Position Error: {100*figs[1]:.2f}% of widest axis")
+    print(f"Position Error: {100 * figs[1]:.2f}% of widest axis")
     print(
-        f"Resolution: Reconstructed point radius {100*figs[2]:.2f}% of image equivalent radius"
+        f"Resolution: Reconstructed point radius {100 * figs[2]:.2f}% of image equivalent radius"
     )
     print(
-        f"Shape Deformation: {100*figs[3]:.2f}% of pixels in the thresholded image are outside the equivalent circle"
+        f"Shape Deformation: {100 * figs[3]:.2f}% of pixels in the thresholded image are outside the equivalent circle"
     )
     print(
-        f"Ringing: Ringing pixel amplitude is  {100*figs[4]:.2f}% of image amplitude in thresholded region"
+        f"Ringing: Ringing pixel amplitude is  {100 * figs[4]:.2f}% of image amplitude in thresholded region"
     )
 
     # Create mesh plots
     fig, axs = plt.subplots(1, 2)
-    create_mesh_plot(axs[0], sim_mesh, ax_kwargs={"title": "Sim mesh"})
+    create_mesh_plot(axs[0], sim_mesh_new, ax_kwargs={"title": "Sim mesh"})
     create_mesh_plot(axs[1], recon_mesh, ax_kwargs={"title": "Recon mesh"})
     fig.set_size_inches(10, 4)
 

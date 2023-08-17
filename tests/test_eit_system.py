@@ -5,7 +5,7 @@ from pyeit.quality.eit_system import (
     calc_drift,
     find_reciprocal,
     find_reciprocals,
-    calc_reciprocity_accuracy
+    calc_reciprocity_accuracy,
 )
 from numpy.testing import assert_array_equal
 from numpy.random import default_rng
@@ -277,4 +277,3 @@ def test_calc_reciprocity_accuracy():
     reciprocity_accuracy = calc_reciprocity_accuracy(data, protocol_obj)
 
     np.testing.assert_array_equal(correct_reciprocity_accuracy, reciprocity_accuracy)
-
