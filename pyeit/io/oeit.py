@@ -11,7 +11,7 @@ def load_oeit_data(file_name):
         if eit is not None:
             data.append(eit)
 
-    return data
+    return np.array(data)
 
 
 def parse_oeit_line(line):
