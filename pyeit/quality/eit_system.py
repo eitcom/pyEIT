@@ -1,8 +1,5 @@
 import numpy as np
-import math
-import scipy.ndimage as ndi
-from typing import Tuple, Callable, Union, Dict
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 import allantools
 from pyeit.eit.protocol import PyEITProtocol
 from pyeit.quality.merit import calc_fractional_amplitude_set
