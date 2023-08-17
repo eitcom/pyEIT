@@ -87,8 +87,8 @@ def main():
     fig.set_size_inches(10, 4)
 
     fig, axs = plt.subplots(1, 2)
-    im_simulation = create_image_plot(axs[0], sim_render, title="Target image")
-    im_recon = create_image_plot(axs[1], recon_render, title="Reconstruction image")
+    create_image_plot(axs[0], sim_render, title="Target image")
+    create_image_plot(axs[1], recon_render, title="Reconstruction image")
     fig.set_size_inches(10, 4)
 
     fig, axs = plt.subplots(1, 2, constrained_layout=True)
