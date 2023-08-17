@@ -17,6 +17,7 @@ from pyeit.quality.eit_system import (
     calc_detectability,
 )
 from pyeit.eit.render import render_2d_mesh
+from pyeit.visual.plot import colorbar
 
 
 def main():
@@ -200,20 +201,6 @@ def main():
     fig.suptitle("Distinguishability Renders")
     fig.tight_layout()
     plt.show()
-
-
-def colorbar(mappable):
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-    import matplotlib.pyplot as plt
-
-    last_axes = plt.gca()
-    ax = mappable.axes
-    fig = ax.figure
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="10%", pad=0.05)
-    cbar = fig.colorbar(mappable, cax=cax)
-    plt.sca(last_axes)
-    return cbar
 
 
 if __name__ == "__main__":

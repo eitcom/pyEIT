@@ -15,6 +15,8 @@ from matplotlib import (
     patches as mpatches,
     axes as mpl_axes,
 )
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.colorbar
 
 
 def ts_plot(ts, figsize=(6, 4), ylabel="ATI (Ohm)", ylim=None, xdate_format=True):
@@ -36,15 +38,15 @@ def ts_plot(ts, figsize=(6, 4), ylabel="ATI (Ohm)", ylim=None, xdate_format=True
 
 
 def create_mesh_plot(
-    ax: mpl_axes.Axes,
-    mesh: PyEITMesh,
-    ax_kwargs: Optional[dict] = {},
-    electrodes: Optional[np.ndarray] = None,
-    coordinate_labels: Optional[str] = None,
-    marker_kwargs: Optional[dict] = {},
-    marker_text_kwargs: Optional[dict] = {},
-    coord_label_text_kwargs: Optional[dict] = {},
-    flat_plane: Optional[str] = "z",
+        ax: mpl_axes.Axes,
+        mesh: PyEITMesh,
+        ax_kwargs: Optional[dict] = {},
+        electrodes: Optional[np.ndarray] = None,
+        coordinate_labels: Optional[str] = None,
+        marker_kwargs: Optional[dict] = {},
+        marker_text_kwargs: Optional[dict] = {},
+        coord_label_text_kwargs: Optional[dict] = {},
+        flat_plane: Optional[str] = "z",
 ):
     """
     Creates a plot to display a 2d mesh. Optionally plots electrode positions and adds coordinate labels.
@@ -100,7 +102,8 @@ def create_mesh_plot(
 
     # Add mesh to ax
     ax.add_collection(pc)
-    ax.figure.colorbar(pc, ax=ax, label="Element Value")
+    cb = colorbar(pc)
+    cb.set_label("Element Value")
     ax.autoscale()
     ax.set_xticks([], labels=None)
     ax.set_yticks([], labels=None)
@@ -122,10 +125,10 @@ def create_mesh_plot(
 
 
 def add_electrode_markers(
-    ax: mpl_axes.Axes,
-    electrode_points: list,
-    marker_kwargs: Optional[dict] = None,
-    text_kwargs: Optional[dict] = None,
+        ax: mpl_axes.Axes,
+        electrode_points: list,
+        marker_kwargs: Optional[dict] = None,
+        text_kwargs: Optional[dict] = None,
 ):
     """
     Add markers to a plot to indicate the position of electrodes
@@ -165,9 +168,9 @@ def add_electrode_markers(
 
 
 def add_coordinate_labels(
-    ax: mpl_axes.Axes,
-    coordinate_labels: Optional[str] = None,
-    text_kwargs: Optional[dict] = None,
+        ax: mpl_axes.Axes,
+        coordinate_labels: Optional[str] = None,
+        text_kwargs: Optional[dict] = None,
 ):
     """
     Add labels to a plot to clarify the relationship between the plot coordinate system and the coordinate system of the
@@ -277,18 +280,18 @@ def alignment_opposing_center(ax: mpl_axes.Axes, x: float, y: float) -> dict:
 
 
 def create_plot(
-    ax: mpl_axes.Axes,
-    eit_image: np.ndarray,
-    mesh: PyEITMesh,
-    vmin: Optional[float] = None,
-    vmax: Optional[float] = None,
-    ax_kwargs: Optional[dict] = None,
-    electrodes: Optional[np.ndarray] = None,
-    coordinate_labels: Optional[str] = None,
-    marker_kwargs: Optional[dict] = None,
-    marker_text_kwargs: Optional[dict] = None,
-    coord_label_text_kwargs: Optional[dict] = None,
-    flat_plane: Optional[str] = "z",
+        ax: mpl_axes.Axes,
+        eit_image: np.ndarray,
+        mesh: PyEITMesh,
+        vmin: Optional[float] = None,
+        vmax: Optional[float] = None,
+        ax_kwargs: Optional[dict] = None,
+        electrodes: Optional[np.ndarray] = None,
+        coordinate_labels: Optional[str] = None,
+        marker_kwargs: Optional[dict] = None,
+        marker_text_kwargs: Optional[dict] = None,
+        coord_label_text_kwargs: Optional[dict] = None,
+        flat_plane: Optional[str] = "z",
 ):
     """
     Creates a plot of a reconstructed EIT image. Optionally plots electrode positions and adds coordinate labels.
@@ -344,7 +347,7 @@ def create_plot(
     tripcolor_keys_map = {"vmin": vmin, "vmax": vmax}
     tripcolor_kwargs = {k: v for k, v in tripcolor_keys_map.items() if v is not None}
     plot_image = ax.tripcolor(x, y, elements, eit_image, **tripcolor_kwargs)
-    ax.figure.colorbar(plot_image)
+    colorbar(plot_image)
     ax.set_xticks([], labels=None)
     ax.set_yticks([], labels=None)
     ax.set(**ax_kwargs)
@@ -365,7 +368,7 @@ def create_plot(
 
 
 def create_image_plot(
-    ax, image, title, vmin=None, vmax=None, background=np.nan, margin=10, origin="lower"
+        ax, image, title, vmin=None, vmax=None, background=np.nan, margin=10, origin="lower"
 ):
     """
     Create a plot using imshow and set the axis bounds to frame the image
@@ -395,12 +398,12 @@ def create_image_plot(
     ax.set_xbound(img_bounds[2] - margin, img_bounds[3] + margin)
     ax.set_title(title)
 
-    ax.figure.colorbar(im)
+    colorbar(im)
     return im
 
 
 def create_layered_image_plot(
-    ax, layers, labels=None, title=None, origin="lower", margin=None
+        ax, layers, labels=None, title=None, origin="lower", margin=None
 ):
     """
     Create a plot using imshow built from discrete layers, and label those layers in the legend.
@@ -427,8 +430,8 @@ def create_layered_image_plot(
     values = list(range(1, len(labels) + 1))
     img_array = np.full(np.shape(layers[0]), np.nan)
     for (
-        i,
-        layer,
+            i,
+            layer,
     ) in enumerate(layers):
         img_array[np.where(np.logical_and(~np.isnan(layer), layer))] = values[i]
 
@@ -494,3 +497,26 @@ def get_img_bounds(img, background=np.nan):
             ymax = j - 1
 
     return xmin, xmax, ymin, ymax
+
+
+def colorbar(mappable: matplotlib.cm.ScalarMappable) -> matplotlib.colorbar.Colorbar:
+    """
+    Add a colorbar that matches the height of its corresponding image
+
+    Parameters
+    ----------
+    mappable
+
+    Returns
+    -------
+    cbar
+
+    """
+    last_axes = plt.gca()
+    ax = mappable.axes
+    fig = ax.figure
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.1)
+    cbar = fig.colorbar(mappable, cax=cax)
+    plt.sca(last_axes)
+    return cbar
