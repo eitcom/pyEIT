@@ -18,17 +18,52 @@ from scipy.sparse import coo_matrix
 from scipy.spatial import ConvexHull
 
 
-def meshgrid(
-    pts: np.ndarray, n: int = 32, ext_ratio: float = 0.0, gc: bool = False
+class TriangleRasterizer:
+    def __init__(self, pts, tri):
+        tp = pts[:, np.newaxis][tri].squeeze()
+        tri_vec = tp[:, [1, 2, 0]] - tp
+        self.tp = tp
+        self.atot = np.abs(self._tri_area(tri_vec[:, 0], tri_vec[:, 1]))
+
+    @staticmethod
+    def _tri_area(bar0, bar1):
+        return bar0[:, 0] * bar1[:, 1] - bar0[:, 1] * bar1[:, 0]
+
+    def _point_in_triangle(self, v):
+        tv = self.tp - v
+        a0 = self._tri_area(tv[:, 0], tv[:, 1])
+        a1 = self._tri_area(tv[:, 1], tv[:, 2])
+        a2 = self._tri_area(tv[:, 2], tv[:, 0])
+        asum = np.sum(np.abs(np.vstack([a0, a1, a2])), axis=0)
+        # add a margin for in-triangle test
+        return np.any(asum <= 1.01 * self.atot)
+
+    def points_in_triangles(self, varray):
+        return np.array([self._point_in_triangle(v) for v in varray])
+
+
+def rasterize(
+    pts: np.ndarray,
+    tri: np.ndarray,
+    method: str = "cg",
+    n: int = 32,
+    ext_ratio: float = 0.0,
+    gc: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    build xg, yg, mask grids from triangles point cloud
+    rasterize triangles point cloud and returns (xg, yg, mask)
     function for interpolating regular grids
 
     Parameters
     ----------
     pts: np.ndarray
-        nx2 array of points (x, y)
+        nx2 array of points {(x, y)}
+    tri: np.ndarray
+        nx3 array of points connection {(i0, i1, i2)}
+    method: str
+        "cg", test a point in a triangle using barycentric coordinates
+        "quick": test the distance from a point to centers of elements
+        "qhull": using convex hull
     n: int
         the number of meshgrid per dimension, by default 32
     ext_ratio: float
@@ -47,8 +82,16 @@ def meshgrid(
     mask denotes points outside mesh.
     """
     xg, yg = _build_grid(pts, n=n, ext_ratio=ext_ratio, gc=gc)
-    pts_edges = _hull_points(pts)
-    mask = _build_mask(pts_edges, xg, yg)
+    points = np.vstack((xg.flatten(), yg.flatten())).T
+
+    # perform rasterize on meshgrids
+    if method == "cg":
+        TR = TriangleRasterizer(pts[:, :2], tri)
+        mask = ~TR.points_in_triangles(points)
+    else:
+        pts_edges = _hull_points(pts)
+        mask = _build_mask(pts_edges, xg, yg)
+
     return xg, yg, mask
 
 
@@ -550,22 +593,24 @@ def demo() -> None:
 
     # plot mesh and interpolated mesh (tri2pts)
     fig_size = (6, 4)
-    fig = plt.figure(figsize=fig_size)
+    fig = plt.figure(figsize=fig_size, dpi=200)
     ax = fig.add_subplot(111)
     ax.set_aspect("equal")
     ax.triplot(pts[:, 0], pts[:, 1], tri)
-    im1 = ax.tripcolor(pts[:, 0], pts[:, 1], tri, mesh_new.perm)
+    ax.set_title("mesh_obj and anomaly")
+    im1 = ax.tripcolor(pts[:, 0], pts[:, 1], tri, mesh_new.perm, alpha=0.8)
     fig.colorbar(im1, orientation="vertical")
 
-    fig = plt.figure(figsize=fig_size)
+    fig = plt.figure(figsize=fig_size, dpi=200)
     ax2 = fig.add_subplot(111)
     ax2.set_aspect("equal")
     ax2.triplot(pts[:, 0], pts[:, 1], tri)
+    ax2.set_title("mesh_obj and anomaly on nodes")
     im2 = ax2.tripcolor(pts[:, 0], pts[:, 1], tri, perm_node, shading="flat")
     fig.colorbar(im2, orientation="vertical")
 
     # 3. interpolate on grids (irregular or regular) using IDW, sigmod
-    xg, yg, mask = meshgrid(pts)
+    xg, yg, mask = rasterize(pts, tri)
     im = np.ones_like(mask)
     # mapping from values on xy to values on xyi
     xy = np.mean(pts[tri], axis=1)
@@ -579,9 +624,10 @@ def demo() -> None:
     im = im.reshape(xg.shape)
 
     # plot interpolated values
-    fig, ax = plt.subplots(figsize=fig_size)
+    fig, ax = plt.subplots(figsize=fig_size, dpi=200)
     ax.set_aspect("equal")
     ax.triplot(pts[:, 0], pts[:, 1], tri, alpha=0.5)
+    ax.set_title("mesh_obj and anomaly rasterized")
     im3 = ax.pcolor(xg, yg, im, edgecolors=None, linewidth=0, alpha=0.8)
     fig.colorbar(im3, orientation="vertical")
     plt.show()

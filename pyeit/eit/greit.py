@@ -17,7 +17,7 @@ from typing import Tuple, Union, Optional
 import numpy as np
 import scipy.linalg as la
 from .base import EitBase
-from .interp2d import meshgrid, weight_sigmod
+from .interp2d import rasterize, weight_sigmod
 
 
 class GREIT(EitBase):
@@ -91,7 +91,7 @@ class GREIT(EitBase):
         }
 
         # Build grids and mask
-        self.xg, self.yg, self.mask = meshgrid(self.mesh.node, n=n)
+        self.xg, self.yg, self.mask = rasterize(self.mesh.node, self.mesh.element, n=n)
 
         w_mat = self._compute_grid_weights(self.xg, self.yg)
         self.J, self.v0 = self.fwd.compute_jac(perm=perm, normalize=jac_normalized)

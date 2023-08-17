@@ -59,7 +59,7 @@ class MeshCircle:
 
         # place electrodes uniformly on the boundary
         n = np.linspace(
-            el_start, el_start + el_len, num=self.n_el, endpoint=False, dtype=np.int
+            el_start, el_start + el_len, num=self.n_el, endpoint=False, dtype=int
         )
 
         # for FMMU, electrodes should be placed clockwise
