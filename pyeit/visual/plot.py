@@ -38,15 +38,15 @@ def ts_plot(ts, figsize=(6, 4), ylabel="ATI (Ohm)", ylim=None, xdate_format=True
 
 
 def create_mesh_plot(
-        ax: mpl_axes.Axes,
-        mesh: PyEITMesh,
-        ax_kwargs: Optional[dict] = {},
-        electrodes: Optional[np.ndarray] = None,
-        coordinate_labels: Optional[str] = None,
-        marker_kwargs: Optional[dict] = {},
-        marker_text_kwargs: Optional[dict] = {},
-        coord_label_text_kwargs: Optional[dict] = {},
-        flat_plane: Optional[str] = "z",
+    ax: mpl_axes.Axes,
+    mesh: PyEITMesh,
+    ax_kwargs: Optional[dict] = {},
+    electrodes: Optional[np.ndarray] = None,
+    coordinate_labels: Optional[str] = None,
+    marker_kwargs: Optional[dict] = {},
+    marker_text_kwargs: Optional[dict] = {},
+    coord_label_text_kwargs: Optional[dict] = {},
+    flat_plane: Optional[str] = "z",
 ):
     """
     Creates a plot to display a 2d mesh. Optionally plots electrode positions and adds coordinate labels.
@@ -125,10 +125,10 @@ def create_mesh_plot(
 
 
 def add_electrode_markers(
-        ax: mpl_axes.Axes,
-        electrode_points: list,
-        marker_kwargs: Optional[dict] = None,
-        text_kwargs: Optional[dict] = None,
+    ax: mpl_axes.Axes,
+    electrode_points: list,
+    marker_kwargs: Optional[dict] = None,
+    text_kwargs: Optional[dict] = None,
 ):
     """
     Add markers to a plot to indicate the position of electrodes
@@ -168,9 +168,9 @@ def add_electrode_markers(
 
 
 def add_coordinate_labels(
-        ax: mpl_axes.Axes,
-        coordinate_labels: Optional[str] = None,
-        text_kwargs: Optional[dict] = None,
+    ax: mpl_axes.Axes,
+    coordinate_labels: Optional[str] = None,
+    text_kwargs: Optional[dict] = None,
 ):
     """
     Add labels to a plot to clarify the relationship between the plot coordinate system and the coordinate system of the
@@ -280,18 +280,18 @@ def alignment_opposing_center(ax: mpl_axes.Axes, x: float, y: float) -> dict:
 
 
 def create_plot(
-        ax: mpl_axes.Axes,
-        eit_image: np.ndarray,
-        mesh: PyEITMesh,
-        vmin: Optional[float] = None,
-        vmax: Optional[float] = None,
-        ax_kwargs: Optional[dict] = None,
-        electrodes: Optional[np.ndarray] = None,
-        coordinate_labels: Optional[str] = None,
-        marker_kwargs: Optional[dict] = None,
-        marker_text_kwargs: Optional[dict] = None,
-        coord_label_text_kwargs: Optional[dict] = None,
-        flat_plane: Optional[str] = "z",
+    ax: mpl_axes.Axes,
+    eit_image: np.ndarray,
+    mesh: PyEITMesh,
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    ax_kwargs: Optional[dict] = None,
+    electrodes: Optional[np.ndarray] = None,
+    coordinate_labels: Optional[str] = None,
+    marker_kwargs: Optional[dict] = None,
+    marker_text_kwargs: Optional[dict] = None,
+    coord_label_text_kwargs: Optional[dict] = None,
+    flat_plane: Optional[str] = "z",
 ):
     """
     Creates a plot of a reconstructed EIT image. Optionally plots electrode positions and adds coordinate labels.
@@ -368,7 +368,7 @@ def create_plot(
 
 
 def create_image_plot(
-        ax, image, title, vmin=None, vmax=None, background=np.nan, margin=10, origin="lower"
+    ax, image, title, vmin=None, vmax=None, background=np.nan, margin=10, origin="lower"
 ):
     """
     Create a plot using imshow and set the axis bounds to frame the image
@@ -403,7 +403,7 @@ def create_image_plot(
 
 
 def create_layered_image_plot(
-        ax, layers, labels=None, title=None, origin="lower", margin=None
+    ax, layers, labels=None, title=None, origin="lower", margin=None
 ):
     """
     Create a plot using imshow built from discrete layers, and label those layers in the legend.
@@ -430,8 +430,8 @@ def create_layered_image_plot(
     values = list(range(1, len(labels) + 1))
     img_array = np.full(np.shape(layers[0]), np.nan)
     for (
-            i,
-            layer,
+        i,
+        layer,
     ) in enumerate(layers):
         img_array[np.where(np.logical_and(~np.isnan(layer), layer))] = values[i]
 

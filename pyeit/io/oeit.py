@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import stats
 
 
 def load_oeit_data(file_name):
@@ -10,6 +11,9 @@ def load_oeit_data(file_name):
         eit = parse_oeit_line(line)
         if eit is not None:
             data.append(eit)
+
+    mode_len = stats.mode([len(item) for item in data], keepdims=False)
+    data = [item for item in data if len(item) == mode_len.mode]
 
     return np.array(data)
 
