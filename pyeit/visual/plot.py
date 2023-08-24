@@ -15,6 +15,8 @@ from matplotlib import (
     patches as mpatches,
     axes as mpl_axes,
 )
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.colorbar
 
 
 def ts_plot(ts, figsize=(6, 4), ylabel="ATI (Ohm)", ylim=None, xdate_format=True):
@@ -100,7 +102,8 @@ def create_mesh_plot(
 
     # Add mesh to ax
     ax.add_collection(pc)
-    ax.figure.colorbar(pc, ax=ax, label="Element Value")
+    cb = colorbar(pc)
+    cb.set_label("Element Value")
     ax.autoscale()
     ax.set_xticks([], labels=None)
     ax.set_yticks([], labels=None)
@@ -344,7 +347,7 @@ def create_plot(
     tripcolor_keys_map = {"vmin": vmin, "vmax": vmax}
     tripcolor_kwargs = {k: v for k, v in tripcolor_keys_map.items() if v is not None}
     plot_image = ax.tripcolor(x, y, elements, eit_image, **tripcolor_kwargs)
-    ax.figure.colorbar(plot_image)
+    colorbar(plot_image)
     ax.set_xticks([], labels=None)
     ax.set_yticks([], labels=None)
     ax.set(**ax_kwargs)
@@ -395,7 +398,7 @@ def create_image_plot(
     ax.set_xbound(img_bounds[2] - margin, img_bounds[3] + margin)
     ax.set_title(title)
 
-    ax.figure.colorbar(im)
+    colorbar(im)
     return im
 
 
@@ -494,3 +497,26 @@ def get_img_bounds(img, background=np.nan):
             ymax = j - 1
 
     return xmin, xmax, ymin, ymax
+
+
+def colorbar(mappable: matplotlib.cm.ScalarMappable) -> matplotlib.colorbar.Colorbar:
+    """
+    Add a colorbar that matches the height of its corresponding image
+
+    Parameters
+    ----------
+    mappable
+
+    Returns
+    -------
+    cbar
+
+    """
+    last_axes = plt.gca()
+    ax = mappable.axes
+    fig = ax.figure
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.1)
+    cbar = fig.colorbar(mappable, cax=cax)
+    plt.sca(last_axes)
+    return cbar
