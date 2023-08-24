@@ -88,15 +88,14 @@ def main():
             axs[i],
             solution,
             recon_mesh,
-            ax_kwargs={"title": f"Target pos: {plot_c[i]:.2f}/r"},
+            ax_kwargs={"title": f"Target Pos: {plot_c[i]:.2f}/r"},
         )
 
-    fig.set_size_inches(15, 2)
+    fig.set_size_inches(12, 2)
     fig.tight_layout()
 
     figs_list = np.array(figs_list)
-    fig, axs = plt.subplots(5, 1, sharex=True)
-    axs[4].set_xlabel("Target pos/r")
+    fig, axs = plt.subplots(1, 5)
     titles = [
         "Average Amplitude",
         "Position Error",
@@ -106,9 +105,12 @@ def main():
     ]
     for i in range(5):
         axs[i].plot(c_range, figs_list[:, i])
-        axs[i].set_title(titles[i], size="small")
+        axs[i].set_title(f"{titles[i]}\nvs Target Pos")
+        axs[i].set_xlabel("Target Pos/r")
+        axs[i].set_ylabel(titles[i])
 
-    plt.tight_layout()
+    fig.set_size_inches(15, 3)
+    fig.tight_layout()
     plt.show()
 
 

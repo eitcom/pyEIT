@@ -13,3 +13,4 @@ dependencies:
   - shapely
   - trimesh
   - "imageio>=2.19"
+  - allantools
