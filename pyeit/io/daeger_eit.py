@@ -76,7 +76,7 @@ class DAEGER_EIT:
         with open(fname, "rb") as fh:
             b = fh.read(16)
             a = struct.unpack("8H", b)
-            offset = a[2] + 8
+            offset = a[2] + 16
 
         # number of frames
         nframe = int((flen - offset) / spc)
