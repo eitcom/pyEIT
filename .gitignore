@@ -4,6 +4,7 @@ sandbox/
 .directory
 .idea/
 .spyproject/
+my_env/
 
 *.jpg
 *.jpeg
