@@ -8,31 +8,16 @@
 
 `pyEIT` is purely python based, it can be installed and run without any difficulty.
 
-### 1.1 Install using pip or conda-forge (recommended)
+### 1.1 Set up a local virtual environment e.g.
 
-`pyEIT` is now availbale on `pypi` and `conda-forge`. It is purely python, which can be installed via
 ```bash
-$ pip install pyeit
-```
-or
-```bash
-$ conda install -c conda-forge pyeit
+python -m ven my_env
 ```
 
-### 1.2 Install from source code
-
-You can track the git version of `pyEIT`, and use it locally by setting the `PYTHONPATH` variable.
-
+### 1.2 Install dependencies using pip
 ```bash
-export PYTHONPATH=/path/to/pyEIT
-```
-
-If you are using `spyder`, or `pyCharm`, you can also set `PYTHONPATH` per project in the IDE, which is more convenient.
-
-Alternatively, but not recommended, you can compile and install from source code,
-```bash
-$ python setup.py build
-$ python setup.py install
+cd pyEIT
+pip install -r requirements.txt
 ```
 
 ## 2. Run the examples

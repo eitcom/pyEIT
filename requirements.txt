@@ -1,0 +1,3 @@
+pyeit
+PyQt5 # For interactive plotting
+vispy # for 3D mesh plots
