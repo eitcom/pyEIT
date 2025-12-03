@@ -117,7 +117,7 @@ class Forward:
         # using natural boundary conditions
         b = np.zeros((ex_mat.shape[0], self.mesh.n_nodes))
         b[np.arange(b.shape[0])[:, None], self.mesh.el_pos[ex_mat]] = [1, -1]
-        result = np.empty((ex_mat.shape[0], self.kg.shape[0]))
+        result = np.empty((ex_mat.shape[0], self.kg.shape[0]), dtype=complex)
 
         # TODO Need to inspect this deeper
         for i in range(result.shape[0]):
