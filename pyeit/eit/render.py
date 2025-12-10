@@ -208,7 +208,7 @@ def map_image(image, values):
     """
     vals = values[image.astype(int)]
     mask = image == -1
-    vals[mask] = np.NaN
+    vals[mask] = np.nan
 
     return vals
 
