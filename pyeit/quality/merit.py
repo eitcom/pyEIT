@@ -600,7 +600,7 @@ def lambda_max(
         return arr.flatten()[idxs]
 
 
-def get_image_bounds(image, background=np.NaN):
+def get_image_bounds(image, background=np.nan):
     """
     Get the bounds of an image.
 
@@ -618,7 +618,7 @@ def get_image_bounds(image, background=np.NaN):
     """
     if not np.isnan(background):
         image = image.astype(float)
-        image[np.where(image == background)] = np.NaN
+        image[np.where(image == background)] = np.nan
 
     rowmin = np.argmax(np.any(~np.isnan(image), axis=0))
     rowmax = image.shape[0] - np.argmax(np.any(~np.isnan(image[::-1]), axis=0))
