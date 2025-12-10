@@ -101,7 +101,7 @@ class TestFem(unittest.TestCase):
         eit = pyeit.eit.greit.GREIT(self.mesh_obj, self.protocol_obj)
         eit.setup(p=0.50, lamb=0.01, perm=1, jac_normalized=True)
         ds = eit.solve(self.v1, self.v0, normalize=True)
-        x, y, ds = eit.mask_value(ds, mask_value=np.NAN)
+        x, y, ds = eit.mask_value(ds, mask_value=np.nan)
 
         # evaluate GREIT
         loc = np.where(np.abs(ds) == np.nanmax(np.abs(ds)))
