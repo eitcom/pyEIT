@@ -19,49 +19,49 @@ from matplotlib import (
     patches as mpatches,
     axes as mpl_axes,
 )
-from numpy import NaN
+from numpy import nan
 
 parent_dir = str(Path(__file__).parent)
 
 test_image = np.array(
     [
-        [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-        [NaN, 0, 0, 0, 0, 0, NaN],
-        [NaN, 0, 1, 1, 1, 0, NaN],
-        [NaN, 0, 1, 1, 1, 0, NaN],
-        [NaN, 0, 1, 1, 1, 0, NaN],
-        [NaN, 0, 1, 1, 1, 0, NaN],
-        [NaN, 0, 2, 2, 2, 0, NaN],
-        [NaN, 0, 0, 0, 0, 0, NaN],
-        [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+        [nan, nan, nan, nan, nan, nan, nan],
+        [nan, 0, 0, 0, 0, 0, nan],
+        [nan, 0, 1, 1, 1, 0, nan],
+        [nan, 0, 1, 1, 1, 0, nan],
+        [nan, 0, 1, 1, 1, 0, nan],
+        [nan, 0, 1, 1, 1, 0, nan],
+        [nan, 0, 2, 2, 2, 0, nan],
+        [nan, 0, 0, 0, 0, 0, nan],
+        [nan, nan, nan, nan, nan, nan, nan],
     ]
 )
 
 test_image_2 = np.array(
     [
-        [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-        [NaN, 0, 0, 0, 0, 0, NaN],
-        [NaN, 0, 1, 1, 1, 0, NaN],
-        [NaN, 0, 1, 1, 1, 0, NaN],
-        [NaN, 0, 1, 1, 1, 0, NaN],
-        [NaN, 0, 1, 1, 1, 0, NaN],
-        [NaN, 0, 0, 0, 0, 0, NaN],
-        [NaN, 0, 0, 0, 0, 0, NaN],
-        [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+        [nan, nan, nan, nan, nan, nan, nan],
+        [nan, 0, 0, 0, 0, 0, nan],
+        [nan, 0, 1, 1, 1, 0, nan],
+        [nan, 0, 1, 1, 1, 0, nan],
+        [nan, 0, 1, 1, 1, 0, nan],
+        [nan, 0, 1, 1, 1, 0, nan],
+        [nan, 0, 0, 0, 0, 0, nan],
+        [nan, 0, 0, 0, 0, 0, nan],
+        [nan, nan, nan, nan, nan, nan, nan],
     ]
 )
 
 test_image_3 = np.array(
     [
-        [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-        [NaN, 0, 0, 0, 0, 0, NaN],
-        [NaN, 0, -1, -1, -1, 0, NaN],
-        [NaN, 0, 0.1, 0.1, 0.1, 0, NaN],
-        [NaN, 0, 0.1, 0.1, 0.1, 0, NaN],
-        [NaN, 0, 0.75, 0.75, 0.75, 0, NaN],
-        [NaN, 0, 2, 2, 2, 0, NaN],
-        [NaN, 0, 0, 0, 0, 0, NaN],
-        [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+        [nan, nan, nan, nan, nan, nan, nan],
+        [nan, 0, 0, 0, 0, 0, nan],
+        [nan, 0, -1, -1, -1, 0, nan],
+        [nan, 0, 0.1, 0.1, 0.1, 0, nan],
+        [nan, 0, 0.1, 0.1, 0.1, 0, nan],
+        [nan, 0, 0.75, 0.75, 0.75, 0, nan],
+        [nan, 0, 2, 2, 2, 0, nan],
+        [nan, 0, 0, 0, 0, 0, nan],
+        [nan, nan, nan, nan, nan, nan, nan],
     ]
 )
 
@@ -69,7 +69,7 @@ test_image_3 = np.array(
 def test_calc_circle():
     square = imread(parent_dir + "/data/square_image.bmp", pilmode="RGB")
 
-    fractional_image = np.full(np.shape(square)[0:2], NaN)
+    fractional_image = np.full(np.shape(square)[0:2], nan)
     fractional_image[
         np.where(
             (square[:, :, 0] == 255)
@@ -101,9 +101,9 @@ def test_calc_circle():
     #
     # img = axs[1, 0].imshow(fractional_image)
     # axs[1, 0].set_title("Fractional Image")
-    # colors = [img.cmap(img.norm(value)) for value in [NaN, 0, 1]]
+    # colors = [img.cmap(img.norm(value)) for value in [nan, 0, 1]]
     # patches = [
-    #     mpatches.Patch(color=colors[0], label="NAN"),
+    #     mpatches.Patch(color=colors[0], label="nan"),
     #     mpatches.Patch(color=colors[1], label="0"),
     #     mpatches.Patch(color=colors[2], label="1")
     # ]
@@ -134,43 +134,43 @@ def test_calc_amplitude():
 def test_calc_position_error():
     test_image_p1 = np.array(
         [
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 1, 1, 1, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+            [nan, nan, nan, nan, nan, nan, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 1, 1, 1, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, nan, nan, nan, nan, nan, nan],
         ]
     )
 
     test_image_p2 = np.array(
         [
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 1, 1, 1, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+            [nan, nan, nan, nan, nan, nan, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 1, 1, 1, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, nan, nan, nan, nan, nan, nan],
         ]
     )
 
     test_image_p2_flipped = np.array(
         [
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 1, 1, 1, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+            [nan, nan, nan, nan, nan, nan, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 1, 1, 1, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, nan, nan, nan, nan, nan, nan],
         ]
     )
 
@@ -223,43 +223,43 @@ def test_calc_fractional_amplitude_set():
 
     correct_fractional_amplitude_set = np.array(
         [
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 1, 1, 1, 0, NaN],
-            [NaN, 0, 1, 1, 1, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+            [nan, nan, nan, nan, nan, nan, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 1, 1, 1, 0, nan],
+            [nan, 0, 1, 1, 1, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, nan, nan, nan, nan, nan, nan],
         ]
     )
 
     correct_fractional_amplitude_set_range = np.array(
         [
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 1, 1, 1, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+            [nan, nan, nan, nan, nan, nan, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 1, 1, 1, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, nan, nan, nan, nan, nan, nan],
         ]
     )
 
     correct_fractional_amplitude_set_negative_target = np.array(
         [
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 1, 1, 1, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+            [nan, nan, nan, nan, nan, nan, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 1, 1, 1, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, nan, nan, nan, nan, nan, nan],
         ]
     )
 
@@ -350,43 +350,43 @@ def test_classify_target_and_background():
 def test_calc_ringing():
     test_image_ringing = np.array(
         [
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, 0, 1, 1, 1, 0, NaN],
-            [NaN, 0, 1, 1, 1, 0, NaN],
-            [NaN, 0, 1, 1, 1, 0, NaN],
-            [NaN, 0, 1, 1, 1, 0, NaN],
-            [NaN, 0, -1, -1, -1, 0, NaN],
-            [NaN, 0, 0, 0, 0, 0, NaN],
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+            [nan, nan, nan, nan, nan, nan, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, 0, 1, 1, 1, 0, nan],
+            [nan, 0, 1, 1, 1, 0, nan],
+            [nan, 0, 1, 1, 1, 0, nan],
+            [nan, 0, 1, 1, 1, 0, nan],
+            [nan, 0, -1, -1, -1, 0, nan],
+            [nan, 0, 0, 0, 0, 0, nan],
+            [nan, nan, nan, nan, nan, nan, nan],
         ]
     )
 
     test_image_target_non_conductive = np.array(
         [
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-            [NaN, 3, 3, 3, 3, 3, NaN],
-            [NaN, 3, 3, 3, 3, 3, NaN],
-            [NaN, 3, 3, 3, 3, 3, NaN],
-            [NaN, 3, 3, 3, 3, 3, NaN],
-            [NaN, 3, 3, 3, 3, 3, NaN],
-            [NaN, 3, 2, 2, 2, 3, NaN],
-            [NaN, 3, 3, 3, 3, 3, NaN],
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+            [nan, nan, nan, nan, nan, nan, nan],
+            [nan, 3, 3, 3, 3, 3, nan],
+            [nan, 3, 3, 3, 3, 3, nan],
+            [nan, 3, 3, 3, 3, 3, nan],
+            [nan, 3, 3, 3, 3, 3, nan],
+            [nan, 3, 3, 3, 3, 3, nan],
+            [nan, 3, 2, 2, 2, 3, nan],
+            [nan, 3, 3, 3, 3, 3, nan],
+            [nan, nan, nan, nan, nan, nan, nan],
         ]
     )
 
     test_image_recon_non_conductive = np.array(
         [
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
-            [NaN, -0.4, -0.4, -0.4, -0.4, -0.4, NaN],
-            [NaN, -0.4, -0.4, -0.4, -0.4, -0.4, NaN],
-            [NaN, -0.4, -0.4, -0.4, -0.4, -0.4, NaN],
-            [NaN, -0.4, -0.4, -0.4, -0.4, -0.4, NaN],
-            [NaN, -0.4, 1, 1, 1, -0.4, NaN],
-            [NaN, -0.4, -2, -2, -2, -0.4, NaN],
-            [NaN, -0.4, -0.4, -0.4, -0.4, -0.4, NaN],
-            [NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+            [nan, nan, nan, nan, nan, nan, nan],
+            [nan, -0.4, -0.4, -0.4, -0.4, -0.4, nan],
+            [nan, -0.4, -0.4, -0.4, -0.4, -0.4, nan],
+            [nan, -0.4, -0.4, -0.4, -0.4, -0.4, nan],
+            [nan, -0.4, -0.4, -0.4, -0.4, -0.4, nan],
+            [nan, -0.4, 1, 1, 1, -0.4, nan],
+            [nan, -0.4, -2, -2, -2, -0.4, nan],
+            [nan, -0.4, -0.4, -0.4, -0.4, -0.4, nan],
+            [nan, nan, nan, nan, nan, nan, nan],
         ]
     )
 
